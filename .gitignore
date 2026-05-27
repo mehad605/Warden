@@ -64,4 +64,5 @@ google-services.json
 /test-code*
 
 # Gradle user home
-gradle/wrapper/gradle-wrapper.jar
+# gradle-wrapper.jar is intentionally committed so CI and fresh clones can run ./gradlew
+# gradle/wrapper/gradle-wrapper.jar
