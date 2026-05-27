@@ -103,49 +103,36 @@ Full technical and user documentation lives in the [`docs/`](docs/) folder:
 
 ## Emergency Uninstall
 
-Warden is designed to be hard to remove — that's intentional. But if you genuinely need to uninstall it and the normal Settings route is blocked, you can use ADB from a computer.
+Warden is designed to be hard to remove — that's intentional. If Anti-Uninstall is enabled, **the standard UI uninstallation path is completely blocked**. The app actively prevents you from force-stopping it, clearing its data, or deactivating its Device Admin status from your phone's settings. 
 
-**You will need:** A PC/Mac, a USB cable, and USB Debugging enabled on your phone.
-If USB Debugging is off and you can't enable it through Settings (because Warden keeps minimizing it), you'll need to factory reset your device as a last resort.
+If you genuinely need to uninstall it and are locked out, you must use one of the two methods below.
 
-### Step 1 — Enable USB Debugging
+### Method 1 — Safe Mode (No PC Required)
 
-Go to `Settings → About Phone` and tap **Build Number** seven times to unlock Developer Options. Then go to `Settings → Developer Options → Enable USB Debugging`.
+The easiest way to remove Warden in an emergency is to boot your Android device into **Safe Mode**. Safe Mode prevents downloaded third-party apps and background services (including Warden's accessibility service) from running.
 
-### Step 2 — Connect and verify ADB
+1. **Boot into Safe Mode:** Usually done by holding the Power button, then long-pressing the "Power Off" icon on the screen until the "Reboot to safe mode" prompt appears.
+2. **Deactivate Admin:** Go to `Settings → Security → Device admin apps` and deactivate Warden.
+3. **Uninstall:** Go to `Settings → Apps → Warden` and uninstall it normally.
+4. **Restart:** Restart your phone to exit Safe Mode.
 
-```bash
-# Install ADB on your computer if you don't have it
-# https://developer.android.com/studio/releases/platform-tools
+### Method 2 — ADB (Requires PC)
 
-adb devices
-# Your device should appear in the list
-```
+If you have a computer with ADB installed and USB Debugging enabled on your phone, you can "blind" Warden by killing its Accessibility Service via terminal.
 
-### Step 3 — Remove Device Administrator
+1. **Connect your phone to your PC** and verify ADB connection (`adb devices`).
+2. **Kill the Accessibility Service:**
+   ```bash
+   adb shell settings delete secure enabled_accessibility_services
+   ```
+   *(This immediately stops Warden from monitoring your screen.)*
+3. **Deactivate Admin:** On your phone, go to `Settings → Security → Device admin apps` and manually deactivate Warden.
+4. **Uninstall the App:**
+   ```bash
+   adb shell pm uninstall com.warden.app
+   ```
 
-If Anti-Uninstall was enabled, you must deactivate Device Admin first, otherwise uninstall will be blocked by Android:
-
-```bash
-adb shell dpm remove-active-admin com.warden.app/.receivers.WardenDeviceAdminReceiver
-```
-
-Expected output: `Success: removed active admin`
-
-### Step 4 — Uninstall the app
-
-```bash
-adb shell pm uninstall com.warden.app
-```
-
-Expected output: `Success`
-
-Warden is now fully removed from your device.
-
-> **Note:** If you simply want to disable Warden temporarily without uninstalling, you can disable the Accessibility Service via ADB:
-> ```bash
-> adb shell settings put secure enabled_accessibility_services ""
-> ```
+> **Note:** The standard ADB command `dpm remove-active-admin` will **fail** with a `SecurityException` because Warden is not built as a test-only app. You must use the methods above.
 
 ---
 

@@ -108,6 +108,13 @@ class KeywordBlocker : BaseBlocker() {
                         lower.contains("force stop") || lower.contains("kill") || lower.contains("clear data") || lower.contains("uninstall")
                     }
 
+                    val hasAccessibilityAction = screenTexts.any {
+                        val lower = it.lowercase(Locale.ROOT)
+                        lower.contains("warden needs access to accessibility data") ||
+                        lower.contains("stop warden") ||
+                        lower.contains("turn off warden")
+                    }
+
                     val isActivating = System.currentTimeMillis() - deviceAdminActivationRequestedAt < 180000
 
                     var shouldBlock = false
@@ -116,6 +123,8 @@ class KeywordBlocker : BaseBlocker() {
                             if (antiUninstallEnabled && hasDeactivateAction && !isActivating) {
                                 shouldBlock = true
                             }
+                        } else if (hasAccessibilityAction) {
+                            shouldBlock = true
                         } else {
                             if (hasUninstallAction) {
                                 shouldBlock = true
@@ -128,9 +137,9 @@ class KeywordBlocker : BaseBlocker() {
                         cancelGracePeriod()
                         rootNode.recycle()
                         val msg = if (antiUninstallEnabled) {
-                            "Self-protection: Cannot force stop, clear data, deactivate admin, or uninstall Warden!"
+                            "Self-protection: Cannot disable accessibility, force stop, clear data, deactivate admin, or uninstall Warden!"
                         } else {
-                            "Self-protection: Cannot force stop, clear data, or uninstall Warden!"
+                            "Self-protection: Cannot disable accessibility, force stop, clear data, or uninstall Warden!"
                         }
                         Handler(Looper.getMainLooper()).post {
                             Toast.makeText(

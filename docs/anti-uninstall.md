@@ -150,10 +150,10 @@ During this window, Device Admin screens are not blocked. After 3 minutes, prote
 
 | Limitation | Detail |
 |---|---|
-| **ADB bypass** | `adb shell dpm remove-active-admin` can deactivate Device Admin from a computer with USB debugging enabled. Disabling USB debugging mitigates this. |
+| **Safe Mode bypass** | A user can boot into Safe Mode to temporarily disable Warden's accessibility service, allowing them to deactivate the Device Admin and uninstall. |
+| **ADB bypass** | A user can run `adb shell settings delete secure enabled_accessibility_services` from a computer to kill the accessibility service, allowing them to deactivate the Device Admin. |
 | **Factory reset** | A factory reset removes all apps including Warden. This is intentional behavior by Android design. |
 | **Root** | A rooted device can uninstall any app regardless of Device Admin status. |
-| **OEM Settings apps** | Some OEM Settings apps display Warden's info under a different package context; the accessibility guard may not catch every UI variant. |
 
 Warden is designed to stop impulsive in-the-moment bypasses — not to be a cryptographically unbreakable lock.
 
@@ -174,13 +174,16 @@ Warden is designed to stop impulsive in-the-moment bypasses — not to be a cryp
 
 **If you are locked out (forgot password or Settings is blocked):**
 
-Use ADB from a computer. Full step-by-step instructions are in the [Emergency Uninstall section of the README](../README.md#emergency-uninstall).
+Use Safe Mode or ADB from a computer. Full step-by-step instructions are in the [Emergency Uninstall section of the README](../README.md#emergency-uninstall).
 
+**Example ADB Emergency Removal Flow:**
 ```bash
-# Step 1: Remove Device Admin
-adb shell dpm remove-active-admin com.warden.app/.receivers.WardenDeviceAdminReceiver
+# Step 1: Kill Accessibility Service to unblock Settings
+adb shell settings delete secure enabled_accessibility_services
 
-# Step 2: Uninstall
+# Step 2: Manually deactivate Device Admin on the phone's Security settings
+
+# Step 3: Uninstall
 adb shell pm uninstall com.warden.app
 ```
 
