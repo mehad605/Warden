@@ -66,3 +66,9 @@ google-services.json
 # Gradle user home
 # gradle-wrapper.jar is intentionally committed so CI and fresh clones can run ./gradlew
 # gradle/wrapper/gradle-wrapper.jar
+
+# Agent and internal files
+.agents/
+skills-lock.json
+ic_launcher_foreground.svg
+tmp_layout.xml
