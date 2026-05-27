@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Shield Left Side (Light Metallic Silver) -->
+    <linearGradient id="shieldLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#CBD5E1" />
+    </linearGradient>
+
+    <!-- Shield Right Side (Shadowed Metallic Silver) -->
+    <linearGradient id="shieldRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+
+    <!-- Soft Professional Shadow for Shield -->
+    <filter id="shieldShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+
+    <!-- Inner Glow on Shield -->
+    <filter id="innerGlow">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Lock Body Gradient (Warm Amber Gold) -->
+    <linearGradient id="lockGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <!-- Lock Shackle Gradient -->
+    <linearGradient id="lockShackle" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+
+    <!-- Shine Overlay -->
+    <linearGradient id="shineGrad" x1="0%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Clip Path for Shield -->
+    <clipPath id="shieldClip">
+      <path d="M256 60 L420 120 L420 270 C420 370 256 450 256 450 C256 450 92 370 92 270 L92 120 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- Shield Left Half -->
+  <path d="M256 60 L420 120 L420 270 C420 370 256 450 256 450 L256 60 Z"
+        fill="url(#shieldLeft)"
+        filter="url(#shieldShadow)" />
+
+  <!-- Shield Right Half -->
+  <path d="M256 60 L92 120 L92 270 C92 370 256 450 256 450 L256 60 Z"
+        fill="url(#shieldRight)" />
+
+  <!-- Shield Border / Outline -->
+  <path d="M256 60 L420 120 L420 270 C420 370 256 450 256 450 C256 450 92 370 92 270 L92 120 Z"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="4"
+        stroke-opacity="0.5" />
+
+  <!-- Shield Center Divider Line -->
+  <line x1="256" y1="65" x2="256" y2="445"
+        stroke="#CBD5E1"
+        stroke-width="1.5"
+        stroke-opacity="0.4" />
+
+  <!-- Shine on Shield -->
+  <path d="M256 60 L420 120 L420 270 C420 370 256 450 256 450 L256 60 Z"
+        fill="url(#shineGrad)"
+        clip-path="url(#shieldClip)" />
+
+  <!-- Lock Shackle (U-shape) -->
+  <path d="M210 230 L210 195 C210 160 302 160 302 195 L302 230"
+        fill="none"
+        stroke="url(#lockShackle)"
+        stroke-width="22"
+        stroke-linecap="round" />
+
+  <!-- Lock Body -->
+  <rect x="185" y="228" width="142" height="110" rx="16" ry="16"
+        fill="url(#lockGold)" />
+
+  <!-- Lock Body Highlight -->
+  <rect x="185" y="228" width="142" height="42" rx="16" ry="16"
+        fill="#FDE68A"
+        opacity="0.3" />
+
+  <!-- Keyhole Circle -->
+  <circle cx="256" cy="278" r="18"
+          fill="#92400E" />
+
+  <!-- Keyhole Slot -->
+  <rect x="249" y="278" width="14" height="26" rx="4"
+        fill="#92400E" />
+
+</svg>

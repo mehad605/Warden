@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/select_ignored"
+        android:title="@string/select_ignored_apps" />
+    <item
+        android:id="@+id/add_widget_usage_tracker"
+        android:title="@string/add_widget_to_homescreen" />
+
+    <item
+        android:id="@+id/export_as_csv"
+        android:title="@string/export_data_as_csv" />
+</menu>
