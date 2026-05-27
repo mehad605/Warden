@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/tv_dialog_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Convince AI Gatekeeper"
+            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tv_dialog_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Please provide a valid study/work emergency justification. You must write at least 7 complete sentences."
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="16dp" />
+
+        <!-- App Selector Row -->
+        <TextView
+            android:id="@+id/tv_select_app_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select Target App:"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/spinner_apps"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Justification Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_justification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Your justification (Min 7 sentences, 5 words/sentence)"
+            android:layout_marginBottom="16dp"
+            app:counterEnabled="true"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_justification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="5"
+                android:gravity="top|start"
+                android:inputType="textMultiLine" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Screenshot Attachment -->
+        <LinearLayout
+            android:id="@+id/layout_attachment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_attach_image"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Attach Screenshot (Optional)"
+                app:icon="@android:drawable/ic_menu_camera" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_image_preview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:cardCornerRadius="8dp">
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/iv_preview"
+                        android:layout_width="160dp"
+                        android:layout_height="120dp"
+                        android:scaleType="centerCrop" />
+
+                    <ImageButton
+                        android:id="@+id/btn_remove_image"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="top|end"
+                        android:background="@android:color/transparent"
+                        android:src="@android:drawable/ic_menu_close_clear_cancel"
+                        app:tint="?attr/colorError" />
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <!-- Loading / Progress -->
+        <LinearLayout
+            android:id="@+id/layout_loading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminate="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Consulting Gemini AI Gatekeeper..."
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- Bot Response Display -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_ai_verdict"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorPrimary">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tv_verdict_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Verdict: REJECTED"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/tv_verdict_message"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="AI response text goes here"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_submit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Submit Request" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
