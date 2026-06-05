@@ -32,17 +32,26 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
-
       - name: Determine release tag
         id: tag
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            CLEAN_VERSION="${{ github.event.inputs.version }}"
           else
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            CLEAN_VERSION="${GITHUB_REF#refs/tags/}"
           fi
+          
+          # Strip leading 'v' to get a clean version name (e.g. v1.1.0 -> 1.1.0)
+          echo "VERSION_NAME=${CLEAN_VERSION#v}" >> $GITHUB_ENV
+          echo "VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+        env:
+          VERSION_CODE: ${{ env.VERSION_CODE }}
+          VERSION_NAME: ${{ env.VERSION_NAME }}
 
       - name: Find APK
         id: apk

@@ -21,30 +21,9 @@ android {
         minSdk = 26
         targetSdk = 34
         
-        val gitVersionCode = try {
-            val stdout = ByteArrayOutputStream()
-            exec {
-                commandLine("git", "rev-list", "--count", "HEAD")
-                standardOutput = stdout
-            }
-            stdout.toString().trim().toInt()
-        } catch (e: Exception) {
-            50
-        }
+        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 50
+        versionName = System.getenv("VERSION_NAME") ?: "1.1.0"
         
-        val gitVersionName = try {
-            val stdout = ByteArrayOutputStream()
-            exec {
-                commandLine("git", "describe", "--tags", "--abbrev=0")
-                standardOutput = stdout
-            }
-            stdout.toString().trim().removePrefix("v")
-        } catch (e: Exception) {
-            "1.1.0"
-        }
-
-        versionCode = gitVersionCode
-        versionName = gitVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
