@@ -21,9 +21,11 @@ android {
         minSdk = 26
         targetSdk = 34
         
-        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 50
-        versionName = System.getenv("VERSION_NAME") ?: "1.1.0"
-        
+        val propVersionCode = (project.findProperty("VERSION_CODE") as? String)?.toIntOrNull() ?: 50
+        val propVersionName = (project.findProperty("VERSION_NAME") as? String) ?: "1.1.0"
+
+        versionCode = propVersionCode
+        versionName = propVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
