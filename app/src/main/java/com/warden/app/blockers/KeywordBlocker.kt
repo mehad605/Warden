@@ -78,11 +78,33 @@ class KeywordBlocker : BaseBlocker() {
         }
 
         // Self-Protection check: Prevent clearing data, force stop, or uninstalling
+        val antiUninstallSafePackages = setOf(
+            // Browsers
+            "com.android.chrome",
+            "org.mozilla.firefox",
+            "com.brave.browser",
+            "com.opera.browser",
+            "com.microsoft.emmx",
+            "com.duckduckgo.mobile.android",
+            "com.sec.android.app.sbrowser",
+            // Social & Messaging
+            "com.facebook.katana",
+            "com.facebook.orca",
+            "com.whatsapp",
+            "org.telegram.messenger",
+            "com.twitter.android",
+            "com.instagram.android",
+            "com.snapchat.android",
+            "com.discord",
+            "com.reddit.frontpage",
+            "com.zhiliaoapp.musically"
+        )
+
         if (event != null && (event.eventType and TARGET_EVENTS_MASK) != 0) {
             val rootNode = service.rootInActiveWindow
             if (rootNode != null) {
                 val appPackage = rootNode.packageName?.toString() ?: ""
-                if (appPackage != "com.warden.app") {
+                if (appPackage != "com.warden.app" && !antiUninstallSafePackages.contains(appPackage)) {
                     val screenTexts = mutableListOf<String>()
                     collectScreenTexts(rootNode, screenTexts)
                     val hasAppName = screenTexts.any {
