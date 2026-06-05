@@ -339,7 +339,7 @@ class KeywordBlockerFragment : Fragment() {
         }
 
         binding.btnExportSettings.setOnClickListener {
-            exportLauncher.launch("BlockWords.json")
+            exportLauncher.launch("Warden.json")
         }
 
         binding.btnImportSettings.setOnClickListener {
@@ -389,7 +389,7 @@ class KeywordBlockerFragment : Fragment() {
             viewModel.ignoreGracePeriodSeconds.collectLatest { seconds ->
                 isUpdatingUi = true
                 binding.sliderGracePeriod.value = seconds.toFloat()
-                binding.tvGracePeriodTitle.text = "Blocker Grace Period: ${seconds}s"
+                binding.tvGracePeriodTitle.text = "Warden Grace Period: ${seconds}s"
                 isUpdatingUi = false
             }
         }
@@ -470,6 +470,7 @@ class KeywordBlockerFragment : Fragment() {
 
     private fun updateKeywordsList(keywords: List<String>) {
         binding.cgKeywords.removeAllViews()
+        binding.tvKeywordCount.text = "${keywords.size} word${if (keywords.size != 1) "s" else ""}"
         for (keyword in keywords) {
             val chip = Chip(requireContext()).apply {
                 text = keyword
