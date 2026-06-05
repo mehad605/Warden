@@ -15,24 +15,35 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Select Apps" />
+            app:title="Select Apps"
+            app:titleCentered="true" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.appcompat.widget.SearchView
-            android:id="@+id/search_view"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:background="?attr/colorSurfaceVariant"
-            app:queryHint="Search apps..."
-            app:iconifiedByDefault="false" />
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Small">
+
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/search_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/colorSurfaceVariant"
+                app:queryHint="Search apps..."
+                app:iconifiedByDefault="false" />
+        </com.google.android.material.card.MaterialCardView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/app_list"

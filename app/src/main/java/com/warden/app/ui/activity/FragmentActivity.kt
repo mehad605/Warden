@@ -5,6 +5,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.color.DynamicColors
 import com.warden.app.R
 import com.warden.app.ui.fragments.main.reducers.blockertools.keywordBlocker.KeywordBlockerFragment
 

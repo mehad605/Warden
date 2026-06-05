@@ -9,14 +9,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="24dp">
 
         <TextView
             android:id="@+id/tv_dialog_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Convince AI Gatekeeper"
-            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
             android:layout_marginBottom="8dp" />
 
         <TextView
@@ -25,10 +25,10 @@
             android:layout_height="wrap_content"
             android:text="Please provide a valid study/work emergency justification. You must write at least 7 complete sentences."
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="?android:attr/textColorSecondary"
-            android:layout_marginBottom="16dp" />
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="20dp" />
 
-        <!-- App Selector Row -->
+        <!-- App Selector -->
         <TextView
             android:id="@+id/tv_select_app_label"
             android:layout_width="match_parent"
@@ -36,21 +36,22 @@
             android:text="Select Target App:"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="8dp" />
 
         <Spinner
             android:id="@+id/spinner_apps"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="20dp" />
 
-        <!-- Justification Input -->
+        <!-- Justification -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_justification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Your justification (Min 7 sentences, 5 words/sentence)"
-            android:layout_marginBottom="16dp"
+            android:hint="Your justification"
+            android:layout_marginBottom="20dp"
             app:counterEnabled="true"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -69,14 +70,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="20dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_attach_image"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Attach Screenshot (Optional)"
+                android:text="Attach Screenshot"
                 app:icon="@android:drawable/ic_menu_camera" />
 
             <com.google.android.material.card.MaterialCardView
@@ -84,9 +85,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:visibility="gone"
-                app:cardCornerRadius="8dp">
+                app:cardElevation="2dp"
+                app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Small">
 
                 <FrameLayout
                     android:layout_width="wrap_content"
@@ -103,14 +105,14 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_gravity="top|end"
-                        android:background="@android:color/transparent"
-                        android:src="@android:drawable/ic_menu_close_clear_cancel"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/baseline_close_24"
                         app:tint="?attr/colorError" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- Loading / Progress -->
+        <!-- Loading -->
         <LinearLayout
             android:id="@+id/layout_loading"
             android:layout_width="match_parent"
@@ -118,7 +120,7 @@
             android:orientation="vertical"
             android:gravity="center"
             android:visibility="gone"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="20dp">
 
             <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:layout_width="wrap_content"
@@ -130,25 +132,25 @@
                 android:layout_height="wrap_content"
                 android:text="Consulting Gemini AI Gatekeeper..."
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:layout_marginTop="8dp" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginTop="12dp" />
         </LinearLayout>
 
-        <!-- Bot Response Display -->
+        <!-- AI Verdict -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_ai_verdict"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="?attr/colorPrimary">
+            android:layout_marginBottom="20dp"
+            app:cardElevation="2dp"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Small">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="16dp">
 
                 <TextView
                     android:id="@+id/tv_verdict_title"
@@ -163,7 +165,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="AI response text goes here"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
