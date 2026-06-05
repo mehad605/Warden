@@ -1,4 +1,5 @@
 import java.util.Locale
+import java.io.ByteArrayOutputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -21,7 +22,7 @@ android {
         targetSdk = 34
         
         val gitVersionCode = try {
-            val stdout = java.io.ByteArrayOutputStream()
+            val stdout = ByteArrayOutputStream()
             exec {
                 commandLine("git", "rev-list", "--count", "HEAD")
                 standardOutput = stdout
@@ -32,7 +33,7 @@ android {
         }
         
         val gitVersionName = try {
-            val stdout = java.io.ByteArrayOutputStream()
+            val stdout = ByteArrayOutputStream()
             exec {
                 commandLine("git", "describe", "--tags", "--abbrev=0")
                 standardOutput = stdout
