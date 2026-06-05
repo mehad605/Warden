@@ -109,7 +109,13 @@ class DataStoreManager(private val context: Context) {
     suspend fun importSettingsJson(json: String): Boolean {
         return try {
             val importedSettings = gson.fromJson(json, Settings::class.java) ?: return false
-            settingsDataStore.updateData { importedSettings }
+            settingsDataStore.updateData { current ->
+                val mergedKeywordConfig = current.keywordBlockerConfig.copy(
+                    isActive = current.keywordBlockerConfig.isActive || importedSettings.keywordBlockerConfig.isActive,
+                    blockedKeywords = (current.keywordBlockerConfig.blockedKeywords + importedSettings.keywordBlockerConfig.blockedKeywords).distinct()
+                )
+                importedSettings.copy(keywordBlockerConfig = mergedKeywordConfig)
+            }
             true
         } catch (e: Exception) {
             e.printStackTrace()
