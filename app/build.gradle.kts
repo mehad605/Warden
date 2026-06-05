@@ -19,8 +19,31 @@ android {
         applicationId = "com.warden.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 50
-        versionName = "5"
+        
+        val gitVersionCode = try {
+            val stdout = java.io.ByteArrayOutputStream()
+            exec {
+                commandLine("git", "rev-list", "--count", "HEAD")
+                standardOutput = stdout
+            }
+            stdout.toString().trim().toInt()
+        } catch (e: Exception) {
+            50
+        }
+        
+        val gitVersionName = try {
+            val stdout = java.io.ByteArrayOutputStream()
+            exec {
+                commandLine("git", "describe", "--tags", "--abbrev=0")
+                standardOutput = stdout
+            }
+            stdout.toString().trim().removePrefix("v")
+        } catch (e: Exception) {
+            "1.1.0"
+        }
+
+        versionCode = gitVersionCode
+        versionName = gitVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
