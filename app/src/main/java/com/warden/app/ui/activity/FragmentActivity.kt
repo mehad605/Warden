@@ -12,6 +12,7 @@ import com.warden.app.ui.fragments.main.reducers.blockertools.keywordBlocker.Key
 class FragmentActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_BlockWords)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_fragment)

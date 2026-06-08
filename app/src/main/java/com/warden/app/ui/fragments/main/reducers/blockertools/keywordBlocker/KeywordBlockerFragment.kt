@@ -179,7 +179,9 @@ class KeywordBlockerFragment : Fragment() {
                     showAiChatDialog(DialogType.PAUSE_BLOCKER)
                 } else {
                     viewModel.setIsActive(true)
+                    updateKeywordBadge(true)
                 }
+                updateKeywordBadge(binding.switchEnableBlocker.isChecked)
             }
         }
 
@@ -257,23 +259,12 @@ class KeywordBlockerFragment : Fragment() {
             }
         }
 
-        binding.btnAddKeyword.setOnClickListener {
-            var keyword = binding.etKeyword.text.toString()
-            if (keyword.isNotBlank()) {
-                if (Patterns.WEB_URL.matcher(keyword).matches()) {
-                    keyword = keyword
-                        .removePrefix("https://")
-                        .removePrefix("http://")
-                        .removePrefix("www.")
-                    Toast.makeText(
-                        requireContext(),
-                        getString(R.string.warning_link_blocker_may_not_work),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                viewModel.addKeyword(keyword)
-                binding.etKeyword.setText("")
-            }
+        binding.tilAddWord.setEndIconOnClickListener { addKeyword() }
+        binding.etKeyword.setOnKeyListener { _, keyCode, _ ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_ENTER) {
+                addKeyword()
+                true
+            } else false
         }
 
 
@@ -295,6 +286,10 @@ class KeywordBlockerFragment : Fragment() {
                 viewModel.setGeminiApiKey(input)
                 Toast.makeText(requireContext(), "API Key saved.", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        binding.cardExemption.setOnClickListener {
+            showAiChatDialog(DialogType.TEMPORARY_IGNORE)
         }
 
         binding.btnAskAiIgnore.setOnClickListener {
@@ -347,6 +342,29 @@ class KeywordBlockerFragment : Fragment() {
         }
     }
 
+    private fun addKeyword() {
+        var keyword = binding.etKeyword.text.toString()
+        if (keyword.isNotBlank()) {
+            if (Patterns.WEB_URL.matcher(keyword).matches()) {
+                keyword = keyword
+                    .removePrefix("https://")
+                    .removePrefix("http://")
+                    .removePrefix("www.")
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.warning_link_blocker_may_not_work),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            viewModel.addKeyword(keyword)
+            binding.etKeyword.setText("")
+        }
+    }
+
+    private fun updateKeywordBadge(isActive: Boolean) {
+        binding.tvBlockerBadge.visibility = if (isActive) View.VISIBLE else View.GONE
+    }
+
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.keywordBlockerConfig.collectLatest { config ->
@@ -355,6 +373,7 @@ class KeywordBlockerFragment : Fragment() {
                 if (binding.switchEnableBlocker.isChecked != config.isActive) {
                     binding.switchEnableBlocker.isChecked = config.isActive
                 }
+                updateKeywordBadge(config.isActive)
 
                 currentIgnoredApps = config.ignoredApps
                 updateIgnoredAppsList()
@@ -368,11 +387,15 @@ class KeywordBlockerFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.passwordHash.collectLatest { hash ->
                 if (hash != null) {
-                    binding.tvPasswordStatus.text = "Password protection is active (required for keyword removal)"
+                    binding.tvPasswordStatus.text = "Required to remove blocked words"
+                    binding.tvPasswordBadge.text = "On"
+                    binding.tvPasswordBadge.setTextColor(android.graphics.Color.parseColor("#4ADE80"))
+                    binding.tvPasswordBadge.visibility = View.VISIBLE
                     binding.btnSetPassword.text = getString(R.string.change_password)
                     binding.btnRemovePassword.visibility = View.VISIBLE
                 } else {
-                    binding.tvPasswordStatus.text = "No password set (keywords can be deleted freely)"
+                    binding.tvPasswordStatus.text = "No password set"
+                    binding.tvPasswordBadge.visibility = View.GONE
                     binding.btnSetPassword.text = getString(R.string.set_password)
                     binding.btnRemovePassword.visibility = View.GONE
                 }
@@ -389,7 +412,7 @@ class KeywordBlockerFragment : Fragment() {
             viewModel.ignoreGracePeriodSeconds.collectLatest { seconds ->
                 isUpdatingUi = true
                 binding.sliderGracePeriod.value = seconds.toFloat()
-                binding.tvGracePeriodTitle.text = "Warden Grace Period: ${seconds}s"
+                binding.tvGraceValue.text = if (seconds == 0) "Off" else "${seconds}s"
                 isUpdatingUi = false
             }
         }
@@ -449,18 +472,20 @@ class KeywordBlockerFragment : Fragment() {
 
         isUpdatingUi = true
         if (hasKey) {
+            binding.ivApiStatusIcon.visibility = View.VISIBLE
             binding.btnRefreshModels.isEnabled = true
             if (hasModels) {
-                binding.tvApiStatus.text = "API Key is configured. AI Gatekeeper features are enabled."
+                binding.tvApiStatus.text = "API key configured · Gatekeeper active"
                 binding.etApiKey.setText("***********")
                 binding.btnAskAiIgnore.isEnabled = true
             } else {
-                binding.tvApiStatus.text = "API Key is configured. Tap Sync/Refresh icon to sync available models before using AI features."
+                binding.tvApiStatus.text = "API Key configured · Sync models to enable"
                 binding.etApiKey.setText("***********")
                 binding.btnAskAiIgnore.isEnabled = false
             }
         } else {
-            binding.tvApiStatus.text = "No API Key configured. AI Gatekeeper features are disabled."
+            binding.ivApiStatusIcon.visibility = View.GONE
+            binding.tvApiStatus.text = "No API Key configured · AI features disabled"
             binding.etApiKey.setText("")
             binding.btnAskAiIgnore.isEnabled = false
             binding.btnRefreshModels.isEnabled = false
