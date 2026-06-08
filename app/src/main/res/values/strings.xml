@@ -9,9 +9,9 @@
     <string name="minutes">minutes</string>
     <string name="app_icon">app_icon</string>
     <string name="accessibility_permission_app_blocker">
-        Enabling this would unlock the following in Warden:\n1. App Blocking\n2, Focus Mode \n\n
-        Warden needs access to accessibility data to know when you open a specific feature within an app, like a social media feed or a game.
-        This lets Warden block those features for you based on your preferences, helping you stay focused and reduce screen distractions.\n\n
+        Enabling this allows Warden to:\n1. Detect and block keywords across apps\n2. Identify and hide distracting UI elements\n3. Protect against forced uninstallation\n\n
+        Warden needs access to accessibility data to scan on-screen text for blocked keywords and identify UI elements you want to hide.
+        This lets Warden help you stay focused and reduce distractions.\n\n
         Rest assured, all accessibility data stays securely on your device—we never share or transmit your data, ensuring your privacy is always protected.
         \n\n
     </string>

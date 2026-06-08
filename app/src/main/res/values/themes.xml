@@ -47,10 +47,15 @@
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest</item>
 
-        <item name="materialCardViewStyle">@style/Widget.Material3.CardView.Elevated</item>
-        <item name="chipStyle">@style/Widget.Material3.Chip.Input</item>
+        <!-- Font -->
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+
+        <!-- Component styles -->
+        <item name="materialCardViewStyle">@style/Widget.Material3.CardView.Filled</item>
+        <item name="chipStyle">@style/Widget.Material3.Chip.Assist</item>
         <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
 
+        <!-- Shape appearance -->
         <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.BlockWords.Small</item>
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.BlockWords.Medium</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.BlockWords.Large</item>
@@ -58,12 +63,12 @@
 
     <style name="ShapeAppearance.BlockWords.Large" parent="ShapeAppearance.Material3.LargeComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">32dp</item>
+        <item name="cornerSize">28dp</item>
     </style>
 
     <style name="ShapeAppearance.BlockWords.Medium" parent="ShapeAppearance.Material3.MediumComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">24dp</item>
+        <item name="cornerSize">20dp</item>
     </style>
 
     <style name="ShapeAppearance.BlockWords.Small" parent="ShapeAppearance.Material3.SmallComponent">
@@ -72,6 +77,10 @@
     </style>
 
     <style name="Theme.BlockWords" parent="Base.Theme.BlockWords" />
+
+    <style name="Theme.BlockWords.Splash" parent="Theme.BlockWords">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
 
     <style name="Theme.BlockWords.TransparentDialog" parent="Theme.Material3.DayNight">
         <item name="android:windowNoTitle">true</item>
@@ -82,5 +91,4 @@
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Material3.MediumComponent</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Material3.LargeComponent</item>
     </style>
-
 </resources>

@@ -1,7 +1,5 @@
 <resources>
-    <!-- Base application theme. -->
     <style name="Base.Theme.BlockWords" parent="Theme.Material3.DayNight.NoActionBar">
-
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
@@ -48,6 +46,18 @@
         <item name="colorSurfaceContainer">@color/md_theme_surfaceContainer</item>
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest</item>
-    </style>
 
+        <!-- Font -->
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+
+        <!-- Component styles -->
+        <item name="materialCardViewStyle">@style/Widget.Material3.CardView.Filled</item>
+        <item name="chipStyle">@style/Widget.Material3.Chip.Assist</item>
+        <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
+
+        <!-- Shape appearance -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.BlockWords.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.BlockWords.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.BlockWords.Large</item>
+    </style>
 </resources>
