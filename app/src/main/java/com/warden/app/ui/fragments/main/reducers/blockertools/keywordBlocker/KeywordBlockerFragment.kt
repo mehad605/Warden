@@ -62,6 +62,7 @@ class KeywordBlockerFragment : Fragment() {
     private var currentIgnoredApps = listOf<String>()
     private val appInfoCache = mutableMapOf<String, Pair<String, Drawable>>()
     private var countdownJob: Job? = null
+    private var pendingExportJson: String? = null
 
     private var onImageAttachedCallback: ((Uri) -> Unit)? = null
 
@@ -80,7 +81,8 @@ class KeywordBlockerFragment : Fragment() {
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
-            viewModel.exportSettings { json ->
+            val json = pendingExportJson
+            if (json != null) {
                 try {
                     requireContext().contentResolver.openOutputStream(uri)?.use { outputStream ->
                         outputStream.write(json.toByteArray())
@@ -89,7 +91,11 @@ class KeywordBlockerFragment : Fragment() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                     Toast.makeText(requireContext(), getString(R.string.failed_to_export_data), Toast.LENGTH_SHORT).show()
+                } finally {
+                    pendingExportJson = null
                 }
+            } else {
+                Toast.makeText(requireContext(), getString(R.string.failed_to_export_data), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -267,6 +273,14 @@ class KeywordBlockerFragment : Fragment() {
             } else false
         }
 
+        binding.tilAddWhitelistWord.setEndIconOnClickListener { addWhitelistKeyword() }
+        binding.etWhitelistKeyword.setOnKeyListener { _, keyCode, _ ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_ENTER) {
+                addWhitelistKeyword()
+                true
+            } else false
+        }
+
 
 
         binding.sliderGracePeriod.addOnChangeListener { _, value, fromUser ->
@@ -334,7 +348,17 @@ class KeywordBlockerFragment : Fragment() {
         }
 
         binding.btnExportSettings.setOnClickListener {
-            exportLauncher.launch("Warden.json")
+            val hasPassword = viewModel.passwordHash.value != null
+            val hasApiKey = viewModel.geminiApiKey.value != null
+
+            if (hasPassword || hasApiKey) {
+                showExportOptionsDialog(hasPassword, hasApiKey)
+            } else {
+                viewModel.exportSettings(includePassword = false, includeApiKey = false) { json ->
+                    pendingExportJson = json
+                    exportLauncher.launch("Warden.json")
+                }
+            }
         }
 
         binding.btnImportSettings.setOnClickListener {
@@ -361,6 +385,25 @@ class KeywordBlockerFragment : Fragment() {
         }
     }
 
+    private fun addWhitelistKeyword() {
+        var keyword = binding.etWhitelistKeyword.text.toString()
+        if (keyword.isNotBlank()) {
+            if (Patterns.WEB_URL.matcher(keyword).matches()) {
+                keyword = keyword
+                    .removePrefix("https://")
+                    .removePrefix("http://")
+                    .removePrefix("www.")
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.warning_link_blocker_may_not_work),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            viewModel.addWhitelistedKeyword(keyword)
+            binding.etWhitelistKeyword.setText("")
+        }
+    }
+
     private fun updateKeywordBadge(isActive: Boolean) {
         binding.tvBlockerBadge.visibility = if (isActive) View.VISIBLE else View.GONE
     }
@@ -379,6 +422,7 @@ class KeywordBlockerFragment : Fragment() {
                 updateIgnoredAppsList()
 
                 updateKeywordsList(config.blockedKeywords)
+                updateWhitelistKeywordsList(config.whitelistedKeywords)
 
                 isUpdatingUi = false
             }
@@ -519,6 +563,32 @@ class KeywordBlockerFragment : Fragment() {
         }
     }
 
+    private fun updateWhitelistKeywordsList(keywords: List<String>) {
+        binding.cgWhitelistKeywords.removeAllViews()
+        binding.tvWhitelistKeywordCount.text = "${keywords.size} word${if (keywords.size != 1) "s" else ""}"
+        for (keyword in keywords) {
+            val chip = Chip(requireContext()).apply {
+                text = keyword
+                isCloseIconVisible = true
+                setOnCloseIconClickListener {
+                    val passwordHash = viewModel.passwordHash.value
+                    if (passwordHash != null) {
+                        showPasswordPromptDialog(
+                            title = getString(R.string.password_prompt_title),
+                            message = getString(R.string.password_required_to_delete)
+                        ) {
+                            viewModel.removeWhitelistedKeyword(keyword)
+                            Toast.makeText(requireContext(), "Whitelist keyword removed!", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        viewModel.removeWhitelistedKeyword(keyword)
+                    }
+                }
+            }
+            binding.cgWhitelistKeywords.addView(chip)
+        }
+    }
+
     private fun showPasswordPromptDialog(title: String, message: String, onVerified: () -> Unit) {
         val context = requireContext()
         val inputLayout = TextInputLayout(context).apply {
@@ -616,6 +686,52 @@ class KeywordBlockerFragment : Fragment() {
             viewModel.removePassword()
             Toast.makeText(requireContext(), requireContext().getString(R.string.password_cleared), Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun showExportOptionsDialog(hasPassword: Boolean, hasApiKey: Boolean) {
+        val context = requireContext()
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 24)
+        }
+
+        val tvInfo = TextView(context).apply {
+            text = "Currently password and API key are also exported. If you want to exclude any of the two, toggle it off and it won't be exported."
+            setPadding(0, 0, 0, 32)
+            androidx.core.widget.TextViewCompat.setTextAppearance(this, com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+        }
+        container.addView(tvInfo)
+
+        val switchPassword = com.google.android.material.materialswitch.MaterialSwitch(context).apply {
+            text = "Export Password Hash"
+            isChecked = true
+            visibility = if (hasPassword) View.VISIBLE else View.GONE
+        }
+        container.addView(switchPassword)
+
+        val switchApiKey = com.google.android.material.materialswitch.MaterialSwitch(context).apply {
+            text = "Export API Key"
+            isChecked = true
+            visibility = if (hasApiKey) View.VISIBLE else View.GONE
+        }
+        container.addView(switchApiKey)
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Export Options")
+            .setView(container)
+            .setPositiveButton("Export") { dialog, _ ->
+                val includePassword = if (hasPassword) switchPassword.isChecked else false
+                val includeApiKey = if (hasApiKey) switchApiKey.isChecked else false
+                viewModel.exportSettings(includePassword = includePassword, includeApiKey = includeApiKey) { json ->
+                    pendingExportJson = json
+                    exportLauncher.launch("Warden.json")
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun showAiChatDialog(type: DialogType, targetPackage: String? = null) {

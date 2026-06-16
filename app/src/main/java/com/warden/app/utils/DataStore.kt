@@ -102,19 +102,47 @@ class DataStoreManager(private val context: Context) {
         settingsDataStore.updateData { it.copy(deviceAdminActivationRequestedAt = timestamp) }
     }
 
-    suspend fun getSettingsJson(): String {
-        return gson.toJson(settingsDataStore.data.first())
+    suspend fun getSettingsJson(includePassword: Boolean = true, includeApiKey: Boolean = true): String {
+        val currentSettings = settingsDataStore.data.first()
+        val exportSettings = currentSettings.copy(
+            passwordHash = if (includePassword) currentSettings.passwordHash else null,
+            geminiApiKey = if (includeApiKey) currentSettings.geminiApiKey else null,
+            antiUninstallEnabled = false,
+            deviceAdminActivationRequestedAt = 0L
+        )
+        return gson.toJson(exportSettings)
     }
 
     suspend fun importSettingsJson(json: String): Boolean {
         return try {
             val importedSettings = gson.fromJson(json, Settings::class.java) ?: return false
+            
+            // Fix nullability caused by Gson bypassing Kotlin constructors
+            val safeKeywordBlockerConfig = importedSettings.keywordBlockerConfig?.let {
+                it.copy(
+                    blockedKeywords = it.blockedKeywords ?: emptyList(),
+                    whitelistedKeywords = it.whitelistedKeywords ?: emptyList(),
+                    ignoredApps = it.ignoredApps ?: emptyList()
+                )
+            } ?: com.warden.app.data.models.KeywordBlocker()
+            
+            val safeTempIgnoredApps = importedSettings.temporaryIgnoredApps ?: emptyMap()
+            val safeAvailableGeminiModels = importedSettings.availableGeminiModels ?: emptyList()
+            val safeSelectedGeminiModel = importedSettings.selectedGeminiModel ?: ""
+
             settingsDataStore.updateData { current ->
                 val mergedKeywordConfig = current.keywordBlockerConfig.copy(
-                    isActive = current.keywordBlockerConfig.isActive || importedSettings.keywordBlockerConfig.isActive,
-                    blockedKeywords = (current.keywordBlockerConfig.blockedKeywords + importedSettings.keywordBlockerConfig.blockedKeywords).distinct()
+                    isActive = current.keywordBlockerConfig.isActive || safeKeywordBlockerConfig.isActive,
+                    blockedKeywords = (current.keywordBlockerConfig.blockedKeywords + safeKeywordBlockerConfig.blockedKeywords).distinct(),
+                    whitelistedKeywords = (current.keywordBlockerConfig.whitelistedKeywords + safeKeywordBlockerConfig.whitelistedKeywords).distinct(),
+                    ignoredApps = (current.keywordBlockerConfig.ignoredApps + safeKeywordBlockerConfig.ignoredApps).distinct()
                 )
-                importedSettings.copy(keywordBlockerConfig = mergedKeywordConfig)
+                importedSettings.copy(
+                    keywordBlockerConfig = mergedKeywordConfig,
+                    temporaryIgnoredApps = safeTempIgnoredApps,
+                    availableGeminiModels = safeAvailableGeminiModels,
+                    selectedGeminiModel = safeSelectedGeminiModel
+                )
             }
             true
         } catch (e: Exception) {
