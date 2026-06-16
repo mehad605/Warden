@@ -46,13 +46,22 @@ jobs:
           VERSION_NAME="${TAG#v}"
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug -PVERSION_NAME="${{ steps.tag.outputs.version_name }}" -PVERSION_CODE="${{ github.run_number }}"
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/warden-release.jks
+
+      - name: Build Release APK
+        env:
+          KEYSTORE_PATH: "warden-release.jks"
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease -PVERSION_NAME="${{ steps.tag.outputs.version_name }}" -PVERSION_CODE="${{ github.run_number }}"
 
       - name: Find APK
         id: apk
         run: |
-          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
           echo "path=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_PATH"
 
@@ -68,7 +77,7 @@ jobs:
             - See commit history for changes in this release.
 
             ### Installation
-            1. Download `Warden-debug.apk` below
+            1. Download `Warden-release.apk` below
             2. Enable **Install from Unknown Sources** on your device
             3. Install the APK
             4. Grant Accessibility permission when prompted
