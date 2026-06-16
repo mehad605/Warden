@@ -51,7 +51,7 @@ class KeywordBlocker : BaseBlocker() {
     private var delayedDetectedKeyword: String? = null
     private var delayedPackageName: String? = null
 
-    private fun containsBlockedKeyword(text: String): String? {
+    private fun containsBlockedKeyword(text: String): Pair<String, String>? {
         var lowerText = text.lowercase(Locale.ROOT)
 
         if (this::whitelistedKeywords.isInitialized) {
@@ -65,26 +65,42 @@ class KeywordBlocker : BaseBlocker() {
 
         for (keyword in blockedKeyword) {
             val lowerKeyword = keyword.lowercase(Locale.ROOT)
-            if (lowerKeyword.isNotBlank() && lowerText.contains(lowerKeyword)) {
-                return keyword
+            val index = lowerText.indexOf(lowerKeyword)
+            if (lowerKeyword.isNotBlank() && index != -1) {
+                val context = extractContext(text, index, lowerKeyword.length)
+                return Pair(keyword, context)
             }
         }
         return null
     }
 
+    private fun extractContext(text: String, keywordStartIndex: Int, keywordLength: Int): String {
+        val beforeText = text.substring(0, keywordStartIndex)
+        val afterText = text.substring(keywordStartIndex + keywordLength)
+        
+        val beforeWords = beforeText.split("\\s+".toRegex()).filter { it.isNotBlank() }
+        val afterWords = afterText.split("\\s+".toRegex()).filter { it.isNotBlank() }
+        
+        val wordsBefore = beforeWords.takeLast(7).joinToString(" ")
+        val wordsAfter = afterWords.take(7).joinToString(" ")
+        val actualKeyword = text.substring(keywordStartIndex, keywordStartIndex + keywordLength)
+        
+        return listOf(wordsBefore, actualKeyword, wordsAfter).filter { it.isNotBlank() }.joinToString(" ")
+    }
+
     fun checkIfUserGettingFreaky(event: AccessibilityEvent?) {
-        fun showMessage(word: String) {
+        fun showMessage(word: String, contextString: String) {
             Handler(Looper.getMainLooper()).post {
                 Toast.makeText(
                     service,
-                    service.getString(R.string.blocked_keyword_word_was_found).replace("-word", word),
+                    "Blocked word $word was found : \" $contextString \"",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
 
-        fun pressHome(word: String) {
-            showMessage(word)
+        fun pressHome(word: String, contextString: String) {
+            showMessage(word, contextString)
             service.pressHome()
         }
 
@@ -214,9 +230,11 @@ class KeywordBlocker : BaseBlocker() {
             return
         }
 
-        val detectedKeyword = scanNodeForBlockedKeyword(rootNode)
+        val detectedResult = scanNodeForBlockedKeyword(rootNode)
 
-        if (detectedKeyword != null) {
+        if (detectedResult != null) {
+            val detectedKeyword = detectedResult.first
+            val contextString = detectedResult.second
             if (ignoreGracePeriodSeconds > 0) {
                 if (delayedDetectedKeyword == detectedKeyword && delayedPackageName == appPackage) {
                     // Grace period already active, wait for task
@@ -228,7 +246,7 @@ class KeywordBlocker : BaseBlocker() {
                     Handler(Looper.getMainLooper()).post {
                         Toast.makeText(
                             service,
-                            "Blocked word: \"$detectedKeyword\" was detected",
+                            "Blocked word $detectedKeyword was found : \" $contextString \"",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -236,9 +254,9 @@ class KeywordBlocker : BaseBlocker() {
                     val runnable = Runnable {
                         val currentRoot = service.rootInActiveWindow
                         if (currentRoot != null && currentRoot.packageName?.toString() == delayedPackageName) {
-                            val checkKeyword = scanNodeForBlockedKeyword(currentRoot)
-                            if (checkKeyword == delayedDetectedKeyword) {
-                                pressHome(checkKeyword!!)
+                            val checkResult = scanNodeForBlockedKeyword(currentRoot)
+                            if (checkResult?.first == delayedDetectedKeyword) {
+                                pressHome(checkResult!!.first, checkResult!!.second)
                             }
                         }
                         delayedDetectedKeyword = null
@@ -253,11 +271,11 @@ class KeywordBlocker : BaseBlocker() {
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(
                         service,
-                        "Blocked word: \"$detectedKeyword\" was detected",
+                        "Blocked word $detectedKeyword was found : \" $contextString \"",
                         Toast.LENGTH_LONG
                     ).show()
                 }
-                pressHome(detectedKeyword)
+                pressHome(detectedKeyword, contextString)
             }
         } else {
             if (appPackage == delayedPackageName) {
@@ -275,26 +293,26 @@ class KeywordBlocker : BaseBlocker() {
         delayedPackageName = null
     }
 
-    private fun scanNodeForBlockedKeyword(node: AccessibilityNodeInfo?): String? {
+    private fun scanNodeForBlockedKeyword(node: AccessibilityNodeInfo?): Pair<String, String>? {
         node ?: return null
 
         val nodeText = node.text?.toString()
         if (!nodeText.isNullOrEmpty()) {
-            val foundWord = containsBlockedKeyword(nodeText)
-            if (foundWord != null) return foundWord
+            val foundResult = containsBlockedKeyword(nodeText)
+            if (foundResult != null) return foundResult
         }
 
         val contentDesc = node.contentDescription?.toString()
         if (!contentDesc.isNullOrEmpty()) {
-            val foundWord = containsBlockedKeyword(contentDesc)
-            if (foundWord != null) return foundWord
+            val foundResult = containsBlockedKeyword(contentDesc)
+            if (foundResult != null) return foundResult
         }
 
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val foundWord = scanNodeForBlockedKeyword(child)
-            if (foundWord != null) {
-                return foundWord
+            val foundResult = scanNodeForBlockedKeyword(child)
+            if (foundResult != null) {
+                return foundResult
             }
         }
 
