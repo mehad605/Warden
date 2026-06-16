@@ -34,6 +34,7 @@ class KeywordBlocker : BaseBlocker() {
     private lateinit var service : BaseBlockingService
 
     lateinit var blockedKeyword: HashSet<String>
+    lateinit var whitelistedKeywords: HashSet<String>
     lateinit var ignoredApps: HashSet<String>
     var ignoreGracePeriodSeconds: Int = 2
     var antiUninstallEnabled: Boolean = false
@@ -51,7 +52,17 @@ class KeywordBlocker : BaseBlocker() {
     private var delayedPackageName: String? = null
 
     private fun containsBlockedKeyword(text: String): String? {
-        val lowerText = text.lowercase(Locale.ROOT)
+        var lowerText = text.lowercase(Locale.ROOT)
+
+        if (this::whitelistedKeywords.isInitialized) {
+            for (white in whitelistedKeywords) {
+                val lowerWhite = white.lowercase(Locale.ROOT)
+                if (lowerWhite.isNotBlank()) {
+                    lowerText = lowerText.replace(lowerWhite, " ")
+                }
+            }
+        }
+
         for (keyword in blockedKeyword) {
             val lowerKeyword = keyword.lowercase(Locale.ROOT)
             if (lowerKeyword.isNotBlank() && lowerText.contains(lowerKeyword)) {
@@ -315,6 +326,7 @@ class KeywordBlocker : BaseBlocker() {
         CoroutineScope(Dispatchers.IO).launch {
             service.dataStoreManager.settings.collectLatest { settings ->
                 blockedKeyword = settings.keywordBlockerConfig.blockedKeywords.toHashSet()
+                whitelistedKeywords = settings.keywordBlockerConfig.whitelistedKeywords.toHashSet()
                 ignoredApps = settings.keywordBlockerConfig.ignoredApps.toHashSet()
                 ignoreGracePeriodSeconds = settings.ignoreGracePeriodSeconds
                 isTurnedOn = settings.keywordBlockerConfig.isActive

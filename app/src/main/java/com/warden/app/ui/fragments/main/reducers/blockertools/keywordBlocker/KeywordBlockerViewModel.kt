@@ -101,6 +101,24 @@ class KeywordBlockerViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    fun addWhitelistedKeyword(keyword: String) {
+        val currentKeywords = _keywordBlockerConfig.value.whitelistedKeywords.toMutableList()
+        val trimmed = keyword.trim().lowercase(Locale.ROOT)
+        if (!currentKeywords.contains(trimmed) && trimmed.isNotBlank()) {
+            currentKeywords.add(trimmed)
+            updateConfig(_keywordBlockerConfig.value.copy(whitelistedKeywords = currentKeywords))
+        }
+    }
+
+    fun removeWhitelistedKeyword(keyword: String) {
+        val currentKeywords = _keywordBlockerConfig.value.whitelistedKeywords.toMutableList()
+        val target = keyword.trim().lowercase(Locale.ROOT)
+        if (currentKeywords.contains(target)) {
+            currentKeywords.remove(target)
+            updateConfig(_keywordBlockerConfig.value.copy(whitelistedKeywords = currentKeywords))
+        }
+    }
+
     fun setIgnoredApps(list: List<String>) {
         updateConfig(_keywordBlockerConfig.value.copy(ignoredApps = list))
     }
@@ -186,9 +204,9 @@ class KeywordBlockerViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun exportSettings(onResult: (String) -> Unit) {
+    fun exportSettings(includePassword: Boolean = true, includeApiKey: Boolean = true, onResult: (String) -> Unit) {
         viewModelScope.launch {
-            onResult(dataStoreManager.getSettingsJson())
+            onResult(dataStoreManager.getSettingsJson(includePassword, includeApiKey))
         }
     }
 

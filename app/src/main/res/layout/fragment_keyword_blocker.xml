@@ -348,6 +348,92 @@
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="20dp" />
 
+                    <!-- Whitelist Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="20dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Whitelisted words"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:letterSpacing="0.04"
+                                android:textStyle="bold" />
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/tv_whitelist_keyword_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="3dp"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                                android:textColor="?attr/colorOnSecondaryContainer"
+                                android:background="@drawable/bg_rounded_time_selector"
+                                android:backgroundTint="?attr/colorSecondaryContainer" />
+                        </LinearLayout>
+
+                        <!-- Chip Cloud -->
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/cg_whitelist_keywords"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            app:chipSpacingVertical="8dp"
+                            app:chipSpacingHorizontal="8dp" />
+
+                        <!-- Add word input (pill) -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/til_add_whitelist_word"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            app:boxCornerRadiusTopStart="999dp"
+                            app:boxCornerRadiusTopEnd="999dp"
+                            app:boxCornerRadiusBottomStart="999dp"
+                            app:boxCornerRadiusBottomEnd="999dp"
+                            app:boxStrokeWidth="1.5dp"
+                            app:boxStrokeWidthFocused="2dp"
+                            app:boxStrokeColor="?attr/colorOutline"
+                            app:endIconDrawable="@drawable/baseline_add_24"
+                            app:endIconMode="custom"
+                            app:endIconTint="?attr/colorPrimary">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_whitelist_keyword"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Add a whitelisted word\u2026"
+                                android:inputType="text"
+                                android:maxLines="1"
+                                android:maxLength="40"
+                                android:paddingEnd="8dp" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="20dp" />
+
                     <!-- Grace Period -->
                     <LinearLayout
                         android:layout_width="match_parent"
