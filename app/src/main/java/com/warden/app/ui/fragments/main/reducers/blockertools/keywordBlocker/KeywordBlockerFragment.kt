@@ -367,22 +367,39 @@ class KeywordBlockerFragment : Fragment() {
     }
 
     private fun addKeyword() {
-        var keyword = binding.etKeyword.text.toString()
+        val keyword = binding.etKeyword.text.toString()
         if (keyword.isNotBlank()) {
-            if (Patterns.WEB_URL.matcher(keyword).matches()) {
-                keyword = keyword
-                    .removePrefix("https://")
-                    .removePrefix("http://")
-                    .removePrefix("www.")
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.warning_link_blocker_may_not_work),
-                    Toast.LENGTH_LONG
-                ).show()
+            val lowerKeyword = keyword.trim().lowercase(Locale.ROOT)
+            if (lowerKeyword == "sex") {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Warning: Risky Keyword")
+                    .setMessage("Using 'sex' as a blocked keyword is dangerous because legitimate forms often ask for your sex/gender. We strongly advise against using this exact word. Consider using alternatives like 'sexy' instead to avoid breaking regular apps.")
+                    .setPositiveButton("Add Anyway") { _, _ ->
+                        processAndAddKeyword(keyword)
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            } else {
+                processAndAddKeyword(keyword)
             }
-            viewModel.addKeyword(keyword)
-            binding.etKeyword.setText("")
         }
+    }
+
+    private fun processAndAddKeyword(rawKeyword: String) {
+        var keyword = rawKeyword
+        if (Patterns.WEB_URL.matcher(keyword).matches()) {
+            keyword = keyword
+                .removePrefix("https://")
+                .removePrefix("http://")
+                .removePrefix("www.")
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.warning_link_blocker_may_not_work),
+                Toast.LENGTH_LONG
+            ).show()
+        }
+        viewModel.addKeyword(keyword)
+        binding.etKeyword.setText("")
     }
 
     private fun addWhitelistKeyword() {

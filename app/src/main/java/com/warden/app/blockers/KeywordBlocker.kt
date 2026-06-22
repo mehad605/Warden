@@ -51,25 +51,28 @@ class KeywordBlocker : BaseBlocker() {
     private var delayedDetectedKeyword: String? = null
     private var delayedPackageName: String? = null
 
+    private var blockedPattern: Regex? = null
+
     private fun containsBlockedKeyword(text: String): Pair<String, String>? {
+        val pattern = blockedPattern ?: return null
+
         var lowerText = text.lowercase(Locale.ROOT)
 
         if (this::whitelistedKeywords.isInitialized) {
             for (white in whitelistedKeywords) {
                 val lowerWhite = white.lowercase(Locale.ROOT)
                 if (lowerWhite.isNotBlank()) {
-                    lowerText = lowerText.replace(lowerWhite, " ")
+                    val spaces = " ".repeat(lowerWhite.length)
+                    lowerText = lowerText.replace(lowerWhite, spaces)
                 }
             }
         }
 
-        for (keyword in blockedKeyword) {
-            val lowerKeyword = keyword.lowercase(Locale.ROOT)
-            val index = lowerText.indexOf(lowerKeyword)
-            if (lowerKeyword.isNotBlank() && index != -1) {
-                val context = extractContext(text, index, lowerKeyword.length)
-                return Pair(keyword, context)
-            }
+        val match = pattern.find(lowerText)
+        if (match != null) {
+            val keyword = match.value
+            val context = extractContext(text, match.range.first, match.value.length)
+            return Pair(keyword, context)
         }
         return null
     }
@@ -352,6 +355,16 @@ class KeywordBlocker : BaseBlocker() {
                 temporaryIgnoredApps = settings.temporaryIgnoredApps
                 antiUninstallEnabled = settings.antiUninstallEnabled
                 deviceAdminActivationRequestedAt = settings.deviceAdminActivationRequestedAt
+                
+                val validKeywords = blockedKeyword.filter { it.isNotBlank() }.map { Regex.escape(it.lowercase(Locale.ROOT)) }
+                if (validKeywords.isNotEmpty()) {
+                    val sortedKeywords = validKeywords.sortedByDescending { it.length }
+                    val keywordsPattern = sortedKeywords.joinToString("|")
+                    val patternString = """(?<!\w)(?:$keywordsPattern)+(?!\w)"""
+                    blockedPattern = Regex(patternString)
+                } else {
+                    blockedPattern = null
+                }
             }
         }
     }
