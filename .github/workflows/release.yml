@@ -1,4 +1,4 @@
-name: Build & Release APK
+name: 🚀 Build & Release Warden
 
 on:
   push:
@@ -6,83 +6,130 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      version:
+      version_number:
         description: 'Release version (e.g. v1.0.0)'
         required: true
+        type: string
         default: 'v1.0.0'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  build:
-    name: Build & Release
+  validate:
+    name: 🧪 Lint & Test
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+    timeout-minutes: 15
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: ⚙️ Set up JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Grant execute permission to gradlew
-        run: chmod +x gradlew
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+        with:
+          cache-read-only: ${{ github.event_name != 'push' }}
 
-      - name: Determine release tag
-        id: tag
+      - name: 🔍 Run Lint
+        run: ./gradlew lint --no-daemon
+
+      - name: 🧪 Run Unit Tests
+        run: ./gradlew test --no-daemon
+
+  release:
+    name: 📦 Build & Release
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Set up JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+        with:
+          cache-read-only: true
+
+      - name: 🏷️ Determine Version
+        id: version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version_number }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ github.event.inputs.version }}"
+            RAW_VER="$INPUT_VERSION"
           else
-            TAG="${GITHUB_REF#refs/tags/}"
+            RAW_VER="${GITHUB_REF_NAME}"
           fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
           
-          # Strip the 'v' prefix if it exists to get a clean versionName
-          VERSION_NAME="${TAG#v}"
-          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          CLEAN_VER="${RAW_VER#v}"
+          echo "VERSION=$RAW_VER" >> $GITHUB_ENV
+          echo "CLEAN_VERSION=$CLEAN_VER" >> $GITHUB_ENV
+          echo "VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
 
-      - name: Decode Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/warden-release.jks
+      - name: 🔐 Decode Keystore
+        uses: timheuer/base64-to-file@ca9e30baf83f7f26708fb0059af9a0973fe5f27e # v1.2.4
+        id: keystore
+        with:
+          fileName: 'signing-key.jks'
+          encodedString: ${{ secrets.KEYSTORE_BASE64 }}
 
-      - name: Build Release APK
+      - name: 🛠️ Build Release APK
         env:
-          KEYSTORE_PATH: "warden-release.jks"
+          KEYSTORE_PATH: ${{ steps.keystore.outputs.filePath }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease -PVERSION_NAME="${{ steps.tag.outputs.version_name }}" -PVERSION_CODE="${{ github.run_number }}"
-
-      - name: Find APK
-        id: apk
         run: |
-          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          echo "path=$APK_PATH" >> $GITHUB_OUTPUT
-          echo "Found APK: $APK_PATH"
+          ./gradlew assembleRelease \
+            --build-cache \
+            --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC" \
+            -PVERSION_NAME="${{ env.CLEAN_VERSION }}" \
+            -PVERSION_CODE="${{ env.VERSION_CODE }}"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: 📦 Rename Artifact
+        run: |
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          mv "$APK_PATH" ./Warden-${{ env.VERSION }}.apk
+
+      - name: 📝 Generate SHA-256 Checksums
+        run: |
+          sha256sum Warden-*.apk > SHA256SUMS.txt
+
+      - name: 🛡️ Attest Build Provenance
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v1.4.3
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: "Warden ${{ steps.tag.outputs.tag }}"
-          body: |
-            ## Warden ${{ steps.tag.outputs.tag }}
+          subject-path: 'Warden-*.apk'
 
-            ### What's New
-            - See commit history for changes in this release.
-
-            ### Installation
-            1. Download `Warden-release.apk` below
-            2. Enable **Install from Unknown Sources** on your device
-            3. Install the APK
-            4. Grant Accessibility permission when prompted
-          files: ${{ steps.apk.outputs.path }}
+      - name: 🚀 Publish GitHub Release
+        uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Warden ${{ env.VERSION }}
+          generate_release_notes: true
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            Warden-${{ env.VERSION }}.apk
+            SHA256SUMS.txt
