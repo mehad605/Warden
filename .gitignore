@@ -72,3 +72,5 @@ google-services.json
 skills-lock.json
 ic_launcher_foreground.svg
 tmp_layout.xml
+apksig_*.txt
+cert_*.txt
