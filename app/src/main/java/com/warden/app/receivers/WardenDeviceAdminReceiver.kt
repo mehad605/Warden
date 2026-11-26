@@ -5,6 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 
+/**
+ * Android [DeviceAdminReceiver] that provides OS-level anti-uninstall protection.
+ *
+ * Component FQCN (`com.warden.app.receivers.WardenDeviceAdminReceiver`) is preserved verbatim
+ * so active Device Administrator status survives upgrades from `baseline-v1`.
+ */
 class WardenDeviceAdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(
         context: Context,

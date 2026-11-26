@@ -168,4 +168,48 @@ class ArchitectureRulesTest {
         }
         assertTrue("Global mutable state / static Context violations:\n${violations.joinToString("\n")}", violations.isEmpty())
     }
+
+    @Test
+    fun allPublicTypesAndTopLevelApisHaveKDoc() {
+        val modifiers = "(?:data|sealed|enum|value|abstract|open|final|annotation|inner|suspend|inline)"
+        val publicDeclRegex =
+            Regex("""^(?:$modifiers\s+)*(?:class|interface|object|fun|typealias)\s+\w+""")
+        val missing = mutableListOf<String>()
+        allMainKotlinFiles().forEach { file ->
+            val lines = file.readLines()
+            lines.forEachIndexed { idx, raw ->
+                val trimmed = raw.trim()
+                val isTopLevelOrPublicMember =
+                    !trimmed.startsWith("private ") &&
+                        !trimmed.startsWith("internal ") &&
+                        !trimmed.startsWith("protected ") &&
+                        !trimmed.startsWith("override ") &&
+                        !trimmed.startsWith("companion ") &&
+                        publicDeclRegex.containsMatchIn(trimmed)
+                if (isTopLevelOrPublicMember && !hasPrecedingKDoc(lines, idx)) {
+                    missing.add("${file.name}:${idx + 1}: $trimmed")
+                }
+            }
+        }
+        assertTrue("Public APIs missing KDoc:\n${missing.joinToString("\n")}", missing.isEmpty())
+    }
+
+    private fun hasPrecedingKDoc(
+        lines: List<String>,
+        declIdx: Int,
+    ): Boolean {
+        var i = declIdx - 1
+        while (i >= 0) {
+            val t = lines[i].trim()
+            if (t.isEmpty() || t.startsWith("@")) {
+                i--
+                continue
+            }
+            return t.endsWith("*/") &&
+                generateSequence(i) { it - 1 }
+                    .takeWhile { it >= 0 }
+                    .any { lines[it].trim().startsWith("/**") }
+        }
+        return false
+    }
 }

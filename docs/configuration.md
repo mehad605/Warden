@@ -1,166 +1,88 @@
 # Configuration Reference
 
-A complete reference for every configurable option in Warden, what it does, and recommended values.
-
----
-
-## Table of Contents
-
-- [Keyword Blocker](#keyword-blocker)
-- [Grace Period](#grace-period)
-- [Password Protection](#password-protection)
-- [AI Gatekeeper (Gemini)](#ai-gatekeeper-gemini)
-- [Anti-Uninstall Protection](#anti-uninstall-protection)
-- [App Ignore List](#app-ignore-list)
-- [Export & Import](#export--import)
+A complete reference for every persisted setting in `Settings` (`filesDir/datastore/settings.json`).
 
 ---
 
 ## Keyword Blocker
 
-### Enable / Disable
+### `keywordBlockerConfig.isActive` (`Boolean`, default: `false`)
+Toggles keyword scanning on or off. Self-protection remains active while the Accessibility Service is enabled.
 
-**Setting:** `keywordBlockerConfig.isActive`
+### `keywordBlockerConfig.blockedKeywords` (`List<String>`, default: `[]`)
+Normalized lowercase words or phrases. Compiled into a single case-insensitive whole-word alternation regex (`(?<!\w)(?:...)+(?!\w)`) and matched against visible `text` and `contentDescription` nodes in non-ignored apps.
 
-Toggles all keyword scanning on or off. When disabled, the accessibility service remains running but the keyword check is skipped entirely. Other features (self-protection, usage tracking) are unaffected.
+### `keywordBlockerConfig.whitelistedKeywords` (`List<String>`, default: `[]`)
+Phrases masked out of scanned text *before* blocked keywords are checked. Use this to prevent false positives (e.g., block `"shorts"` while whitelisting `"cargo shorts"`).
 
-**Recommended:** Always keep enabled when you want active focus protection.
-
----
-
-### Blocked Keywords
-
-**Setting:** `keywordBlockerConfig.blockedKeywords` (List)
-
-A list of words or phrases. If any of these appear anywhere in the text content or content descriptions of any visible UI node, the app is minimized.
-
-**Tips:**
-- Keep keywords specific enough to avoid false positives (e.g., `"instagram"` rather than `"gram"`)
-- Keyword matching is **case-insensitive substring** — `"news"` blocks `"Breaking News"`, `"newsroom"`, etc.
-- You can block phrases, not just single words (e.g., `"sports scores"`)
-- There is no limit on the number of keywords
-
-**Recommended starting keywords:** `instagram`, `tiktok`, `reels`, `shorts`, `reddit`, `twitter`
+### `keywordBlockerConfig.ignoredApps` (`List<String>`, default: `[]`)
+Package names permanently exempt from keyword scanning. Managed through the dashboard's ignored-apps list and AI Gatekeeper dialogs.
 
 ---
 
 ## Grace Period
 
-**Setting:** `ignoreGracePeriodSeconds` (Int, default: `2`)
-
-Number of seconds Warden waits after detecting a keyword before pressing Home. During this window, it re-checks whether the keyword is still on screen in the same app. If the user has already navigated away, the action is cancelled.
-
-| Value | Behavior |
-|---|---|
-| `0` | Instant block — fires on first detection, no re-check |
-| `2` (default) | 2-second delay before home press |
-| Higher values | More lenient — good if you have many false positives |
-
-**Recommended:** `2` for most users. Set to `0` if you want zero-tolerance.
+### `ignoreGracePeriodSeconds` (`Int`, default: `2`)
+Seconds Warden waits after detecting a blocked keyword before re-scanning and pressing Home.
+- `0` — immediate Home press on first detection.
+- `2` (default) — 2-second re-check window to tolerate transient UI elements.
 
 ---
 
 ## Password Protection
 
-**Setting:** `passwordHash` (String, nullable)
+### `passwordHash` (`String?`, default: `null`)
+Lowercase SHA-256 hex digest of the user's configuration password (`PasswordPolicy`). Gates sensitive settings changes (removing keywords, changing grace period, disabling anti-uninstall, resetting `noCount`, modifying API key).
 
-A password that gates access to:
-- Adding or removing blocked keywords
-- Changing the grace period
-- Disabling the blocker
-- Toggling Anti-Uninstall
+Password validation rules (`PasswordPolicy`):
+- Minimum **6 characters**
+- At least **1 letter**
+- At least **1 digit**
 
-Passwords must meet the following requirements:
-- Minimum 6 characters
-- Must contain at least one letter
-- Must contain at least one number
-
-The hash is stored locally. Warden does not offer password recovery — if you forget your password, the only option is to uninstall the app (after deactivating Device Admin if enabled).
-
-**Recommended:** Set a strong password immediately after initial setup.
+Warden stores only the hash locally and cannot recover forgotten passwords.
 
 ---
 
 ## AI Gatekeeper (Gemini)
 
-### API Key
+### `geminiApiKey` (`String?`, default: `null`)
+Google Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey). Stored locally in `settings.json` and sent only to `https://generativelanguage.googleapis.com` over HTTPS (`HttpGeminiGatekeeperClient`).
 
-**Setting:** `geminiApiKey` (String, nullable)
+### `selectedGeminiModel` (`String`, default: `""`, runtime fallback `"models/gemini-1.5-flash"`)
+Active Gemini model used for gatekeeper evaluations. When empty, `BlockerViewModel` and `HttpGeminiGatekeeperClient` fall back to `"models/gemini-1.5-flash"`.
 
-Your Google Gemini API key. Obtain one free at [Google AI Studio](https://aistudio.google.com/app/apikey).
+### `availableGeminiModels` (`List<String>`, default: `[]`)
+Cached list of `generateContent`-capable models fetched when the user saves or refreshes their API key.
 
-Stored on-device in DataStore. Never transmitted except directly to `generativelanguage.googleapis.com`.
+### `noCount` (`Int`, default: `0`)
+Cumulative count of AI rejections. Sent in every evaluation prompt as credibility context; resettable from settings (password-gated when a password is set).
 
-AI features are disabled if no key is set.
+### `temporaryIgnoredApps` (`Map<String, Long>`, default: `{}`)
+Map of `packageName -> expiryEpochMillis` for AI-approved temporary app exemptions (5–60 minutes).
 
----
-
-### Selected Model
-
-**Setting:** `selectedGeminiModel` (String)
-
-Which Gemini model handles your gatekeeper decisions. Options are fetched live from the API when you enter your key.
-
-| Model | Speed | Quality | Notes |
-|---|---|---|---|
-| `gemini-1.5-flash` | Fast | Good | Recommended for most users |
-| `gemini-1.5-pro` | Slower | Excellent | Better nuanced judgment |
-| `gemini-2.0-flash` | Very fast | Good | If available in your region |
-
----
-
-### No Count (Credibility Score)
-
-**Setting:** `noCount` (Int, default: `0`)
-
-Tracks how many times the AI gatekeeper has rejected your requests. This value is included in every AI prompt so the model can factor in your history of bypass attempts. Higher scores make future approvals harder to obtain.
-
-Can be reset manually in settings (requires password).
+### `blockerDisabledUntil` (`Long`, default: `0L`)
+Epoch timestamp (ms) until which global keyword scanning is paused following an AI-approved full pause (5–15 minutes).
 
 ---
 
 ## Anti-Uninstall Protection
 
-**Setting:** `antiUninstallEnabled` (Boolean, default: `false`)
+### `antiUninstallEnabled` (`Boolean`, default: `false`)
+Enables Device Administrator registration (`WardenDeviceAdminReceiver`) and the accessibility-based deactivation guard. See [Anti-Uninstall](anti-uninstall.md).
 
-When enabled:
-1. Warden registers as a **Device Administrator** — preventing uninstallation from the standard app info screen
-2. The accessibility service monitors for Device Admin deactivation screens and navigates away from them
-3. Force Stop and Clear Data actions targeting Warden are intercepted and blocked
-
-See [Anti-Uninstall Documentation](anti-uninstall.md) for full details.
-
-**Recommended:** Enable after initial setup is complete and you're satisfied with your configuration.
+### `deviceAdminActivationRequestedAt` (`Long`, default: `0L`)
+Timestamp (ms) when Warden opened the system Device Admin consent prompt, granting a 180-second grace window so self-protection does not block activation.
 
 ---
 
-## App Ignore List
+## Export & Import (Backup)
 
-**Setting:** `keywordBlockerConfig.ignoredApps` (List)
-
-Apps in this list are permanently exempt from keyword scanning. All events from these packages are skipped before any text processing occurs.
-
-**When to use:**
-- Apps where keyword blocking causes false positives (e.g., your note-taking app where you write about blocked topics)
-- Communication apps you genuinely need unrestricted (note: you can use the AI exemption instead for temporary access)
-- System apps that display overlapping content
-
-**Temporary ignore** (via AI exemption) is tracked separately in `temporaryIgnoredApps` and expires automatically.
-
----
-
-## Export & Import
-
-Warden can export and restore the full `Settings` object as a JSON file.
+Handled off the main thread by `BackupDialogController` using Android's Storage Access Framework (`CreateDocument` / `OpenDocument`) and `SettingsJsonCodec`.
 
 ### Export
+- Exports keywords, whitelist, ignored apps, grace period, and model preferences via `SettingsJsonCodec.prepareForExport()`.
+- **Anti-uninstall reset:** Export always resets `antiUninstallEnabled = false` and `deviceAdminActivationRequestedAt = 0L` so importing on another device never claims active Device Admin before system registration.
+- **Secrets opt-in:** Exporting `passwordHash` and `geminiApiKey` is optional — the user explicitly chooses whether to include sensitive credentials before writing the JSON file.
 
-Serializes the current `Settings` data class to JSON and writes it to a file in your Downloads folder. Useful before a factory reset or device migration.
-
-> ⚠️ The exported file contains your **Gemini API key** in plaintext. Store it securely.
-
-### Import
-
-Reads a previously exported JSON file and overwrites the current settings. All fields are restored, including keywords, passwords, and the API key.
-
-> ⚠️ Importing will overwrite all current settings. There is no undo.
+### Import (Merge-Only)
+- Importing a backup **merges** keywords, whitelisted phrases, and ignored apps into existing settings rather than silently wiping existing rules, and safely restores optional fields using `SettingsJsonCodec` defaults for any missing keys.

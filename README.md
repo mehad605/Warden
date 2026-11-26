@@ -4,42 +4,22 @@
 
 # Warden
 
-**A self-enforcing digital focus guardian for Android.**
+**A lightweight, self-enforcing digital focus guardian for Android.**
 
-Warden is built for people who are serious about quitting doomscrolling, cutting down on mindless content consumption, and reclaiming their attention. If you've tried every ordinary app blocker and found yourself disabling it within five minutes of installing it — Warden is for you.
+Warden monitors on-screen text in real time through an Android `AccessibilityService`, intercepts content containing keywords you have flagged as distracting (after masking whitelisted exception phrases), and returns you to the home screen before doomscrolling begins. When you genuinely need a temporary exception, you must argue your case to an adversarial **Gemini AI Gatekeeper** whose default answer is **NO**.
 
-It monitors every window on your device in real time, intercepts content containing words you've flagged as distracting, and sends you straight back to the home screen before you even realize you've fallen into the scroll. When you genuinely need an exception, you have to argue your case to an **AI gatekeeper** — and it defaults to no.
+> **CRITICAL WARNING:**
+> Once enabled, Warden's self-protection and optional Device Administrator anti-uninstall lock are intentionally difficult to bypass. Install and use Warden at your own risk.
+>
+> *Privacy Note:* Warden has zero analytics, telemetry, or third-party trackers. All keyword scanning runs 100% offline on-device. The only network request is to `generativelanguage.googleapis.com` when you explicitly configure a Gemini API key and submit an AI Gatekeeper request or refresh models.
 
-> ⚠️ **CRITICAL WARNING:**
-> **THIS APP IS EXTREMELY DIFFICULT TO UNINSTALL.**
-> Warden is strictly designed for those struggling with digital habits. Once you install this app and enable its protection, you may not be able to uninstall it normally. You cannot simply click "uninstall." Furthermore, if you grant it Device Administrator privileges, even standard ADB removal methods will likely fail. 
-> There is a hidden method to uninstall it, but **it will not be disclosed here or anywhere else in this repository**. 
-> 
-> **Install and use this app completely at your own risk.**
-> 
-> *Privacy Note:* While Warden is extremely strict, it does not collect, log, or transmit any of your personal data. All processing happens entirely on-device (except for explicit AI exemption requests which use the Gemini API).
-
-[![Build Status](https://github.com/mehad605/Warden/actions/workflows/release.yml/badge.svg)](https://github.com/mehad605/Warden/actions/workflows/release.yml)
-[![API](https://img.shields.io/badge/API-26%2B-brightgreen.svg)](https://android-arsenal.com/api?level=26)
+[![Release](https://github.com/mehad605/Warden/actions/workflows/release.yml/badge.svg)](https://github.com/mehad605/Warden/actions/workflows/release.yml)
+[![API](https://img.shields.io/badge/API-26%2B-brightgreen.svg)](https://developer.android.com/tools/releases/platforms)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[Download APK](#installation) · [Documentation](docs/) · [Architecture](docs/architecture.md) · [FAQ](#faq) · [Contributing](CONTRIBUTING.md)
+[Installation](#installation) · [Build & Test](#build-run-and-test) · [Architecture](docs/ARCHITECTURE.md) · [How-To Recipes](docs/HOW_TO.md) · [Releasing](docs/RELEASING.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
-
----
-
-## Who Is This For?
-
-Warden is for people who:
-
-- Catch themselves mindlessly opening Instagram, Reddit, or YouTube Shorts every few minutes without even meaning to
-- Want to block specific topics (e.g. news, sports scores, political content) across *all* apps, not just at the app level
-- Have tried "gentle" blockers and disabled them within seconds during a weak moment
-- Need friction that is strong enough to actually hold — even against a determined, impulsive version of themselves
-- Are willing to trade some convenience for genuine behavioural change
-
-Unlike passive blockers, Warden doesn't ask for your cooperation. The moment a blocked keyword appears on screen, it sends you home — no confirmation dialog, no "are you sure?" prompt.
 
 ---
 
@@ -47,133 +27,85 @@ Unlike passive blockers, Warden doesn't ask for your cooperation. The moment a b
 
 | Feature | Description |
 |---|---|
-| 🔍 **Keyword Blocking** | Real-time accessibility scan of every on-screen text node — blocks at the exact moment a keyword appears |
-| ⏱️ **Grace Period** | Configurable delay before the home action fires, avoiding false positives on transient text |
-| 🤖 **AI Gatekeeper** | Gemini-powered chat dialog adjudicates exemption, pause, and extension requests — default answer is NO |
-| 📸 **Screenshot Proof** | AI exemption requests can include a screenshot as evidence for borderline cases |
-| 🛡️ **Anti-Uninstall** | Device Administrator registration prevents uninstallation, force-stop, and data-clear without deactivation |
-| 🔑 **Password Lock** | Settings are gated behind a strong password to prevent impulsive self-bypass |
-| 📦 **App Ignore List** | Permanently or temporarily exempt specific apps from keyword scanning |
-| 📤 **Export / Import** | Full settings snapshot can be exported and restored as JSON |
-| 📊 **Crash Logs** | On-device crash logger, shareable for debugging |
+| **Real-Time Keyword Blocking** | Whole-word regex scan (`(?<!\w)(?:...)+(?!\w)`) over visible `text` and `contentDescription` nodes with ±7-word context feedback |
+| **Whitelist Masking** | Whitelisted phrases (e.g., `"basketball shorts"`) are masked before keyword scanning to prevent false positives |
+| **Configurable Grace Period** | 0–5s delay (default 2s) with re-check before `GLOBAL_ACTION_HOME` fires |
+| **Adversarial AI Gatekeeper** | Direct HTTPS Gemini REST client (no heavy SDK) adjudicating app exemptions, extensions, ignore removals, and full blocker pauses with optional screenshot proof |
+| **Anti-Uninstall & Self-Protection** | Device Administrator registration paired with Accessibility interception of Force Stop, Clear Data, Accessibility revocation, and Device Admin deactivation |
+| **Password Lock** | Strong password protection (SHA-256) gating keyword/whitelist removal, password updates, and Anti-Uninstall deactivation |
+| **Active Ignored Apps & Countdown** | Live countdown for temporary exemptions, decrease-only slider, automatic expiry pruning, and zero polling when idle |
+| **Merge-Only Backup & Restore** | JSON export (optionally excluding secrets, always clearing anti-uninstall flags) and merge-only import so restoring cannot weaken active rules |
+| **Bounded On-Device Crash Logs** | Rotated `crash_log.txt` (128 KiB cap + single backup) with zero main-thread I/O at startup |
 
 ---
 
 ## Installation
 
-### Option A — Download APK (Recommended)
-
-1. Go to [**Releases**](https://github.com/mehad605/Warden/releases) and download the latest `Warden-debug.apk`.
-2. On your Android device, enable **Install from Unknown Sources**:
-   `Settings → Apps → Special App Access → Install Unknown Apps`
-3. Open the downloaded APK and tap **Install**.
-4. Follow the **Quick Setup** screen inside the app to grant permissions.
-
-### Option B — Build from Source
-
-```bash
-git clone https://github.com/mehad605/Warden.git
-cd Warden
-./gradlew assembleDebug
-# Output: app/build/outputs/apk/debug/Warden-debug.apk
-```
-
-**Requirements:** Android Studio Hedgehog or newer · JDK 17 · Android SDK 34
+1. Download the signed release APK (`Warden-vX.Y.Z.apk`) and `SHA256SUMS.txt` from [**GitHub Releases**](https://github.com/mehad605/Warden/releases).
+2. Verify the checksum: `sha256sum -c SHA256SUMS.txt`.
+3. Install on Android **8.0 (API 26)** or higher (tested against API 30 / Realme Narzo 20 target constraints).
+4. Grant **Accessibility Service** access (and optionally **Device Administrator** for Anti-Uninstall).
 
 ---
 
-## Quick Setup
+## Build, Run, and Test
 
-After installing, Warden walks you through three permissions:
+**Requirements:** JDK 17 (or 21), Android SDK Platform 34, Gradle Wrapper (`./gradlew`).
 
-1. **Accessibility Service** — core engine; required for all screen content scanning
-2. **Display Over Other Apps** — needed for overlay features
-3. **Device Administrator** *(optional but strongly recommended)* — enables anti-uninstall protection
+```bash
+# Clone
+git clone https://github.com/mehad605/Warden.git
+cd Warden
 
-Then add your first blocked keyword and you're protected.
+# Run all static checks & unit/architecture tests
+./gradlew ktlintCheck detekt lint testDebugUnitTest
+
+# Build debug APK and install on a connected device
+./gradlew installDebug
+
+# Build R8-minified, resource-shrunk release APK
+./gradlew assembleRelease
+# Output: app/build/outputs/apk/release/Warden-release.apk
+```
+
+---
+
+## Release Process
+
+Releases are produced deterministically from SemVer Git tags (`vMAJOR.MINOR.PATCH`) via [`.github/workflows/release.yml`](.github/workflows/release.yml) with Gradle wrapper validation, `apksigner verify`, size budget enforcement, SBOM generation, SHA-256 checksums, and build provenance attestation. See [docs/RELEASING.md](docs/RELEASING.md) for key rotation and dry-run instructions.
 
 ---
 
 ## Documentation
 
-Full technical and user documentation lives in the [`docs/`](docs/) folder:
-
-| Document | Description |
+| Document | Purpose |
 |---|---|
-| [How It Works](docs/how-it-works.md) | Deep dive into the blocking engine, accessibility pipeline, and home-press mechanism |
-| [AI Gatekeeper](docs/ai-gatekeeper.md) | How Gemini evaluates exemption, pause, and extension requests |
-| [Anti-Uninstall](docs/anti-uninstall.md) | Device Administrator integration and self-protection strategy |
-| [Architecture](docs/architecture.md) | Module map, data flow diagram, and component overview |
-| [Configuration](docs/configuration.md) | All settings, their purpose, and recommended values |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layered architecture, Mermaid diagrams, package map, runtime footprint floor |
+| [docs/HOW_TO.md](docs/HOW_TO.md) | Step-by-step recipes: add a feature, screen, setting, dependency, or replace the network layer |
+| [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) | Justification and size cost of every runtime dependency |
+| [docs/RELEASING.md](docs/RELEASING.md) | Release pipeline architecture, dry runs, and signing key rotation |
+| [docs/adr/](docs/adr/) | Architecture Decision Records explaining every major design choice |
+| [docs/how-it-works.md](docs/how-it-works.md) | Deep dive into the keyword matching and self-protection engine |
+| [docs/ai-gatekeeper.md](docs/ai-gatekeeper.md) | Adversarial prompt rules, local validation, and multimodal proof |
+| [docs/anti-uninstall.md](docs/anti-uninstall.md) | Device Administrator & Accessibility self-protection details |
+| [docs/configuration.md](docs/configuration.md) | Settings reference and JSON schema |
 
 ---
 
-## FAQ
+## Emergency Uninstall
 
-**Does Warden need an internet connection?**
-Only for AI gatekeeper features (Gemini API calls). All blocking logic runs entirely offline.
+If you enabled Anti-Uninstall protection and are locked out of Settings:
 
-**What happens if I don't set up a Gemini API key?**
-Everything except the AI exemption dialog works normally. You can still use keyword blocking, the ignore list, and anti-uninstall — just without the AI gatekeeper.
-
-**Will Warden drain my battery?**
-The accessibility service runs continuously, but it is lightweight — it only processes events when the screen changes. Impact is comparable to other accessibility services like TalkBack.
-
-**Can Warden read my messages or passwords?**
-No. The accessibility service scans text visible on screen for keyword matching only. It does not log, store, or transmit any screen content.
-
-**My keyword is getting blocked in apps I need. What do I do?**
-Add those apps to the **Ignore List** in settings. They will be permanently exempt from scanning.
-
-**The AI keeps rejecting my exemption request. What counts as proof?**
-For a full blocker pause, you need to include an email address, a URL, or a screenshot. For app exemptions, write a detailed justification (minimum 7 sentences) explaining exactly why you need access and why it's work-related.
-
-**Can I use Warden with a parental control setup?**
-Warden is designed for self-regulation, not parental enforcement. It lacks remote management features. For parental controls, consider a dedicated MDM solution.
-
-**Does Warden work with VPNs or split tunnelling?**
-Yes. Warden doesn't touch network traffic — it operates entirely at the accessibility layer.
-
----
-
-## Privacy
-
-Warden is a **local-first** application:
-
-- All keyword lists, settings, and crash logs stay **on-device** in Android DataStore.
-- No analytics, telemetry, or tracking of any kind is collected or transmitted.
-- The only outbound network call is to the **Google Gemini API** when you explicitly trigger an AI exemption request. Your key is stored locally and never leaves your device through Warden.
-- Accessibility data is processed entirely in-process and is never logged, stored, or transmitted.
-
----
-
-## Requirements
-
-- Android **8.0 (API 26)** or higher
-- A Google Gemini API key — required only for AI gatekeeper features (free tier available at [aistudio.google.com](https://aistudio.google.com/app/apikey))
-
----
-
-## Tech Stack
-
-- **Language:** Kotlin
-- **Min SDK:** 26 · **Target SDK:** 34
-- **Architecture:** Single-activity, Fragment-based MVVM
-- **Persistence:** Jetpack DataStore
-- **AI:** Google Generative AI SDK (`generativeai`)
-- **Build:** Gradle (Kotlin DSL)
-
----
-
-## Contributing
-
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+1. **Via Safe Mode:** Reboot into Android Safe Mode (which temporarily disables third-party Accessibility Services), open **Settings → Security → Device admin apps** to deactivate Warden, and uninstall normally.
+2. **Via ADB (from a computer):**
+   ```bash
+   adb shell settings delete secure enabled_accessibility_services
+   # Deactivate Warden in Device Admin settings on the phone, then:
+   adb shell pm uninstall com.warden.app
+   ```
 
 ---
 
 ## License
 
-```
-MIT License — Copyright (c) 2024 Warden Contributors
-See LICENSE for full text.
-```
+MIT License — see [LICENSE](LICENSE).
