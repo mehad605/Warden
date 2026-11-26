@@ -1,29 +1,37 @@
 package com.warden.app
 
-import com.google.gson.Gson
+import com.warden.app.core.data.JsonSettingsRepository
+import com.warden.app.core.data.SettingsJsonCodec
 import com.warden.app.data.models.KeywordBlocker
 import com.warden.app.data.models.Settings
-import com.warden.app.utils.GsonSerializer
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import java.io.File
 
 /**
- * Characterization tests locking in C15 (export/import JSON contract)
+ * Characterization & upgrade-compatibility tests locking in C15 (export/import JSON contract)
  * and C17 (baseline-v1 settings.json upgrade schema compatibility).
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [30])
 class SettingsPersistenceCharacterizationTest {
 
-    private val gson = Gson()
-    private val serializer = GsonSerializer(gson, Settings::class.java, Settings())
+    @get:Rule
+    val tempFolder = TemporaryFolder()
 
     @Test
-    fun c17_roundTripsFullSettingsJsonSchema() = runTest {
+    fun c17_roundTripsFullSettingsJsonSchema() {
         val original = Settings(
             keywordBlockerConfig = KeywordBlocker(
                 isActive = true,
@@ -43,77 +51,123 @@ class SettingsPersistenceCharacterizationTest {
             deviceAdminActivationRequestedAt = 1_700_000_000_000L
         )
 
-        val out = ByteArrayOutputStream()
-        serializer.writeTo(original, out)
-        val restored = serializer.readFrom(ByteArrayInputStream(out.toByteArray()))
+        val encoded = SettingsJsonCodec.encode(original)
+        val restored = SettingsJsonCodec.decodeOrNull(encoded)
 
         assertEquals(original, restored)
     }
 
     @Test
-    fun c17_corruptedJsonFallsBackToDefaults() = runTest {
-        val restored = serializer.readFrom(ByteArrayInputStream("{broken json".toByteArray()))
-        assertEquals(Settings(), restored)
+    fun c17_corruptedJsonFallsBackToDefaultsOnLoad() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val file = File(tempFolder.root, "datastore/settings.json").apply {
+            parentFile?.mkdirs()
+            writeText("{broken json")
+        }
+        val repo = JsonSettingsRepository(file, ioDispatcher = dispatcher)
+        assertEquals(Settings(), repo.awaitLoaded())
     }
 
     @Test
-    fun c15_v1SettingsJsonFieldNamesAreStable() {
-        val v1Json = """
+    fun c17_readsLegacyBaselineV1SettingsJsonFromDiskIncludingMissingOptionalFields() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val legacyJson = """
             {
               "keywordBlockerConfig": {
                 "isActive": true,
-                "blockedKeywords": ["news", "shorts"],
-                "whitelistedKeywords": ["good news"],
-                "ignoredApps": ["com.example.docs"]
+                "blockedKeywords": ["news", "shorts"]
               },
-              "passwordHash": "abc123",
-              "geminiApiKey": "key-xyz",
+              "passwordHash": "5b11618c2e44027877d0cd0921ed166b9f176f50587fc91e7534dd2946db77d6",
               "noCount": 2,
-              "temporaryIgnoredApps": {"com.temp.app": 999999},
-              "blockerDisabledUntil": 123456,
-              "ignoreGracePeriodSeconds": 3,
-              "selectedGeminiModel": "models/gemini-1.5-flash",
-              "availableGeminiModels": ["models/gemini-1.5-flash"],
-              "antiUninstallEnabled": false,
-              "deviceAdminActivationRequestedAt": 0
+              "ignoreGracePeriodSeconds": 3
             }
         """.trimIndent()
+        val file = File(tempFolder.root, "datastore/settings.json").apply {
+            parentFile?.mkdirs()
+            writeText(legacyJson)
+        }
 
-        val parsed = gson.fromJson(v1Json, Settings::class.java)
-        assertTrue(parsed.keywordBlockerConfig.isActive)
-        assertEquals(listOf("news", "shorts"), parsed.keywordBlockerConfig.blockedKeywords)
-        assertEquals(listOf("good news"), parsed.keywordBlockerConfig.whitelistedKeywords)
-        assertEquals(listOf("com.example.docs"), parsed.keywordBlockerConfig.ignoredApps)
-        assertEquals("abc123", parsed.passwordHash)
-        assertEquals("key-xyz", parsed.geminiApiKey)
-        assertEquals(2, parsed.noCount)
-        assertEquals(999999L, parsed.temporaryIgnoredApps["com.temp.app"])
-        assertEquals(123456L, parsed.blockerDisabledUntil)
-        assertEquals(3, parsed.ignoreGracePeriodSeconds)
-        assertEquals("models/gemini-1.5-flash", parsed.selectedGeminiModel)
-        assertEquals(listOf("models/gemini-1.5-flash"), parsed.availableGeminiModels)
-        assertFalse(parsed.antiUninstallEnabled)
-        assertEquals(0L, parsed.deviceAdminActivationRequestedAt)
+        val repo = JsonSettingsRepository(file, ioDispatcher = dispatcher)
+        val loaded = repo.awaitLoaded()
+
+        assertTrue(loaded.keywordBlockerConfig.isActive)
+        assertEquals(listOf("news", "shorts"), loaded.keywordBlockerConfig.blockedKeywords)
+        assertEquals(emptyList<String>(), loaded.keywordBlockerConfig.whitelistedKeywords)
+        assertEquals(emptyList<String>(), loaded.keywordBlockerConfig.ignoredApps)
+        assertEquals("5b11618c2e44027877d0cd0921ed166b9f176f50587fc91e7534dd2946db77d6", loaded.passwordHash)
+        assertNull(loaded.geminiApiKey)
+        assertEquals(2, loaded.noCount)
+        assertEquals(3, loaded.ignoreGracePeriodSeconds)
+        assertFalse(loaded.antiUninstallEnabled)
     }
 
     @Test
-    fun c15_exportOmitsSecretsWhenRequestedAndClearsAntiUninstall() {
-        val current = Settings(
-            passwordHash = "deadbeef",
-            geminiApiKey = "secret-key",
-            antiUninstallEnabled = true,
-            deviceAdminActivationRequestedAt = 12345L
+    fun c15_exportOmitsSecretsWhenRequestedAndClearsAntiUninstall() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val file = File(tempFolder.root, "datastore/settings.json")
+        val repo = JsonSettingsRepository(file, ioDispatcher = dispatcher)
+        repo.update {
+            it.copy(
+                passwordHash = "deadbeef",
+                geminiApiKey = "secret-key",
+                antiUninstallEnabled = true,
+                deviceAdminActivationRequestedAt = 12_345L
+            )
+        }
+
+        val exportedWithoutSecrets = repo.exportJson(includePassword = false, includeApiKey = false)
+        val decodedNoSecrets = SettingsJsonCodec.decodeOrNull(exportedWithoutSecrets)
+        assertNotNull(decodedNoSecrets)
+        assertNull(decodedNoSecrets!!.passwordHash)
+        assertNull(decodedNoSecrets.geminiApiKey)
+        assertFalse(decodedNoSecrets.antiUninstallEnabled)
+        assertEquals(0L, decodedNoSecrets.deviceAdminActivationRequestedAt)
+
+        val exportedWithSecrets = repo.exportJson(includePassword = true, includeApiKey = true)
+        val decodedWithSecrets = SettingsJsonCodec.decodeOrNull(exportedWithSecrets)
+        assertEquals("deadbeef", decodedWithSecrets!!.passwordHash)
+        assertEquals("secret-key", decodedWithSecrets.geminiApiKey)
+        assertFalse(decodedWithSecrets.antiUninstallEnabled)
+    }
+
+    @Test
+    fun c15_importIsMergeOnlyForBlockerStateKeywordsWhitelistAndIgnoredApps() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val file = File(tempFolder.root, "datastore/settings.json")
+        val repo = JsonSettingsRepository(file, ioDispatcher = dispatcher)
+        repo.update {
+            it.copy(
+                keywordBlockerConfig = KeywordBlocker(
+                    isActive = true,
+                    blockedKeywords = listOf("shorts", "reels"),
+                    whitelistedKeywords = listOf("gym shorts"),
+                    ignoredApps = listOf("com.app.a")
+                )
+            )
+        }
+
+        val incomingJson = SettingsJsonCodec.encode(
+            Settings(
+                keywordBlockerConfig = KeywordBlocker(
+                    isActive = false,
+                    blockedKeywords = listOf("reels", "news"),
+                    whitelistedKeywords = listOf("good news"),
+                    ignoredApps = listOf("com.app.a", "com.app.b")
+                ),
+                ignoreGracePeriodSeconds = 5,
+                noCount = 4
+            )
         )
-        val exported = current.copy(
-            passwordHash = null,
-            geminiApiKey = null,
-            antiUninstallEnabled = false,
-            deviceAdminActivationRequestedAt = 0L
-        )
-        val roundTripped = gson.fromJson(gson.toJson(exported), Settings::class.java)
-        assertNull(roundTripped.passwordHash)
-        assertNull(roundTripped.geminiApiKey)
-        assertFalse(roundTripped.antiUninstallEnabled)
-        assertEquals(0L, roundTripped.deviceAdminActivationRequestedAt)
+
+        assertTrue(repo.importJson(incomingJson))
+        assertFalse(repo.importJson("not-json"))
+
+        val after = repo.settings.value
+        assertTrue("Active state must remain true (OR merge)", after.keywordBlockerConfig.isActive)
+        assertEquals(listOf("shorts", "reels", "news"), after.keywordBlockerConfig.blockedKeywords)
+        assertEquals(listOf("gym shorts", "good news"), after.keywordBlockerConfig.whitelistedKeywords)
+        assertEquals(listOf("com.app.a", "com.app.b"), after.keywordBlockerConfig.ignoredApps)
+        assertEquals(5, after.ignoreGracePeriodSeconds)
+        assertEquals(4, after.noCount)
     }
 }

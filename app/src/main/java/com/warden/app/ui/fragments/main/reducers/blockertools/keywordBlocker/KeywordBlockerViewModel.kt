@@ -4,18 +4,31 @@ import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.warden.app.Warden
+import com.warden.app.core.data.JsonSettingsRepository
+import com.warden.app.core.data.SettingsRepository
+import com.warden.app.data.models.KeywordBlocker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import com.warden.app.data.models.KeywordBlocker
-import com.warden.app.utils.DataStoreManager
+import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
 
-class KeywordBlockerViewModel(application: Application) : AndroidViewModel(application) {
-    private val dataStoreManager = DataStoreManager(application)
-    
+class KeywordBlockerViewModel(
+    application: Application,
+    private val settingsRepository: SettingsRepository =
+        (application as? Warden)?.container?.settingsRepository
+            ?: JsonSettingsRepository(File(application.filesDir, "datastore/settings.json"))
+) : AndroidViewModel(application) {
+
+    constructor(application: Application) : this(
+        application = application,
+        settingsRepository = (application as? Warden)?.container?.settingsRepository
+            ?: JsonSettingsRepository(File(application.filesDir, "datastore/settings.json"))
+    )
+
     private val _keywordBlockerConfig = MutableStateFlow(KeywordBlocker())
     val keywordBlockerConfig: StateFlow<KeywordBlocker> = _keywordBlockerConfig
 
@@ -51,7 +64,7 @@ class KeywordBlockerViewModel(application: Application) : AndroidViewModel(appli
 
     init {
         viewModelScope.launch {
-            dataStoreManager.settings.collectLatest { settings ->
+            settingsRepository.settings.collectLatest { settings ->
                 _keywordBlockerConfig.value = settings.keywordBlockerConfig
                 _passwordHash.value = settings.passwordHash
                 _geminiApiKey.value = settings.geminiApiKey
@@ -74,7 +87,7 @@ class KeywordBlockerViewModel(application: Application) : AndroidViewModel(appli
 
     private fun updateConfig(newConfig: KeywordBlocker) {
         viewModelScope.launch {
-            dataStoreManager.updateKeywordBlockerConfig(newConfig)
+            settingsRepository.update { it.copy(keywordBlockerConfig = newConfig) }
             requestKeywordBlockerRefresh()
         }
     }
@@ -130,13 +143,13 @@ class KeywordBlockerViewModel(application: Application) : AndroidViewModel(appli
 
     fun setPassword(password: String) {
         viewModelScope.launch {
-            dataStoreManager.updatePasswordHash(hashPassword(password))
+            settingsRepository.update { it.copy(passwordHash = hashPassword(password)) }
         }
     }
 
     fun removePassword() {
         viewModelScope.launch {
-            dataStoreManager.updatePasswordHash(null)
+            settingsRepository.update { it.copy(passwordHash = null) }
         }
     }
 
@@ -147,72 +160,72 @@ class KeywordBlockerViewModel(application: Application) : AndroidViewModel(appli
 
     fun setGeminiApiKey(key: String?) {
         viewModelScope.launch {
-            dataStoreManager.updateGeminiApiKey(key)
+            settingsRepository.update { it.copy(geminiApiKey = key) }
         }
     }
 
     fun setNoCount(count: Int) {
         viewModelScope.launch {
-            dataStoreManager.updateNoCount(count)
+            settingsRepository.update { it.copy(noCount = count) }
         }
     }
 
     fun setTemporaryIgnoredApps(apps: Map<String, Long>) {
         viewModelScope.launch {
-            dataStoreManager.updateTemporaryIgnoredApps(apps)
+            settingsRepository.update { it.copy(temporaryIgnoredApps = apps) }
             requestKeywordBlockerRefresh()
         }
     }
 
     fun setBlockerDisabledUntil(timestamp: Long) {
         viewModelScope.launch {
-            dataStoreManager.updateBlockerDisabledUntil(timestamp)
+            settingsRepository.update { it.copy(blockerDisabledUntil = timestamp) }
             requestKeywordBlockerRefresh()
         }
     }
 
     fun setIgnoreGracePeriodSeconds(seconds: Int) {
         viewModelScope.launch {
-            dataStoreManager.updateIgnoreGracePeriodSeconds(seconds)
+            settingsRepository.update { it.copy(ignoreGracePeriodSeconds = seconds) }
             requestKeywordBlockerRefresh()
         }
     }
 
     fun setAntiUninstallEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            dataStoreManager.updateAntiUninstallEnabled(enabled)
+            settingsRepository.update { it.copy(antiUninstallEnabled = enabled) }
             requestKeywordBlockerRefresh()
         }
     }
 
     fun setDeviceAdminActivationRequestedAt(timestamp: Long) {
         viewModelScope.launch {
-            dataStoreManager.updateDeviceAdminActivationRequestedAt(timestamp)
+            settingsRepository.update { it.copy(deviceAdminActivationRequestedAt = timestamp) }
             requestKeywordBlockerRefresh()
         }
     }
 
     fun setSelectedGeminiModel(model: String) {
         viewModelScope.launch {
-            dataStoreManager.updateSelectedGeminiModel(model)
+            settingsRepository.update { it.copy(selectedGeminiModel = model) }
         }
     }
 
     fun setAvailableGeminiModels(models: List<String>) {
         viewModelScope.launch {
-            dataStoreManager.updateAvailableGeminiModels(models)
+            settingsRepository.update { it.copy(availableGeminiModels = models) }
         }
     }
 
     fun exportSettings(includePassword: Boolean = true, includeApiKey: Boolean = true, onResult: (String) -> Unit) {
         viewModelScope.launch {
-            onResult(dataStoreManager.getSettingsJson(includePassword, includeApiKey))
+            onResult(settingsRepository.exportJson(includePassword, includeApiKey))
         }
     }
 
     fun importSettings(json: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val success = dataStoreManager.importSettingsJson(json)
+            val success = settingsRepository.importJson(json)
             if (success) {
                 requestKeywordBlockerRefresh()
             }

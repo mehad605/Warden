@@ -345,7 +345,7 @@ class KeywordBlocker {
         this.service = service
         Log.d("Keyword Blocker", "Setting up kw blocker")
         CoroutineScope(Dispatchers.IO).launch {
-            service.dataStoreManager.settings.collectLatest { settings ->
+            service.settingsRepository.settings.collectLatest { settings ->
                 blockedKeyword = settings.keywordBlockerConfig.blockedKeywords.toHashSet()
                 whitelistedKeywords = settings.keywordBlockerConfig.whitelistedKeywords.toHashSet()
                 ignoredApps = settings.keywordBlockerConfig.ignoredApps.toHashSet()

@@ -1,6 +1,5 @@
 [versions]
 agp = "8.7.2"
-datastore = "1.2.1"
 fragmentKtx = "1.8.9"
 gson = "2.11.0"
 kotlin = "1.9.24"
@@ -19,7 +18,6 @@ generativeai = "0.9.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

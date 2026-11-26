@@ -94,7 +94,6 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.fragment.ktx)
-    implementation(libs.androidx.datastore)
     implementation(libs.gson)
     implementation(libs.generativeai)
 
