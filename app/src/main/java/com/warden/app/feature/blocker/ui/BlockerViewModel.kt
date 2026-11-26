@@ -20,9 +20,8 @@ import kotlinx.coroutines.launch
 class BlockerViewModel(
     private val settingsRepository: SettingsRepository,
     private val gatekeeperClient: GatekeeperClient,
-    private val clock: Clock
+    private val clock: Clock,
 ) : ViewModel() {
-
     /** Single reactive state stream for the dashboard UI. */
     val settings: StateFlow<Settings> = settingsRepository.settings
 
@@ -35,8 +34,7 @@ class BlockerViewModel(
     }
 
     /** Verifies [candidate] against the stored SHA-256 password hash. */
-    fun verifyPassword(candidate: String): Boolean =
-        PasswordPolicy.verify(candidate, settings.value.passwordHash)
+    fun verifyPassword(candidate: String): Boolean = PasswordPolicy.verify(candidate, settings.value.passwordHash)
 
     /** Fetches available `generateContent` Gemini models and persists the refreshed list. */
     suspend fun refreshGeminiModels(): List<String> {
@@ -50,7 +48,7 @@ class BlockerViewModel(
     /** Evaluates an AI Gatekeeper [request] using the stored API key and selected model. */
     suspend fun evaluateGatekeeper(
         request: GatekeeperRequest,
-        image: EncodedImage?
+        image: EncodedImage?,
     ): GatekeeperVerdict {
         val snapshot = settings.value
         val apiKey = snapshot.geminiApiKey.orEmpty()
@@ -60,18 +58,19 @@ class BlockerViewModel(
     }
 
     /** Serializes current settings for backup export. */
-    suspend fun exportSettingsJson(includePassword: Boolean, includeApiKey: Boolean): String =
-        settingsRepository.exportJson(includePassword, includeApiKey)
+    suspend fun exportSettingsJson(
+        includePassword: Boolean,
+        includeApiKey: Boolean,
+    ): String = settingsRepository.exportJson(includePassword, includeApiKey)
 
     /** Imports backup [json] using merge-only semantics. */
-    suspend fun importSettingsJson(json: String): Boolean =
-        settingsRepository.importJson(json)
+    suspend fun importSettingsJson(json: String): Boolean = settingsRepository.importJson(json)
 
     /** Factory constructing [BlockerViewModel] with explicit dependencies from `AppContainer`. */
     class Factory(
         private val settingsRepository: SettingsRepository,
         private val gatekeeperClient: GatekeeperClient,
-        private val clock: Clock
+        private val clock: Clock,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {

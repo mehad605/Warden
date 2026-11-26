@@ -16,22 +16,25 @@ interface AccessibilityPermissionChecker {
     fun isServiceEnabled(serviceClass: Class<*>): Boolean
 
     /** Opens Accessibility Settings targeting [serviceClass], falling back to the root screen. */
-    fun openAccessibilitySettings(context: Context, serviceClass: Class<*>)
+    fun openAccessibilitySettings(
+        context: Context,
+        serviceClass: Class<*>,
+    )
 }
 
 /**
  * Android platform implementation of [AccessibilityPermissionChecker].
  */
 class AndroidAccessibilityPermissionChecker(
-    private val appContext: Context
+    private val appContext: Context,
 ) : AccessibilityPermissionChecker {
-
     override fun isServiceEnabled(serviceClass: Class<*>): Boolean {
         val expected = ComponentName(appContext, serviceClass)
-        val enabledSetting = Settings.Secure.getString(
-            appContext.contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
+        val enabledSetting =
+            Settings.Secure.getString(
+                appContext.contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+            ) ?: return false
 
         val splitter = TextUtils.SimpleStringSplitter(':').apply { setString(enabledSetting) }
         while (splitter.hasNext()) {
@@ -43,15 +46,19 @@ class AndroidAccessibilityPermissionChecker(
         return false
     }
 
-    override fun openAccessibilitySettings(context: Context, serviceClass: Class<*>) {
+    override fun openAccessibilitySettings(
+        context: Context,
+        serviceClass: Class<*>,
+    ) {
         val componentKey = ComponentName(context, serviceClass).flattenToString()
-        val targetedIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-            putExtra(EXTRA_FRAGMENT_ARGS_KEY, componentKey)
-            putExtra(
-                EXTRA_SHOW_FRAGMENT_ARGS,
-                Bundle().apply { putString(EXTRA_FRAGMENT_ARGS_KEY, componentKey) }
-            )
-        }
+        val targetedIntent =
+            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                putExtra(EXTRA_FRAGMENT_ARGS_KEY, componentKey)
+                putExtra(
+                    EXTRA_SHOW_FRAGMENT_ARGS,
+                    Bundle().apply { putString(EXTRA_FRAGMENT_ARGS_KEY, componentKey) },
+                )
+            }
         try {
             context.startActivity(targetedIntent)
         } catch (_: ActivityNotFoundException) {

@@ -13,7 +13,6 @@ import kotlin.math.roundToInt
  * Bounding resolution to 1024px caps memory spikes on 4 GB RAM devices and reduces upload size.
  */
 object BitmapImageEncoder {
-
     private const val MAX_DIMENSION_PX = 1024
     private const val JPEG_QUALITY = 80
     private const val MIME_JPEG = "image/jpeg"

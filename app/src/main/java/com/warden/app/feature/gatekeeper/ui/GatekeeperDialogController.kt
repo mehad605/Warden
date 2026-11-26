@@ -30,7 +30,7 @@ import java.io.IOException
 enum class GatekeeperDialogMode {
     TEMPORARY_IGNORE,
     PAUSE_BLOCKER,
-    EXTEND_IGNORE
+    EXTEND_IGNORE,
 }
 
 /**
@@ -46,15 +46,14 @@ class GatekeeperDialogController(
     private val evaluateRequest: suspend (GatekeeperRequest, EncodedImage?) -> GatekeeperVerdict,
     private val onApproved: (GatekeeperDialogMode, LaunchableApp?, Boolean, GatekeeperVerdict) -> Unit,
     private val onRejected: () -> Unit,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
-
     /** Displays the gatekeeper dialog for [mode], optionally locked to [targetPackage]. */
     fun show(
         mode: GatekeeperDialogMode,
         permanentIgnoredApps: List<String>,
         rejectionCount: Int,
-        targetPackage: String? = null
+        targetPackage: String? = null,
     ) {
         val binding = DialogAiChatBinding.inflate(layoutInflater)
         val viewBinder = GatekeeperDialogViewBinder(context, binding)
@@ -77,7 +76,7 @@ class GatekeeperDialogController(
     private fun loadAppsAsync(
         viewBinder: GatekeeperDialogViewBinder,
         dialog: AlertDialog,
-        targetPackage: String?
+        targetPackage: String?,
     ) {
         viewBinder.showAppsLoading()
         scope.launch {
@@ -88,7 +87,10 @@ class GatekeeperDialogController(
         }
     }
 
-    private fun bindAttachmentButtons(binding: DialogAiChatBinding, onBitmapChanged: (Bitmap?) -> Unit) {
+    private fun bindAttachmentButtons(
+        binding: DialogAiChatBinding,
+        onBitmapChanged: (Bitmap?) -> Unit,
+    ) {
         binding.btnAttachImage.setOnClickListener {
             requestPickImage { uri ->
                 scope.launch {
@@ -114,7 +116,7 @@ class GatekeeperDialogController(
         mode: GatekeeperDialogMode,
         permanentIgnoredApps: List<String>,
         rejectionCount: Int,
-        attachedBitmap: Bitmap?
+        attachedBitmap: Bitmap?,
     ) {
         val justification = binding.etJustification.text?.toString().orEmpty()
         val selectedApp = binding.spinnerApps.selectedItem as? LaunchableApp
@@ -122,9 +124,10 @@ class GatekeeperDialogController(
             Toast.makeText(context, R.string.select_app_prompt, Toast.LENGTH_SHORT).show()
             return
         }
-        val isRemoval = mode == GatekeeperDialogMode.TEMPORARY_IGNORE &&
-            selectedApp != null &&
-            permanentIgnoredApps.contains(selectedApp.packageName)
+        val isRemoval =
+            mode == GatekeeperDialogMode.TEMPORARY_IGNORE &&
+                selectedApp != null &&
+                permanentIgnoredApps.contains(selectedApp.packageName)
 
         val validationError = JustificationValidator.validate(justification, isRemoval = isRemoval)
         if (validationError != null) {
@@ -141,31 +144,34 @@ class GatekeeperDialogController(
         selectedApp: LaunchableApp?,
         isRemoval: Boolean,
         justification: String,
-        rejectionCount: Int
-    ): GatekeeperRequest = when (mode) {
-        GatekeeperDialogMode.PAUSE_BLOCKER -> GatekeeperRequest.PauseBlocker(justification, rejectionCount)
-        GatekeeperDialogMode.EXTEND_IGNORE -> GatekeeperRequest.ExtendExemption(
-            appName = selectedApp?.label.orEmpty(),
-            packageName = selectedApp?.packageName.orEmpty(),
-            userPrompt = justification,
-            rejectionCount = rejectionCount
-        )
-        GatekeeperDialogMode.TEMPORARY_IGNORE -> if (isRemoval) {
-            GatekeeperRequest.RemoveFromIgnore(
-                appName = selectedApp?.label.orEmpty(),
-                packageName = selectedApp?.packageName.orEmpty(),
-                userPrompt = justification,
-                rejectionCount = rejectionCount
-            )
-        } else {
-            GatekeeperRequest.AppExemption(
-                appName = selectedApp?.label.orEmpty(),
-                packageName = selectedApp?.packageName.orEmpty(),
-                userPrompt = justification,
-                rejectionCount = rejectionCount
-            )
+        rejectionCount: Int,
+    ): GatekeeperRequest =
+        when (mode) {
+            GatekeeperDialogMode.PAUSE_BLOCKER -> GatekeeperRequest.PauseBlocker(justification, rejectionCount)
+            GatekeeperDialogMode.EXTEND_IGNORE ->
+                GatekeeperRequest.ExtendExemption(
+                    appName = selectedApp?.label.orEmpty(),
+                    packageName = selectedApp?.packageName.orEmpty(),
+                    userPrompt = justification,
+                    rejectionCount = rejectionCount,
+                )
+            GatekeeperDialogMode.TEMPORARY_IGNORE ->
+                if (isRemoval) {
+                    GatekeeperRequest.RemoveFromIgnore(
+                        appName = selectedApp?.label.orEmpty(),
+                        packageName = selectedApp?.packageName.orEmpty(),
+                        userPrompt = justification,
+                        rejectionCount = rejectionCount,
+                    )
+                } else {
+                    GatekeeperRequest.AppExemption(
+                        appName = selectedApp?.label.orEmpty(),
+                        packageName = selectedApp?.packageName.orEmpty(),
+                        userPrompt = justification,
+                        rejectionCount = rejectionCount,
+                    )
+                }
         }
-    }
 
     private fun evaluateAsync(
         viewBinder: GatekeeperDialogViewBinder,
@@ -174,20 +180,21 @@ class GatekeeperDialogController(
         selectedApp: LaunchableApp?,
         isRemoval: Boolean,
         request: GatekeeperRequest,
-        attachedBitmap: Bitmap?
+        attachedBitmap: Bitmap?,
     ) {
         viewBinder.setLoading(true)
         scope.launch {
             try {
-                val encodedImage = attachedBitmap?.let { bmp ->
-                    withContext(Dispatchers.Default) { BitmapImageEncoder.encode(bmp) }
-                }
+                val encodedImage =
+                    attachedBitmap?.let { bmp ->
+                        withContext(Dispatchers.Default) { BitmapImageEncoder.encode(bmp) }
+                    }
                 val verdict = evaluateRequest(request, encodedImage)
                 viewBinder.showVerdict(
                     dialog = dialog,
                     verdict = verdict,
                     onApprovedRendered = { onApproved(mode, selectedApp, isRemoval, verdict) },
-                    onRejectedRendered = onRejected
+                    onRejectedRendered = onRejected,
                 )
             } catch (e: IOException) {
                 viewBinder.setLoading(false)
@@ -203,22 +210,23 @@ class GatekeeperDialogController(
         Toast.makeText(
             context,
             context.getString(R.string.ai_request_error, message.orEmpty()),
-            Toast.LENGTH_SHORT
+            Toast.LENGTH_SHORT,
         ).show()
     }
 
-    private fun decodeBitmapFromUri(uri: Uri): Bitmap? = try {
-        val resolver = context.contentResolver
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val source = ImageDecoder.createSource(resolver, uri)
-            ImageDecoder.decodeBitmap(source) { decoder, _, _ -> decoder.isMutableRequired = true }
-        } else {
-            @Suppress("DEPRECATION")
-            MediaStore.Images.Media.getBitmap(resolver, uri)
+    private fun decodeBitmapFromUri(uri: Uri): Bitmap? =
+        try {
+            val resolver = context.contentResolver
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val source = ImageDecoder.createSource(resolver, uri)
+                ImageDecoder.decodeBitmap(source) { decoder, _, _ -> decoder.isMutableRequired = true }
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(resolver, uri)
+            }
+        } catch (_: IOException) {
+            null
+        } catch (_: SecurityException) {
+            null
         }
-    } catch (_: IOException) {
-        null
-    } catch (_: SecurityException) {
-        null
-    }
 }

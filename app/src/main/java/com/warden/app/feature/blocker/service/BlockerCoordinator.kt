@@ -18,9 +18,8 @@ class BlockerCoordinator(
     private val showToast: (String) -> Unit,
     private val engine: BlockingDecisionEngine = BlockingDecisionEngine(),
     private val graceController: GracePeriodController = GracePeriodController(),
-    private val clock: Clock = SystemClockProvider()
+    private val clock: Clock = SystemClockProvider(),
 ) {
-
     /** Updates compiled rules when [Settings] changes. */
     fun onSettingsUpdated(settings: Settings) {
         engine.updateSettings(settings)
@@ -47,7 +46,10 @@ class BlockerCoordinator(
         graceController.cancel()
     }
 
-    private fun handleSelfProtection(event: AccessibilityEvent, nowMs: Long): Boolean {
+    private fun handleSelfProtection(
+        event: AccessibilityEvent,
+        nowMs: Long,
+    ): Boolean {
         val rootNode = rootNodeProvider() ?: return false
         try {
             val activePackage = rootNode.packageName?.toString().orEmpty()
@@ -69,7 +71,10 @@ class BlockerCoordinator(
         }
     }
 
-    private fun scanActiveWindow(eventPackage: String, nowMs: Long) {
+    private fun scanActiveWindow(
+        eventPackage: String,
+        nowMs: Long,
+    ) {
         val rootNode = rootNodeProvider() ?: return
         try {
             val rootPackage = rootNode.packageName?.toString().orEmpty()
@@ -88,7 +93,10 @@ class BlockerCoordinator(
         }
     }
 
-    private fun handleKeywordMatch(packageName: String, match: KeywordMatch) {
+    private fun handleKeywordMatch(
+        packageName: String,
+        match: KeywordMatch,
+    ) {
         val graceSeconds = engine.gracePeriodSeconds
         if (graceSeconds <= 0) {
             graceController.cancel()
@@ -97,15 +105,19 @@ class BlockerCoordinator(
             return
         }
 
-        val scheduled = graceController.scheduleIfNew(packageName, match.keyword, graceSeconds) {
-            recheckAndMinimize(packageName, match.keyword)
-        }
+        val scheduled =
+            graceController.scheduleIfNew(packageName, match.keyword, graceSeconds) {
+                recheckAndMinimize(packageName, match.keyword)
+            }
         if (scheduled) {
             showToast(engine.formatBlockedMessage(match))
         }
     }
 
-    private fun recheckAndMinimize(expectedPackage: String, expectedKeyword: String) {
+    private fun recheckAndMinimize(
+        expectedPackage: String,
+        expectedKeyword: String,
+    ) {
         val rootNode = rootNodeProvider() ?: return
         try {
             if (rootNode.packageName?.toString() != expectedPackage) return

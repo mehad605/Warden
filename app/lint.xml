@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Versions are intentionally pinned in gradle/libs.versions.toml for deterministic builds (S7.1);
+         automated updates are managed via .github/dependabot.yml (S6.10). -->
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+
+    <!-- Upstream AndroidX Lifecycle 2.10.0 lint detector crashes under AGP 8.7.2 (Kotlin Analysis API
+         version mismatch: KaCallableMemberCall). Warden uses StateFlow, never MutableLiveData. -->
+    <issue id="NullSafeMutableLiveData" severity="ignore" />
+
+    <!-- Monochrome adaptive icon was intentionally removed in commit b40d026 per product design. -->
+    <issue id="MonochromeLauncherIcon" severity="ignore" />
+
+    <!-- Dashboard layout intentionally houses all single-screen settings cards; view hierarchy depth
+         was flattened (< 10 levels) and the card count is bounded. -->
+    <issue id="TooManyViews" severity="ignore" />
+</lint>

@@ -14,12 +14,69 @@
     <string name="status_on">On</string>
     <string name="grace_period_off">Off</string>
     <string name="grace_period_seconds_fmt">%1$ds</string>
+    <string name="grace_period_default">2s</string>
     <string name="permanent_label">Permanent</string>
 
     <plurals name="word_count">
         <item quantity="one">%1$d word</item>
         <item quantity="other">%1$d words</item>
     </plurals>
+
+    <plurals name="new_duration_minutes">
+        <item quantity="one">New Duration: %1$d minute</item>
+        <item quantity="other">New Duration: %1$d minutes</item>
+    </plurals>
+
+    <!-- Dashboard Layout -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Warden · Content Shield</string>
+    <string name="accessibility_required_title">Accessibility Required</string>
+    <string name="accessibility_required_message">Warden needs Accessibility permission to detect keywords in other running apps and minimize them securely.</string>
+    <string name="enable_in_settings">Enable in Settings</string>
+    <string name="section_core_protection">CORE PROTECTION</string>
+    <string name="keyword_blocker_title">Keyword Blocker</string>
+    <string name="keyword_blocker_subtitle">Active content filtering</string>
+    <string name="blocked_words_label">Blocked words</string>
+    <string name="add_blocked_word_hint">Add a blocked word…</string>
+    <string name="whitelisted_words_label">Whitelisted words</string>
+    <string name="add_whitelisted_word_hint">Add a whitelisted word…</string>
+    <string name="grace_period_title">Grace Period</string>
+    <string name="grace_period_subtitle">Delay before app minimizes</string>
+    <string name="section_ai_gatekeeper">AI GATEKEEPER</string>
+    <string name="gemini_engine_title">Gemini Engine</string>
+    <string name="gemini_engine_subtitle">AI-powered rule evaluation</string>
+    <string name="api_status_default">No API Key configured</string>
+    <string name="gemini_api_key_label">GEMINI API KEY</string>
+    <string name="paste_api_key_hint">Paste your API key here</string>
+    <string name="model_label">MODEL</string>
+    <string name="refresh_models_desc">Refresh Models</string>
+    <string name="save_api_key">Save API Key</string>
+    <string name="app_exemptions_label">APP EXEMPTIONS</string>
+    <string name="app_exemptions_subtitle">Ask AI to bypass rules for a specific app</string>
+    <string name="convince_ai_ignore_app">Convince AI to Ignore App</string>
+    <string name="state_your_reason">State your reason — AI decides</string>
+    <string name="active_ignored_apps">Active Ignored Apps</string>
+    <string name="section_security_data">SECURITY &amp; DATA</string>
+    <string name="password_protection_title">Password Protection</string>
+    <string name="remove_action">Remove</string>
+    <string name="anti_uninstall_title">Anti-Uninstall</string>
+    <string name="anti_uninstall_subtitle">Prevent removal or force stop</string>
+    <string name="backup_restore_title">Backup &amp; Restore</string>
+    <string name="backup_restore_subtitle">Export or import your config</string>
+    <string name="version_footer">Warden v2.0 · Android Content Shield</string>
+    <string name="cd_app_icon">App Icon</string>
+    <string name="cd_extend_time">Extend Time</string>
+    <string name="cd_screenshot_preview">Attached screenshot preview</string>
+    <string name="cd_remove_screenshot">Remove attached screenshot</string>
+
+    <!-- AI Chat Dialog Layout -->
+    <string name="ai_dialog_default_title">Convince AI Gatekeeper</string>
+    <string name="ai_dialog_default_subtitle">Please provide a valid study/work emergency justification. You must write at least 7 complete sentences.</string>
+    <string name="select_target_app">Select Target App:</string>
+    <string name="your_justification_hint">Your justification</string>
+    <string name="attach_screenshot">Attach Screenshot</string>
+    <string name="consulting_gemini">Consulting Gemini AI Gatekeeper…</string>
+    <string name="submit_request">Submit Request</string>
 
     <!-- Disclaimer -->
     <string name="disclaimer_title">Disclaimer &amp; Warning</string>
@@ -92,7 +149,6 @@
     <!-- Ignored Apps Decrease Dialog -->
     <string name="decrease_ignore_title">Decrease Ignore Time</string>
     <string name="decrease_ignore_message">Set a shorter duration for %1$s. You cannot increase the time.</string>
-    <string name="new_duration_minutes">New Duration: %1$d minutes</string>
     <string name="duration_updated">Duration updated.</string>
 
     <!-- Backup & Restore -->

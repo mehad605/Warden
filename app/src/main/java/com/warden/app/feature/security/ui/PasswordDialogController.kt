@@ -17,15 +17,19 @@ class PasswordDialogController(
     private val context: Context,
     private val verifyPassword: (String) -> Boolean,
     private val onSetPassword: (String) -> Unit,
-    private val onRemovePassword: () -> Unit
+    private val onRemovePassword: () -> Unit,
 ) {
-
     /** Prompts for the current password and invokes [onVerified] only when it matches. */
-    fun showVerifyDialog(title: String, message: String, onVerified: () -> Unit) {
-        val (inputLayout, editText) = createPasswordInput(
-            hint = context.getString(R.string.enter_password),
-            helperText = null
-        )
+    fun showVerifyDialog(
+        title: String,
+        message: String,
+        onVerified: () -> Unit,
+    ) {
+        val (inputLayout, editText) =
+            createPasswordInput(
+                hint = context.getString(R.string.enter_password),
+                helperText = null,
+            )
         MaterialAlertDialogBuilder(context)
             .setTitle(title)
             .setMessage(message)
@@ -48,7 +52,7 @@ class PasswordDialogController(
             showVerifyDialog(
                 title = context.getString(R.string.verify_old_password_title),
                 message = context.getString(R.string.verify_old_password_message),
-                onVerified = ::showNewPasswordDialog
+                onVerified = ::showNewPasswordDialog,
             )
         } else {
             showNewPasswordDialog()
@@ -59,7 +63,7 @@ class PasswordDialogController(
     fun showRemoveDialog() {
         showVerifyDialog(
             title = context.getString(R.string.remove_password_title),
-            message = context.getString(R.string.remove_password_message)
+            message = context.getString(R.string.remove_password_message),
         ) {
             onRemovePassword()
             Toast.makeText(context, R.string.password_cleared, Toast.LENGTH_SHORT).show()
@@ -67,16 +71,18 @@ class PasswordDialogController(
     }
 
     private fun showNewPasswordDialog() {
-        val (inputLayout, editText) = createPasswordInput(
-            hint = context.getString(R.string.password_hint),
-            helperText = context.getString(R.string.strong_password_rules)
-        )
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.set_password)
-            .setView(inputLayout)
-            .setPositiveButton(R.string.save, null)
-            .setNegativeButton(R.string.cancel) { d, _ -> d.dismiss() }
-            .create()
+        val (inputLayout, editText) =
+            createPasswordInput(
+                hint = context.getString(R.string.password_hint),
+                helperText = context.getString(R.string.strong_password_rules),
+            )
+        val dialog =
+            MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.set_password)
+                .setView(inputLayout)
+                .setPositiveButton(R.string.save, null)
+                .setNegativeButton(R.string.cancel) { d, _ -> d.dismiss() }
+                .create()
 
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -95,19 +101,21 @@ class PasswordDialogController(
 
     private fun createPasswordInput(
         hint: String,
-        helperText: String?
+        helperText: String?,
     ): Pair<TextInputLayout, TextInputEditText> {
-        val editText = TextInputEditText(context).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        val inputLayout = TextInputLayout(context).apply {
-            boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
-            setPadding(INPUT_HORIZONTAL_PADDING, INPUT_VERTICAL_PADDING, INPUT_HORIZONTAL_PADDING, INPUT_VERTICAL_PADDING)
-            this.hint = hint
-            endIconMode = TextInputLayout.END_ICON_PASSWORD_TOGGLE
-            this.helperText = helperText
-            addView(editText)
-        }
+        val editText =
+            TextInputEditText(context).apply {
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
+        val inputLayout =
+            TextInputLayout(context).apply {
+                boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
+                setPadding(INPUT_HORIZONTAL_PADDING, INPUT_VERTICAL_PADDING, INPUT_HORIZONTAL_PADDING, INPUT_VERTICAL_PADDING)
+                this.hint = hint
+                endIconMode = TextInputLayout.END_ICON_PASSWORD_TOGGLE
+                this.helperText = helperText
+                addView(editText)
+            }
         return inputLayout to editText
     }
 

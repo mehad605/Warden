@@ -10,7 +10,7 @@ import android.os.Looper
  * when the same `(packageName, keyword)` remains visible across rapid events.
  */
 class GracePeriodController(
-    private val handler: Handler = Handler(Looper.getMainLooper())
+    private val handler: Handler = Handler(Looper.getMainLooper()),
 ) {
     private var pendingRunnable: Runnable? = null
     private var pendingKeyword: String? = null
@@ -27,7 +27,7 @@ class GracePeriodController(
         packageName: String,
         keyword: String,
         graceSeconds: Int,
-        onElapsed: () -> Unit
+        onElapsed: () -> Unit,
     ): Boolean {
         if (pendingKeyword == keyword && pendingPackage == packageName) {
             return false
@@ -35,12 +35,13 @@ class GracePeriodController(
         cancel()
         pendingKeyword = keyword
         pendingPackage = packageName
-        val runnable = Runnable {
-            pendingRunnable = null
-            pendingKeyword = null
-            pendingPackage = null
-            onElapsed()
-        }
+        val runnable =
+            Runnable {
+                pendingRunnable = null
+                pendingKeyword = null
+                pendingPackage = null
+                onElapsed()
+            }
         pendingRunnable = runnable
         handler.postDelayed(runnable, graceSeconds * 1_000L)
         return true

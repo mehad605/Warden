@@ -3,14 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:layout_height="match_parent">
 
-    <!-- TOP APP BAR (sticky, non-collapsing) -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurface"
         app:liftOnScroll="true">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -18,12 +15,12 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             app:title=""
-            app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
             app:titleCentered="false">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:baselineAligned="false"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -31,6 +28,7 @@
                     android:id="@+id/iv_back"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
+                    android:contentDescription="@null"
                     android:padding="12dp"
                     android:src="@drawable/ic_back_arrow"
                     app:tint="?attr/colorOnSurface" />
@@ -38,31 +36,32 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="4dp">
+                    android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Settings"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:textColor="?attr/colorOnSurface"
+                        android:includeFontPadding="false"
                         android:letterSpacing="-0.01"
-                        android:includeFontPadding="false" />
+                        android:text="@string/settings_title"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Warden &#183; Content Shield"
+                        android:layout_marginTop="-2dp"
+                        android:text="@string/settings_subtitle"
                         android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:layout_marginTop="-2dp" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
 
                 <ImageView
                     android:layout_width="48dp"
                     android:layout_height="48dp"
+                    android:contentDescription="@null"
                     android:padding="14dp"
                     android:src="@drawable/outline_more_vert_24"
                     app:tint="?attr/colorOnSurfaceVariant" />
@@ -70,7 +69,6 @@
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- SCROLL CONTENT -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -81,23 +79,22 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:paddingHorizontal="16dp"
-            android:paddingTop="8dp"
-            android:clipChildren="false"
-            android:clipToPadding="false">
+            android:paddingTop="8dp">
 
-            <!-- ═══ Accessibility Warning ═══ -->
+            <!-- Accessibility Warning -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_accessibility_warning"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:visibility="gone"
-                app:cardElevation="0dp"
-                app:cardCornerRadius="28dp"
-                android:clipToOutline="true"
                 app:cardBackgroundColor="?attr/colorErrorContainer"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp"
                 app:shapeAppearance="?attr/shapeAppearanceLargeComponent">
 
                 <LinearLayout
@@ -106,148 +103,116 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp"
+                        android:drawablePadding="12dp"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
-
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/baseline_warning_24"
-                            app:tint="?attr/colorOnErrorContainer"
-                            android:layout_marginEnd="12dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Accessibility Required"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnErrorContainer" />
-                    </LinearLayout>
+                        android:text="@string/accessibility_required_title"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        android:textColor="?attr/colorOnErrorContainer"
+                        android:textStyle="bold"
+                        app:drawableStartCompat="@drawable/baseline_warning_24"
+                        app:drawableTint="?attr/colorOnErrorContainer" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Warden needs Accessibility permission to detect keywords in other running apps and minimize them securely."
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="?attr/colorOnErrorContainer"
+                        android:layout_marginBottom="20dp"
                         android:alpha="0.9"
-                        android:layout_marginBottom="20dp" />
+                        android:text="@string/accessibility_required_message"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="?attr/colorOnErrorContainer" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_enable_accessibility"
                         style="@style/Widget.Material3.Button.ElevatedButton"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
-                        android:text="Enable in Settings"
+                        android:text="@string/enable_in_settings"
                         android:textColor="?attr/colorOnError"
                         app:backgroundTint="?attr/colorError"
                         app:cornerRadius="999dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ═══ SECTION: CORE PROTECTION ═══ -->
-            <LinearLayout
+            <!-- SECTION: CORE PROTECTION -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:drawablePadding="10dp"
                 android:gravity="center_vertical"
+                android:letterSpacing="0.05"
                 android:paddingHorizontal="4dp"
                 android:paddingTop="16dp"
-                android:paddingBottom="8dp">
+                android:paddingBottom="8dp"
+                android:text="@string/section_core_protection"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textStyle="bold"
+                app:drawableStartCompat="@drawable/ic_block_aesthetic"
+                app:drawableTint="?attr/colorPrimary" />
 
-                <LinearLayout
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_rounded_8"
-                    android:backgroundTint="?attr/colorPrimaryContainer">
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_block_aesthetic"
-                        app:tint="?attr/colorOnPrimaryContainer" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="CORE PROTECTION"
-                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:letterSpacing="0.05"
-                    android:layout_marginStart="10dp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- ═══ KEYWORD BLOCKER CARD ═══ -->
+            <!-- KEYWORD BLOCKER CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                app:cardElevation="0dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:cardCornerRadius="28dp"
-                app:strokeWidth="1dp"
+                app:cardElevation="0dp"
+                app:shapeAppearance="?attr/shapeAppearanceLargeComponent"
                 app:strokeColor="?attr/colorOutlineVariant"
-                android:clipToOutline="true"
-                app:shapeAppearance="?attr/shapeAppearanceLargeComponent">
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:animateLayoutChanges="true"
                     android:orientation="vertical"
-                    android:animateLayoutChanges="true">
+                    android:padding="20dp">
 
-                    <!-- Card Header -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="20dp"
-                        android:gravity="center_vertical">
+                        android:layout_marginBottom="16dp"
+                        android:baselineAligned="false"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                        <LinearLayout
+                        <ImageView
                             android:layout_width="44dp"
                             android:layout_height="44dp"
-                            android:gravity="center"
                             android:background="@drawable/bg_rounded_12"
-                            android:backgroundTint="?attr/colorPrimaryContainer">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:src="@drawable/ic_keywords_aesthetic"
-                                app:tint="?attr/colorOnPrimaryContainer" />
-                        </LinearLayout>
+                            android:backgroundTint="?attr/colorPrimaryContainer"
+                            android:contentDescription="@null"
+                            android:padding="11dp"
+                            android:src="@drawable/ic_keywords_aesthetic"
+                            app:tint="?attr/colorOnPrimaryContainer" />
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:layout_marginStart="14dp">
+                            android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Keyword Blocker"
+                                android:text="@string/keyword_blocker_title"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorOnSurface" />
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Active content filtering"
+                                android:layout_marginTop="1dp"
+                                android:text="@string/keyword_blocker_subtitle"
                                 android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="?attr/colorOnSurfaceVariant"
-                                android:layout_marginTop="1dp" />
+                                android:textColor="?attr/colorOnSurfaceVariant" />
                         </LinearLayout>
 
                         <TextView
@@ -263,645 +228,555 @@
                             android:layout_height="wrap_content" />
                     </LinearLayout>
 
-                    <!-- Keywords Section -->
+                    <!-- Blocked Words -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingHorizontal="20dp"
-                        android:paddingBottom="12dp">
+                        android:layout_marginBottom="12dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="12dp">
+                            android:layout_weight="1"
+                            android:letterSpacing="0.04"
+                            android:text="@string/blocked_words_label"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textStyle="bold" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Blocked words"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="?attr/colorOnSurfaceVariant"
-                                android:letterSpacing="0.04"
-                                android:textStyle="bold" />
-
-                            <Space
-                                android:layout_width="0dp"
-                                android:layout_height="match_parent"
-                                android:layout_weight="1" />
-
-                            <TextView
-                                android:id="@+id/tv_keyword_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:paddingHorizontal="10dp"
-                                android:paddingVertical="3dp"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="?attr/colorOnPrimaryContainer"
-                                android:background="@drawable/bg_rounded_time_selector"
-                                android:backgroundTint="?attr/colorPrimaryContainer" />
-                        </LinearLayout>
-
-                        <!-- Chip Cloud -->
-                        <com.google.android.material.chip.ChipGroup
-                            android:id="@+id/cg_keywords"
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:id="@+id/tv_keyword_count"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
-                            app:chipSpacingVertical="8dp"
-                            app:chipSpacingHorizontal="8dp" />
-
-                        <!-- Add word input (pill) -->
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/til_add_word"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                            app:boxCornerRadiusTopStart="999dp"
-                            app:boxCornerRadiusTopEnd="999dp"
-                            app:boxCornerRadiusBottomStart="999dp"
-                            app:boxCornerRadiusBottomEnd="999dp"
-                            app:boxStrokeWidth="1.5dp"
-                            app:boxStrokeWidthFocused="2dp"
-                            app:boxStrokeColor="?attr/colorOutline"
-                            app:endIconDrawable="@drawable/baseline_add_24"
-                            app:endIconMode="custom"
-                            app:endIconTint="?attr/colorPrimary">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/et_keyword"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Add a blocked word\u2026"
-                                android:inputType="text"
-                                android:maxLines="1"
-                                android:maxLength="40"
-                                android:paddingEnd="8dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
+                            android:background="@drawable/bg_rounded_time_selector"
+                            android:backgroundTint="?attr/colorPrimaryContainer"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="3dp"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                            android:textColor="?attr/colorOnPrimaryContainer" />
                     </LinearLayout>
 
-                    <!-- Divider -->
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/cg_keywords"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:chipSpacingHorizontal="8dp"
+                        app:chipSpacingVertical="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_add_word"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:boxCornerRadiusBottomEnd="999dp"
+                        app:boxCornerRadiusBottomStart="999dp"
+                        app:boxCornerRadiusTopEnd="999dp"
+                        app:boxCornerRadiusTopStart="999dp"
+                        app:boxStrokeColor="?attr/colorOutline"
+                        app:boxStrokeWidth="1.5dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        app:endIconDrawable="@drawable/baseline_add_24"
+                        app:endIconMode="custom"
+                        app:endIconTint="?attr/colorPrimary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_keyword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/add_blocked_word_hint"
+                            android:inputType="text"
+                            android:maxLength="40"
+                            android:maxLines="1"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="8dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
                     <com.google.android.material.divider.MaterialDivider
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="20dp" />
+                        android:layout_marginVertical="12dp" />
 
-                    <!-- Whitelist Section -->
+                    <!-- Whitelisted Words -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingHorizontal="20dp"
-                        android:paddingTop="12dp"
-                        android:paddingBottom="12dp">
+                        android:layout_marginBottom="12dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="12dp">
+                            android:layout_weight="1"
+                            android:letterSpacing="0.04"
+                            android:text="@string/whitelisted_words_label"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textStyle="bold" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Whitelisted words"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="?attr/colorOnSurfaceVariant"
-                                android:letterSpacing="0.04"
-                                android:textStyle="bold" />
-
-                            <Space
-                                android:layout_width="0dp"
-                                android:layout_height="match_parent"
-                                android:layout_weight="1" />
-
-                            <TextView
-                                android:id="@+id/tv_whitelist_keyword_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:paddingHorizontal="10dp"
-                                android:paddingVertical="3dp"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="?attr/colorOnSecondaryContainer"
-                                android:background="@drawable/bg_rounded_time_selector"
-                                android:backgroundTint="?attr/colorSecondaryContainer" />
-                        </LinearLayout>
-
-                        <!-- Chip Cloud -->
-                        <com.google.android.material.chip.ChipGroup
-                            android:id="@+id/cg_whitelist_keywords"
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:id="@+id/tv_whitelist_keyword_count"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
-                            app:chipSpacingVertical="8dp"
-                            app:chipSpacingHorizontal="8dp" />
-
-                        <!-- Add word input (pill) -->
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/til_add_whitelist_word"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                            app:boxCornerRadiusTopStart="999dp"
-                            app:boxCornerRadiusTopEnd="999dp"
-                            app:boxCornerRadiusBottomStart="999dp"
-                            app:boxCornerRadiusBottomEnd="999dp"
-                            app:boxStrokeWidth="1.5dp"
-                            app:boxStrokeWidthFocused="2dp"
-                            app:boxStrokeColor="?attr/colorOutline"
-                            app:endIconDrawable="@drawable/baseline_add_24"
-                            app:endIconMode="custom"
-                            app:endIconTint="?attr/colorPrimary">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/et_whitelist_keyword"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Add a whitelisted word\u2026"
-                                android:inputType="text"
-                                android:maxLines="1"
-                                android:maxLength="40"
-                                android:paddingEnd="8dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
+                            android:background="@drawable/bg_rounded_time_selector"
+                            android:backgroundTint="?attr/colorSecondaryContainer"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="3dp"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                            android:textColor="?attr/colorOnSecondaryContainer" />
                     </LinearLayout>
 
-                    <!-- Divider -->
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/cg_whitelist_keywords"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:chipSpacingHorizontal="8dp"
+                        app:chipSpacingVertical="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_add_whitelist_word"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:boxCornerRadiusBottomEnd="999dp"
+                        app:boxCornerRadiusBottomStart="999dp"
+                        app:boxCornerRadiusTopEnd="999dp"
+                        app:boxCornerRadiusTopStart="999dp"
+                        app:boxStrokeColor="?attr/colorOutline"
+                        app:boxStrokeWidth="1.5dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        app:endIconDrawable="@drawable/baseline_add_24"
+                        app:endIconMode="custom"
+                        app:endIconTint="?attr/colorPrimary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_whitelist_keyword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/add_whitelisted_word_hint"
+                            android:inputType="text"
+                            android:maxLength="40"
+                            android:maxLines="1"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="8dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
                     <com.google.android.material.divider.MaterialDivider
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="20dp" />
+                        android:layout_marginVertical="12dp" />
 
                     <!-- Grace Period -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="20dp">
+                        android:layout_marginBottom="12dp"
+                        android:baselineAligned="false"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
                         <LinearLayout
-                            android:layout_width="match_parent"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="12dp">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/tv_grace_period_title"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Grace Period"
-                                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                                    android:textStyle="bold"
-                                    android:textColor="?attr/colorOnSurface" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Delay before app minimizes"
-                                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                                    android:textColor="?attr/colorOnSurfaceVariant" />
-                            </LinearLayout>
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
                             <TextView
-                                android:id="@+id/tv_grace_value"
+                                android:id="@+id/tv_grace_period_title"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:paddingHorizontal="16dp"
-                                android:paddingVertical="6dp"
-                                android:text="2s"
+                                android:text="@string/grace_period_title"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorOnPrimaryContainer"
-                                android:background="@drawable/bg_rounded_999"
-                                android:backgroundTint="?attr/colorPrimaryContainer" />
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/grace_period_subtitle"
+                                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
                         </LinearLayout>
 
-                        <com.google.android.material.slider.Slider
-                            android:id="@+id/slider_grace_period"
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:id="@+id/tv_grace_value"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:valueFrom="0.0"
-                            android:valueTo="5.0"
-                            android:value="2.0"
-                            android:stepSize="1.0"
-                            app:trackHeight="4dp"
-                            app:thumbRadius="10dp"
-                            app:tickVisible="true" />
+                            android:background="@drawable/bg_rounded_999"
+                            android:backgroundTint="?attr/colorPrimaryContainer"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="6dp"
+                            android:text="@string/grace_period_default"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                            android:textColor="?attr/colorOnPrimaryContainer"
+                            android:textStyle="bold" />
                     </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_grace_period"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:stepSize="1.0"
+                        android:value="2.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="5.0"
+                        app:thumbRadius="10dp"
+                        app:tickVisible="true"
+                        app:trackHeight="4dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ═══ SECTION: AI GATEKEEPER ═══ -->
-            <LinearLayout
+            <!-- SECTION: AI GATEKEEPER -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:drawablePadding="10dp"
                 android:gravity="center_vertical"
+                android:letterSpacing="0.05"
                 android:paddingHorizontal="4dp"
                 android:paddingTop="16dp"
-                android:paddingBottom="8dp">
+                android:paddingBottom="8dp"
+                android:text="@string/section_ai_gatekeeper"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textStyle="bold"
+                app:drawableStartCompat="@drawable/ic_view_blocker_aesthetic"
+                app:drawableTint="?attr/colorSecondary" />
 
-                <LinearLayout
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_rounded_8"
-                    android:backgroundTint="?attr/colorSecondaryContainer">
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/ic_view_blocker_aesthetic"
-                        app:tint="?attr/colorOnSecondaryContainer" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="AI GATEKEEPER"
-                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:letterSpacing="0.05"
-                    android:layout_marginStart="10dp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- ═══ AI CARD ═══ -->
+            <!-- AI CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                app:cardElevation="0dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:cardCornerRadius="28dp"
-                app:strokeWidth="1dp"
+                app:cardElevation="0dp"
+                app:shapeAppearance="?attr/shapeAppearanceLargeComponent"
                 app:strokeColor="?attr/colorOutlineVariant"
-                android:clipToOutline="true"
-                app:shapeAppearance="?attr/shapeAppearanceLargeComponent">
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:animateLayoutChanges="true"
                     android:orientation="vertical"
-                    android:animateLayoutChanges="true">
+                    android:padding="20dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="20dp">
+                        android:layout_marginBottom="16dp"
+                        android:baselineAligned="false"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                        <!-- AI Header -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="16dp">
-
-                            <LinearLayout
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:gravity="center"
-                                android:background="@drawable/bg_rounded_12"
-                                android:backgroundTint="?attr/colorSecondaryContainer">
-
-                                <ImageView
-                                    android:layout_width="22dp"
-                                    android:layout_height="22dp"
-                                    android:src="@drawable/ic_intent_aesthetic"
-                                    app:tint="?attr/colorOnSecondaryContainer" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical"
-                                android:layout_marginStart="14dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Gemini Engine"
-                                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                                    android:textStyle="bold"
-                                    android:textColor="?attr/colorOnSurface" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="AI-powered rule evaluation"
-                                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                    android:textColor="?attr/colorOnSurfaceVariant"
-                                    android:layout_marginTop="1dp" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- API Status -->
-                        <LinearLayout
-                            android:id="@+id/layout_api_status"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:paddingHorizontal="14dp"
-                            android:paddingVertical="12dp"
+                        <ImageView
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
                             android:background="@drawable/bg_rounded_12"
-                            android:backgroundTint="@color/status_active_bg"
-                            android:layout_marginBottom="20dp">
+                            android:backgroundTint="?attr/colorSecondaryContainer"
+                            android:contentDescription="@null"
+                            android:padding="11dp"
+                            android:src="@drawable/ic_intent_aesthetic"
+                            app:tint="?attr/colorOnSecondaryContainer" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/gemini_engine_title"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:text="@string/gemini_engine_subtitle"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layout_api_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        android:background="@drawable/bg_rounded_12"
+                        android:backgroundTint="@color/status_active_bg"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="12dp">
+
+                        <ImageView
+                            android:id="@+id/iv_api_status_icon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/baseline_done_24"
+                            app:tint="@color/status_active" />
+
+                        <TextView
+                            android:id="@+id/tv_api_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:text="@string/api_status_default"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:letterSpacing="0.04"
+                        android:text="@string/gemini_api_key_label"
+                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_api_key"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxStrokeWidth="1.5dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        app:endIconMode="password_toggle"
+                        app:endIconTint="?attr/colorOnSurfaceVariant"
+                        app:startIconDrawable="@drawable/baseline_lock_24"
+                        app:startIconTint="?attr/colorOnSurfaceVariant">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_api_key"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:hint="@string/paste_api_key_hint"
+                            android:inputType="textPassword" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:letterSpacing="0.04"
+                        android:text="@string/model_label"
+                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/bg_rounded_12"
+                        android:backgroundTint="?attr/colorSurfaceContainerHigh"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingVertical="2dp"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="8dp">
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/bg_rounded_time_selector"
+                            android:backgroundTint="@color/status_active" />
+
+                        <Spinner
+                            android:id="@+id/spinner_gemini_models"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1" />
+
+                        <ImageButton
+                            android:id="@+id/btn_refresh_models"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/refresh_models_desc"
+                            android:src="@drawable/baseline_refresh_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_save_api_key"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginBottom="20dp"
+                        android:text="@string/save_api_key"
+                        android:textColor="?attr/colorOnSecondary"
+                        app:backgroundTint="?attr/colorSecondary"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:letterSpacing="0.04"
+                        android:text="@string/app_exemptions_label"
+                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/app_exemptions_subtitle"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_exemption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="?attr/colorOutline"
+                        app:strokeWidth="1.5dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:baselineAligned="false"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="14dp">
 
                             <ImageView
-                                android:id="@+id/iv_api_status_icon"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_rounded_10"
+                                android:backgroundTint="?attr/colorTertiaryContainer"
+                                android:contentDescription="@null"
+                                android:padding="9dp"
+                                android:src="@drawable/baseline_edit_24"
+                                app:tint="?attr/colorOnTertiaryContainer" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/convince_ai_ignore_app"
+                                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                                    android:textColor="?attr/colorOnSurface"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/state_your_reason"
+                                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
+                            </LinearLayout>
+
+                            <ImageView
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
-                                android:src="@drawable/baseline_done_24"
-                                app:tint="@color/status_active" />
-
-                            <TextView
-                                android:id="@+id/tv_api_status"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="No API Key configured"
-                                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                                android:textColor="?attr/colorOnSurfaceVariant"
-                                android:layout_marginStart="10dp" />
+                                android:contentDescription="@null"
+                                android:rotation="180"
+                                android:src="@drawable/ic_back_arrow"
+                                app:tint="?attr/colorOnSurfaceVariant" />
                         </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
-                        <!-- API Key field -->
+                    <LinearLayout
+                        android:id="@+id/card_ignored_apps_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="GEMINI API KEY"
-                            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:letterSpacing="0.04"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="8dp" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/til_api_key"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                            app:boxCornerRadiusTopStart="12dp"
-                            app:boxCornerRadiusTopEnd="12dp"
-                            app:boxCornerRadiusBottomStart="12dp"
-                            app:boxCornerRadiusBottomEnd="12dp"
-                            app:boxStrokeWidth="1.5dp"
-                            app:boxStrokeWidthFocused="2dp"
-                            app:startIconDrawable="@drawable/baseline_lock_24"
-                            app:startIconTint="?attr/colorOnSurfaceVariant"
-                            app:endIconMode="password_toggle"
-                            app:endIconTint="?attr/colorOnSurfaceVariant">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/et_api_key"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Paste your API key here"
-                                android:inputType="textPassword"
-                                android:fontFamily="monospace" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <!-- Model Selector -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="MODEL"
-                            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:letterSpacing="0.04"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="8dp" />
+                            android:layout_marginBottom="8dp"
+                            android:text="@string/active_ignored_apps"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                            android:textColor="?attr/colorPrimary"
+                            android:textStyle="bold" />
 
                         <LinearLayout
+                            android:id="@+id/layout_ignored_apps"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:background="@drawable/bg_rounded_12"
-                            android:backgroundTint="?attr/colorSurfaceContainerHigh"
-                            android:paddingStart="14dp"
-                            android:paddingEnd="8dp"
-                            android:paddingVertical="2dp"
-                            android:layout_marginBottom="16dp">
-
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:background="@drawable/bg_rounded_time_selector"
-                                android:backgroundTint="@color/status_active" />
-
-                            <Spinner
-                                android:id="@+id/spinner_gemini_models"
-                                android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="12dp" />
-
-                            <ImageButton
-                                android:id="@+id/btn_refresh_models"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:src="@drawable/baseline_refresh_24"
-                                android:contentDescription="Refresh Models"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <!-- Save API Key button -->
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_save_api_key"
-                            style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            app:cornerRadius="12dp"
-                            android:text="Save API Key"
-                            app:backgroundTint="?attr/colorSecondary"
-                            android:textColor="?attr/colorOnSecondary"
-                            android:layout_marginBottom="20dp" />
-
-                        <!-- Divider -->
-                        <com.google.android.material.divider.MaterialDivider
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp" />
-
-                        <!-- App Exemptions -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="APP EXEMPTIONS"
-                            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:letterSpacing="0.04"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Ask AI to bypass rules for a specific app"
-                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:layout_marginBottom="12dp" />
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/card_exemption"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            app:cardElevation="0dp"
-                            app:cardCornerRadius="12dp"
-                            app:strokeWidth="1.5dp"
-                            app:strokeColor="?attr/colorOutline"
-                            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:padding="14dp">
-
-                                <LinearLayout
-                                    android:layout_width="36dp"
-                                    android:layout_height="36dp"
-                                    android:gravity="center"
-                                    android:background="@drawable/bg_rounded_10"
-                                    android:backgroundTint="?attr/colorTertiaryContainer">
-
-                                    <ImageView
-                                        android:layout_width="18dp"
-                                        android:layout_height="18dp"
-                                        android:src="@drawable/baseline_edit_24"
-                                        app:tint="?attr/colorOnTertiaryContainer" />
-                                </LinearLayout>
-
-                                <LinearLayout
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:orientation="vertical"
-                                    android:layout_marginStart="12dp">
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="Convince AI to Ignore App"
-                                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                                        android:textStyle="bold"
-                                        android:textColor="?attr/colorOnSurface" />
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="State your reason \u2014 AI decides"
-                                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                        android:textColor="?attr/colorOnSurfaceVariant" />
-                                </LinearLayout>
-
-                                <ImageView
-                                    android:layout_width="16dp"
-                                    android:layout_height="16dp"
-                                    android:src="@drawable/ic_back_arrow"
-                                    android:rotation="180"
-                                    app:tint="?attr/colorOnSurfaceVariant" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <!-- Ignored apps list -->
-                        <LinearLayout
-                            android:id="@+id/card_ignored_apps_list"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:visibility="gone"
-                            android:layout_marginTop="16dp">
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="Active Ignored Apps"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                                android:textColor="?attr/colorPrimary"
-                                android:textStyle="bold"
-                                android:layout_marginBottom="8dp" />
-
-                            <LinearLayout
-                                android:id="@+id/layout_ignored_apps"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical" />
-                        </LinearLayout>
-
-                        <!-- Hidden button for AI exemption (triggered programmatically) -->
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_ask_ai_ignore"
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:visibility="gone" />
+                            android:orientation="vertical" />
                     </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_ask_ai_ignore"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ═══ SECTION: SECURITY & DATA ═══ -->
-            <LinearLayout
+            <!-- SECTION: SECURITY & DATA -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:drawablePadding="10dp"
                 android:gravity="center_vertical"
+                android:letterSpacing="0.05"
                 android:paddingHorizontal="4dp"
                 android:paddingTop="16dp"
-                android:paddingBottom="8dp">
+                android:paddingBottom="8dp"
+                android:text="@string/section_security_data"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textStyle="bold"
+                app:drawableStartCompat="@drawable/baseline_lock_24"
+                app:drawableTint="?attr/colorError" />
 
-                <LinearLayout
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_rounded_8"
-                    android:backgroundTint="?attr/colorErrorContainer">
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:src="@drawable/baseline_lock_24"
-                        app:tint="?attr/colorOnErrorContainer" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="SECURITY &amp; DATA"
-                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:letterSpacing="0.05"
-                    android:layout_marginStart="10dp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- ═══ PASSWORD CARD ═══ -->
+            <!-- PASSWORD CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                app:cardElevation="0dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:cardCornerRadius="28dp"
-                app:strokeWidth="1dp"
+                app:cardElevation="0dp"
+                app:shapeAppearance="?attr/shapeAppearanceLargeComponent"
                 app:strokeColor="?attr/colorOutlineVariant"
-                android:clipToOutline="true"
-                app:shapeAppearance="?attr/shapeAppearanceLargeComponent">
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -909,48 +784,44 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!-- Password header with toggle -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                        android:layout_marginBottom="4dp"
+                        android:baselineAligned="false"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="4dp">
+                        android:orientation="horizontal">
 
-                        <LinearLayout
+                        <ImageView
                             android:layout_width="40dp"
                             android:layout_height="40dp"
-                            android:gravity="center"
                             android:background="@drawable/bg_rounded_10"
-                            android:backgroundTint="?attr/colorErrorContainer">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/baseline_lock_24"
-                                app:tint="?attr/colorOnErrorContainer" />
-                        </LinearLayout>
+                            android:backgroundTint="?attr/colorErrorContainer"
+                            android:contentDescription="@null"
+                            android:padding="11dp"
+                            android:src="@drawable/baseline_lock_24"
+                            app:tint="?attr/colorOnErrorContainer" />
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:layout_marginStart="14dp">
+                            android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Password Protection"
+                                android:text="@string/password_protection_title"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorOnSurface" />
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/tv_password_status"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="No password set"
+                                android:text="@string/no_password_set"
                                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
                         </LinearLayout>
@@ -962,89 +833,84 @@
                             android:visibility="gone" />
                     </LinearLayout>
 
-                    <!-- Buttons -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="16dp">
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_set_password"
                             style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="0dp"
                             android:layout_height="48dp"
+                            android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            app:cornerRadius="12dp"
-                            android:text="Set Password"
-                            android:layout_marginEnd="6dp" />
+                            android:text="@string/set_password"
+                            app:cornerRadius="12dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_remove_password"
                             style="@style/Widget.Material3.Button.TextButton"
                             android:layout_width="wrap_content"
                             android:layout_height="48dp"
-                            android:text="Remove"
+                            android:text="@string/remove_action"
                             android:textColor="?attr/colorError"
                             android:visibility="gone" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ═══ ANTI-UNINSTALL ═══ -->
+            <!-- ANTI-UNINSTALL CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                app:cardElevation="0dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:cardCornerRadius="28dp"
-                app:strokeWidth="1dp"
+                app:cardElevation="0dp"
+                app:shapeAppearance="?attr/shapeAppearanceLargeComponent"
                 app:strokeColor="?attr/colorOutlineVariant"
-                android:clipToOutline="true"
-                app:shapeAppearance="?attr/shapeAppearanceLargeComponent">
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:baselineAligned="false"
                     android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:padding="20dp">
 
-                    <LinearLayout
+                    <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:gravity="center"
                         android:background="@drawable/bg_rounded_10"
-                        android:backgroundTint="?attr/colorErrorContainer">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_block_aesthetic"
-                            app:tint="?attr/colorOnErrorContainer" />
-                    </LinearLayout>
+                        android:backgroundTint="?attr/colorErrorContainer"
+                        android:contentDescription="@null"
+                        android:padding="11dp"
+                        android:src="@drawable/ic_block_aesthetic"
+                        app:tint="?attr/colorOnErrorContainer" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
                         android:layout_marginStart="14dp"
-                        android:layout_marginEnd="12dp">
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Anti-Uninstall"
+                            android:text="@string/anti_uninstall_title"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorOnSurface" />
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Prevent removal or force stop"
+                            android:text="@string/anti_uninstall_subtitle"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
@@ -1056,18 +922,17 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ═══ BACKUP & RESTORE ═══ -->
+            <!-- BACKUP & RESTORE CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                app:cardElevation="0dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:cardCornerRadius="28dp"
-                app:strokeWidth="1dp"
+                app:cardElevation="0dp"
+                app:shapeAppearance="?attr/shapeAppearanceLargeComponent"
                 app:strokeColor="?attr/colorOutlineVariant"
-                android:clipToOutline="true"
-                app:shapeAppearance="?attr/shapeAppearanceLargeComponent">
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1078,43 +943,40 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp"
+                        android:baselineAligned="false"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
+                        android:orientation="horizontal">
 
-                        <LinearLayout
+                        <ImageView
                             android:layout_width="40dp"
                             android:layout_height="40dp"
-                            android:gravity="center"
                             android:background="@drawable/bg_rounded_10"
-                            android:backgroundTint="?attr/colorTertiaryContainer">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/baseline_file_upload_24"
-                                app:tint="?attr/colorOnTertiaryContainer" />
-                        </LinearLayout>
+                            android:backgroundTint="?attr/colorTertiaryContainer"
+                            android:contentDescription="@null"
+                            android:padding="11dp"
+                            android:src="@drawable/baseline_file_upload_24"
+                            app:tint="?attr/colorOnTertiaryContainer" />
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:layout_marginStart="14dp">
+                            android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Backup &amp; Restore"
+                                android:text="@string/backup_restore_title"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorOnSurface" />
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Export or import your config"
+                                android:text="@string/backup_restore_subtitle"
                                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
                         </LinearLayout>
@@ -1130,10 +992,10 @@
                             style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="0dp"
                             android:layout_height="48dp"
-                            android:layout_weight="1"
-                            app:cornerRadius="12dp"
-                            android:text="Export"
                             android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:text="@string/export_action"
+                            app:cornerRadius="12dp"
                             app:icon="@drawable/baseline_file_upload_24" />
 
                         <com.google.android.material.button.MaterialButton
@@ -1141,26 +1003,25 @@
                             style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="0dp"
                             android:layout_height="48dp"
-                            android:layout_weight="1"
-                            app:cornerRadius="12dp"
-                            android:text="Import"
                             android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:text="@string/import_action"
+                            app:cornerRadius="12dp"
                             app:icon="@drawable/baseline_file_download_24" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Version Footer -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:paddingVertical="20dp"
-                android:text="Warden v2.0 &#183; Android Content Shield"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant"
                 android:alpha="0.5"
-                android:letterSpacing="0.02" />
+                android:gravity="center"
+                android:letterSpacing="0.02"
+                android:paddingVertical="20dp"
+                android:text="@string/version_footer"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

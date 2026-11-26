@@ -10,7 +10,7 @@ import java.util.Locale
  */
 data class KeywordMatch(
     val keyword: String,
-    val context: String
+    val context: String,
 )
 
 /**
@@ -22,12 +22,12 @@ data class KeywordMatch(
  */
 class KeywordMatcher(
     blockedKeywords: Collection<String>,
-    whitelistedKeywords: Collection<String>
+    whitelistedKeywords: Collection<String>,
 ) {
-
-    private val lowerWhitelist: List<String> = whitelistedKeywords
-        .map { it.lowercase(Locale.ROOT) }
-        .filter { it.isNotBlank() }
+    private val lowerWhitelist: List<String> =
+        whitelistedKeywords
+            .map { it.lowercase(Locale.ROOT) }
+            .filter { it.isNotBlank() }
 
     private val blockedPattern: Regex? = compilePattern(blockedKeywords)
 
@@ -58,18 +58,24 @@ class KeywordMatcher(
         return result
     }
 
-    private fun extractContext(text: String, startIndex: Int, length: Int): String {
+    private fun extractContext(
+        text: String,
+        startIndex: Int,
+        length: Int,
+    ): String {
         val beforeText = text.substring(0, startIndex)
         val afterText = text.substring(startIndex + length)
 
-        val wordsBefore = beforeText.split(WHITESPACE_REGEX)
-            .filter { it.isNotBlank() }
-            .takeLast(CONTEXT_WORD_WINDOW)
-            .joinToString(" ")
-        val wordsAfter = afterText.split(WHITESPACE_REGEX)
-            .filter { it.isNotBlank() }
-            .take(CONTEXT_WORD_WINDOW)
-            .joinToString(" ")
+        val wordsBefore =
+            beforeText.split(WHITESPACE_REGEX)
+                .filter { it.isNotBlank() }
+                .takeLast(CONTEXT_WORD_WINDOW)
+                .joinToString(" ")
+        val wordsAfter =
+            afterText.split(WHITESPACE_REGEX)
+                .filter { it.isNotBlank() }
+                .take(CONTEXT_WORD_WINDOW)
+                .joinToString(" ")
         val actualKeyword = text.substring(startIndex, startIndex + length)
 
         return listOf(wordsBefore, actualKeyword, wordsAfter)
@@ -78,13 +84,14 @@ class KeywordMatcher(
     }
 
     private fun compilePattern(keywords: Collection<String>): Regex? {
-        val escaped = keywords
-            .asSequence()
-            .filter { it.isNotBlank() }
-            .map { Regex.escape(it.lowercase(Locale.ROOT)) }
-            .distinct()
-            .sortedByDescending { it.length }
-            .toList()
+        val escaped =
+            keywords
+                .asSequence()
+                .filter { it.isNotBlank() }
+                .map { Regex.escape(it.lowercase(Locale.ROOT)) }
+                .distinct()
+                .sortedByDescending { it.length }
+                .toList()
         if (escaped.isEmpty()) return null
         val alternation = escaped.joinToString("|")
         return Regex("""(?<!\w)(?:$alternation)+(?!\w)""")

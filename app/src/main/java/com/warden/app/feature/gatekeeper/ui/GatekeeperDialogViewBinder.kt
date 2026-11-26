@@ -16,14 +16,13 @@ import com.warden.app.feature.gatekeeper.domain.GatekeeperVerdict
  */
 internal class GatekeeperDialogViewBinder(
     private val context: Context,
-    private val binding: DialogAiChatBinding
+    private val binding: DialogAiChatBinding,
 ) {
-
     /** Configures titles, hints, and field visibility for [mode]. */
     fun bindModeHeader(
         mode: GatekeeperDialogMode,
         permanentIgnoredApps: List<String>,
-        targetAppLabel: String?
+        targetAppLabel: String?,
     ) {
         when (mode) {
             GatekeeperDialogMode.TEMPORARY_IGNORE -> bindTempIgnoreSpinnerListener(permanentIgnoredApps)
@@ -49,17 +48,21 @@ internal class GatekeeperDialogViewBinder(
 
     /** Shows a placeholder spinner state while installed apps load off the main thread. */
     fun showAppsLoading() {
-        binding.spinnerApps.adapter = ArrayAdapter(
-            context,
-            android.R.layout.simple_spinner_item,
-            listOf(context.getString(R.string.loading_installed_apps))
-        )
+        binding.spinnerApps.adapter =
+            ArrayAdapter(
+                context,
+                android.R.layout.simple_spinner_item,
+                listOf(context.getString(R.string.loading_installed_apps)),
+            )
         binding.spinnerApps.isEnabled = false
         binding.btnSubmit.isEnabled = false
     }
 
     /** Populates the app spinner and locks selection when [targetPackage] is specified. */
-    fun bindLoadedApps(apps: List<LaunchableApp>, targetPackage: String?) {
+    fun bindLoadedApps(
+        apps: List<LaunchableApp>,
+        targetPackage: String?,
+    ) {
         val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, apps)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerApps.adapter = adapter
@@ -85,7 +88,7 @@ internal class GatekeeperDialogViewBinder(
         dialog: AlertDialog,
         verdict: GatekeeperVerdict,
         onApprovedRendered: () -> Unit,
-        onRejectedRendered: () -> Unit
+        onRejectedRendered: () -> Unit,
     ) {
         binding.layoutLoading.visibility = View.GONE
         binding.cardAiVerdict.visibility = View.VISIBLE
@@ -108,21 +111,30 @@ internal class GatekeeperDialogViewBinder(
     private fun bindTempIgnoreSpinnerListener(permanentIgnoredApps: List<String>) {
         binding.tvDialogTitle.setText(R.string.ai_ignore_title)
         binding.tvDialogSubtitle.setText(R.string.ai_ignore_subtitle)
-        binding.spinnerApps.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selected = binding.spinnerApps.selectedItem as? LaunchableApp
-                if (selected == null) {
-                    binding.layoutAttachment.visibility = View.GONE
-                    return
+        binding.spinnerApps.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    val selected = binding.spinnerApps.selectedItem as? LaunchableApp
+                    if (selected == null) {
+                        binding.layoutAttachment.visibility = View.GONE
+                        return
+                    }
+                    applySelectionCopy(selected.label, permanentIgnoredApps.contains(selected.packageName))
                 }
-                applySelectionCopy(selected.label, permanentIgnoredApps.contains(selected.packageName))
-            }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-        }
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
     }
 
-    private fun applySelectionCopy(appLabel: String, isAlreadyIgnored: Boolean) {
+    private fun applySelectionCopy(
+        appLabel: String,
+        isAlreadyIgnored: Boolean,
+    ) {
         if (isAlreadyIgnored) {
             binding.tvDialogTitle.setText(R.string.ai_remove_ignore_title)
             binding.tvDialogSubtitle.text = context.getString(R.string.ai_remove_ignore_subtitle, appLabel)

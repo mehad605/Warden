@@ -22,9 +22,8 @@ internal class SecurityAndBackupSectionBinder(
     private val isUpdatingUi: () -> Boolean,
     private val onRecordAdminActivation: () -> Unit,
     private val onExportClicked: () -> Unit,
-    private val onImportClicked: () -> Unit
+    private val onImportClicked: () -> Unit,
 ) {
-
     /** Wires anti-uninstall switch, password buttons, and backup export/import buttons. */
     fun bindListeners() {
         binding.switchAntiUninstall.setOnCheckedChangeListener { _, isChecked ->
@@ -32,7 +31,7 @@ internal class SecurityAndBackupSectionBinder(
             antiUninstallController.onToggleRequested(
                 desiredChecked = isChecked,
                 hasPassword = hasPassword(),
-                onRecordActivationRequest = onRecordAdminActivation
+                onRecordActivationRequest = onRecordAdminActivation,
             )
         }
         binding.btnSetPassword.setOnClickListener {

@@ -33,16 +33,23 @@ class IgnoredAppsListBinder(
     private val listContainer: LinearLayout,
     private val appsProvider: InstalledAppsProvider,
     private val clock: Clock,
-    private val onRequestExtend: (packageName: String) -> Unit,
-    private val onDecreaseDuration: (packageName: String, newMinutes: Int) -> Unit,
-    private val onPruneExpired: () -> Unit
+    private val callbacks: Callbacks,
 ) {
+    /** User-interaction callbacks emitted by the ignored-apps list. */
+    data class Callbacks(
+        val onRequestExtend: (packageName: String) -> Unit,
+        val onDecreaseDuration: (packageName: String, newMinutes: Int) -> Unit,
+        val onPruneExpired: () -> Unit,
+    )
 
     private var countdownJob: Job? = null
     private var latestTempApps: Map<String, Long> = emptyMap()
 
     /** Renders [permanentApps] and unexpired [temporaryApps] and toggles the countdown ticker. */
-    fun render(permanentApps: List<String>, temporaryApps: Map<String, Long>) {
+    fun render(
+        permanentApps: List<String>,
+        temporaryApps: Map<String, Long>,
+    ) {
         latestTempApps = temporaryApps
         val nowMs = clock.currentTimeMillis()
         val rows = IgnoredAppsFormatter.buildActiveRows(permanentApps, temporaryApps, nowMs)
@@ -81,23 +88,27 @@ class IgnoredAppsListBinder(
 
     private fun startCountdownIfNeeded() {
         if (countdownJob?.isActive == true) return
-        countdownJob = scope.launch {
-            while (isActive) {
-                val nowMs = clock.currentTimeMillis()
-                if (IgnoredAppsFormatter.pruneExpired(latestTempApps, nowMs) != null) {
-                    onPruneExpired()
+        countdownJob =
+            scope.launch {
+                while (isActive) {
+                    val nowMs = clock.currentTimeMillis()
+                    if (IgnoredAppsFormatter.pruneExpired(latestTempApps, nowMs) != null) {
+                        callbacks.onPruneExpired()
+                    }
+                    refreshCountdownTexts(nowMs)
+                    if (latestTempApps.values.none { it > nowMs }) {
+                        break
+                    }
+                    delay(TICK_INTERVAL_MS)
                 }
-                refreshCountdownTexts(nowMs)
-                if (latestTempApps.values.none { it > nowMs }) {
-                    break
-                }
-                delay(TICK_INTERVAL_MS)
+                countdownJob = null
             }
-            countdownJob = null
-        }
     }
 
-    private fun buildRowView(row: IgnoredAppRow, nowMs: Long): View {
+    private fun buildRowView(
+        row: IgnoredAppRow,
+        nowMs: Long,
+    ): View {
         val itemBinding = ItemIgnoredAppBinding.inflate(layoutInflater, listContainer, false)
         itemBinding.root.tag = row.packageName
         itemBinding.tvAppName.text = appsProvider.cachedLabel(row.packageName) ?: row.packageName
@@ -118,7 +129,7 @@ class IgnoredAppsListBinder(
     private fun bindDurationControls(
         itemBinding: ItemIgnoredAppBinding,
         row: IgnoredAppRow,
-        nowMs: Long
+        nowMs: Long,
     ) {
         val expiryMs = row.expiryMs
         if (expiryMs != null) {
@@ -128,7 +139,7 @@ class IgnoredAppsListBinder(
                 showDecreaseTimeDialog(row.packageName, label, expiryMs)
             }
             itemBinding.btnExtendTime.visibility = View.VISIBLE
-            itemBinding.btnExtendTime.setOnClickListener { onRequestExtend(row.packageName) }
+            itemBinding.btnExtendTime.setOnClickListener { callbacks.onRequestExtend(row.packageName) }
         } else {
             itemBinding.tvRemainingTime.setText(R.string.permanent_label)
             itemBinding.tvRemainingTime.isClickable = false
@@ -140,52 +151,69 @@ class IgnoredAppsListBinder(
     private fun refreshCountdownTexts(nowMs: Long) {
         for (i in 0 until listContainer.childCount) {
             val child = listContainer.getChildAt(i)
-            val pkg = child.tag as? String ?: continue
-            val tvRemaining = child.findViewById<TextView>(R.id.tv_remaining_time) ?: continue
-            val expiry = latestTempApps[pkg]
-            if (expiry != null) {
-                tvRemaining.text = IgnoredAppsFormatter.formatRemaining(expiry, nowMs)
-            } else {
-                tvRemaining.setText(R.string.permanent_label)
+            val pkg = child.tag as? String
+            val tvRemaining = child.findViewById<TextView>(R.id.tv_remaining_time)
+            if (pkg != null && tvRemaining != null) {
+                val expiry = latestTempApps[pkg]
+                if (expiry != null) {
+                    tvRemaining.text = IgnoredAppsFormatter.formatRemaining(expiry, nowMs)
+                } else {
+                    tvRemaining.setText(R.string.permanent_label)
+                }
             }
         }
     }
 
-    private fun showDecreaseTimeDialog(packageName: String, appLabel: String, expiryMs: Long) {
-        val bounds = IgnoredAppsFormatter.remainingMinutesForSlider(expiryMs, clock.currentTimeMillis()) ?: return
-        val (remainingMinutes, maxMinutes) = bounds
-
-        val tvValue = TextView(context).apply {
-            text = context.getString(R.string.new_duration_minutes, remainingMinutes)
-            TextViewCompat.setTextAppearance(this, com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
-            setPadding(0, 0, 0, VALUE_BOTTOM_PADDING)
-        }
-        val slider = Slider(context).apply {
-            valueFrom = 0.0f
-            valueTo = maxMinutes.toFloat()
-            value = remainingMinutes.toFloat()
-            stepSize = 1.0f
-            addOnChangeListener { _, value, _ ->
-                tvValue.text = context.getString(R.string.new_duration_minutes, value.toInt())
-            }
-        }
-        val container = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(DIALOG_PADDING_H, DIALOG_PADDING_V, DIALOG_PADDING_H, DIALOG_PADDING_V)
-            addView(tvValue)
-            addView(slider)
-        }
+    private fun showDecreaseTimeDialog(
+        packageName: String,
+        appLabel: String,
+        expiryMs: Long,
+    ) {
+        val (remainingMinutes, maxMinutes) =
+            IgnoredAppsFormatter.remainingMinutesForSlider(expiryMs, clock.currentTimeMillis()) ?: return
+        val (container, slider) = buildDecreaseSliderView(remainingMinutes, maxMinutes)
 
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.decrease_ignore_title)
             .setMessage(context.getString(R.string.decrease_ignore_message, appLabel))
             .setView(container)
             .setPositiveButton(R.string.apply_action) { _, _ ->
-                onDecreaseDuration(packageName, slider.value.toInt())
+                callbacks.onDecreaseDuration(packageName, slider.value.toInt())
                 Toast.makeText(context, R.string.duration_updated, Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun buildDecreaseSliderView(
+        remainingMinutes: Int,
+        maxMinutes: Int,
+    ): Pair<LinearLayout, Slider> {
+        val tvValue =
+            TextView(context).apply {
+                text = context.resources.getQuantityString(R.plurals.new_duration_minutes, remainingMinutes, remainingMinutes)
+                TextViewCompat.setTextAppearance(this, com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                setPadding(0, 0, 0, VALUE_BOTTOM_PADDING)
+            }
+        val slider =
+            Slider(context).apply {
+                valueFrom = 0.0f
+                valueTo = maxMinutes.toFloat()
+                value = remainingMinutes.toFloat()
+                stepSize = 1.0f
+                addOnChangeListener { _, value, _ ->
+                    val mins = value.toInt()
+                    tvValue.text = context.resources.getQuantityString(R.plurals.new_duration_minutes, mins, mins)
+                }
+            }
+        val container =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(DIALOG_PADDING_H, DIALOG_PADDING_V, DIALOG_PADDING_H, DIALOG_PADDING_V)
+                addView(tvValue)
+                addView(slider)
+            }
+        return container to slider
     }
 
     companion object {

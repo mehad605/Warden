@@ -18,5 +18,6 @@ interface Clock {
  */
 class SystemClockProvider : Clock {
     override fun currentTimeMillis(): Long = System.currentTimeMillis()
+
     override fun uptimeMillis(): Long = SystemClock.uptimeMillis()
 }

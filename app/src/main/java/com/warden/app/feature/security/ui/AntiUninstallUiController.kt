@@ -17,9 +17,8 @@ class AntiUninstallUiController(
     private val passwordDialogs: PasswordDialogController,
     private val onRequestAdminActivation: (Intent) -> Unit,
     private val onSetEnabled: (Boolean) -> Unit,
-    private val onSyncSwitchVisual: (Boolean) -> Unit
+    private val onSyncSwitchVisual: (Boolean) -> Unit,
 ) {
-
     /** Synchronizes persisted anti-uninstall state with OS Device Admin active status. */
     fun syncWithSystemState(persistedEnabled: Boolean) {
         val isActive = deviceAdminController.isAdminActive()
@@ -32,7 +31,7 @@ class AntiUninstallUiController(
     fun onToggleRequested(
         desiredChecked: Boolean,
         hasPassword: Boolean,
-        onRecordActivationRequest: () -> Unit
+        onRecordActivationRequest: () -> Unit,
     ) {
         if (desiredChecked) {
             handleEnableRequest(onRecordActivationRequest)
@@ -48,9 +47,10 @@ class AntiUninstallUiController(
         }
         onSyncSwitchVisual(false)
         onRecordActivationRequest()
-        val intent = deviceAdminController.buildActivationIntent(
-            context.getString(R.string.anti_uninstall_admin_explanation)
-        )
+        val intent =
+            deviceAdminController.buildActivationIntent(
+                context.getString(R.string.anti_uninstall_admin_explanation),
+            )
         onRequestAdminActivation(intent)
     }
 
@@ -60,7 +60,7 @@ class AntiUninstallUiController(
             passwordDialogs.showVerifyDialog(
                 title = context.getString(R.string.disable_anti_uninstall_title),
                 message = context.getString(R.string.disable_anti_uninstall_password_msg),
-                onVerified = ::deactivateAdmin
+                onVerified = ::deactivateAdmin,
             )
         } else {
             MaterialAlertDialogBuilder(context)
@@ -85,7 +85,7 @@ class AntiUninstallUiController(
             Toast.makeText(
                 context,
                 context.getString(R.string.anti_uninstall_disable_error, e.message.orEmpty()),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
     }

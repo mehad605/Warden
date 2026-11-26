@@ -26,9 +26,8 @@ import java.io.IOException
 class JsonSettingsRepository(
     private val settingsFile: File,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val onError: (Exception) -> Unit = {}
+    private val onError: (Exception) -> Unit = {},
 ) : SettingsRepository {
-
     private val mutex = Mutex()
     private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private val _settings = MutableStateFlow(Settings())
@@ -54,15 +53,19 @@ class JsonSettingsRepository(
             }
         }
 
-    override suspend fun exportJson(includePassword: Boolean, includeApiKey: Boolean): String =
+    override suspend fun exportJson(
+        includePassword: Boolean,
+        includeApiKey: Boolean,
+    ): String =
         withContext(ioDispatcher) {
             mutex.withLock {
                 ensureLoadedLocked()
-                val snapshot = SettingsJsonCodec.prepareForExport(
-                    current = _settings.value,
-                    includePassword = includePassword,
-                    includeApiKey = includeApiKey
-                )
+                val snapshot =
+                    SettingsJsonCodec.prepareForExport(
+                        current = _settings.value,
+                        includePassword = includePassword,
+                        includeApiKey = includeApiKey,
+                    )
                 SettingsJsonCodec.encode(snapshot)
             }
         }
@@ -80,12 +83,13 @@ class JsonSettingsRepository(
         }
 
     /** Ensures disk state has been loaded at least once before any read/modify/write cycle. */
-    suspend fun awaitLoaded(): Settings = withContext(ioDispatcher) {
-        mutex.withLock {
-            ensureLoadedLocked()
-            _settings.value
+    suspend fun awaitLoaded(): Settings =
+        withContext(ioDispatcher) {
+            mutex.withLock {
+                ensureLoadedLocked()
+                _settings.value
+            }
         }
-    }
 
     private fun ensureLoadedLocked() {
         if (loaded) return

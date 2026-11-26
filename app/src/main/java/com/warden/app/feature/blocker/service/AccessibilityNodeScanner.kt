@@ -11,23 +11,16 @@ import com.warden.app.feature.blocker.domain.KeywordMatcher
  * in `finally` blocks on API < 33 so the accessibility node pool is never leaked.
  */
 object AccessibilityNodeScanner {
-
     /**
      * Depth-first search over [node] inspecting `text` and `contentDescription` until [matcher]
      * finds a blocked keyword. Recycles all intermediate child nodes before returning.
      */
-    fun findFirstMatch(node: AccessibilityNodeInfo?, matcher: KeywordMatcher): KeywordMatch? {
+    fun findFirstMatch(
+        node: AccessibilityNodeInfo?,
+        matcher: KeywordMatcher,
+    ): KeywordMatch? {
         node ?: return null
-
-        val nodeText = node.text?.toString()
-        if (!nodeText.isNullOrEmpty()) {
-            matcher.findMatch(nodeText)?.let { return it }
-        }
-
-        val contentDesc = node.contentDescription?.toString()
-        if (!contentDesc.isNullOrEmpty()) {
-            matcher.findMatch(contentDesc)?.let { return it }
-        }
+        matchNodeText(node, matcher)?.let { return it }
 
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
@@ -40,11 +33,26 @@ object AccessibilityNodeScanner {
         return null
     }
 
+    private fun matchNodeText(
+        node: AccessibilityNodeInfo,
+        matcher: KeywordMatcher,
+    ): KeywordMatch? {
+        val nodeText = node.text?.toString()
+        if (!nodeText.isNullOrEmpty()) {
+            matcher.findMatch(nodeText)?.let { return it }
+        }
+        val contentDesc = node.contentDescription?.toString()
+        return if (!contentDesc.isNullOrEmpty()) matcher.findMatch(contentDesc) else null
+    }
+
     /**
      * Collects all non-empty `text` and `contentDescription` values from [node] into [targetList],
      * recycling every child node in `finally`.
      */
-    fun collectScreenTexts(node: AccessibilityNodeInfo?, targetList: MutableList<String>) {
+    fun collectScreenTexts(
+        node: AccessibilityNodeInfo?,
+        targetList: MutableList<String>,
+    ) {
         node ?: return
         node.text?.toString()?.takeIf { it.isNotEmpty() }?.let { targetList.add(it) }
         node.contentDescription?.toString()?.takeIf { it.isNotEmpty() }?.let { targetList.add(it) }

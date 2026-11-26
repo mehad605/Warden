@@ -11,7 +11,6 @@ import com.warden.app.receivers.WardenDeviceAdminReceiver
  * for [WardenDeviceAdminReceiver].
  */
 class DeviceAdminController(private val appContext: Context) {
-
     private val policyManager: DevicePolicyManager by lazy {
         appContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     }
@@ -21,11 +20,12 @@ class DeviceAdminController(private val appContext: Context) {
     }
 
     /** Returns `true` if Warden is currently an active Device Administrator. */
-    fun isAdminActive(): Boolean = try {
-        policyManager.isAdminActive(adminComponent)
-    } catch (_: SecurityException) {
-        false
-    }
+    fun isAdminActive(): Boolean =
+        try {
+            policyManager.isAdminActive(adminComponent)
+        } catch (_: SecurityException) {
+            false
+        }
 
     /** Builds the system consent [Intent] requesting Device Administrator privileges. */
     fun buildActivationIntent(explanation: String): Intent =

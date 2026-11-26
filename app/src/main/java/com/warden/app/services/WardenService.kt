@@ -5,7 +5,8 @@ import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
-import com.warden.app.Warden
+import com.warden.app.core.di.AppContainerProvider
+import com.warden.app.core.platform.CrashLogger
 import com.warden.app.feature.blocker.service.AccessibilityNodeScanner
 import com.warden.app.feature.blocker.service.BlockerCoordinator
 import kotlinx.coroutines.CancellationException
@@ -24,23 +25,24 @@ import kotlinx.coroutines.launch
  * upgrading from `baseline-v1` retains the user's Accessibility Service permission grant.
  */
 class WardenService : AccessibilityService() {
-
     private val mainHandler = Handler(Looper.getMainLooper())
     private val serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val eventChannel = Channel<AccessibilityEvent>(Channel.CONFLATED) { dropped ->
-        AccessibilityNodeScanner.recycleEventCompat(dropped)
-    }
+    private val eventChannel =
+        Channel<AccessibilityEvent>(Channel.CONFLATED) { dropped ->
+            AccessibilityNodeScanner.recycleEventCompat(dropped)
+        }
 
     private var coordinator: BlockerCoordinator? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        val container = (application as Warden).container
-        val activeCoordinator = BlockerCoordinator(
-            rootNodeProvider = { rootInActiveWindow },
-            pressHome = { performGlobalAction(GLOBAL_ACTION_HOME) },
-            showToast = ::showMainThreadToast
-        )
+        val container = (application as AppContainerProvider).container
+        val activeCoordinator =
+            BlockerCoordinator(
+                rootNodeProvider = { rootInActiveWindow },
+                pressHome = { performGlobalAction(GLOBAL_ACTION_HOME) },
+                showToast = ::showMainThreadToast,
+            )
         coordinator = activeCoordinator
 
         // Observe settings directly from the process-shared repository (no broadcast receiver needed).
@@ -72,7 +74,7 @@ class WardenService : AccessibilityService() {
 
     private fun startEventWorker(
         activeCoordinator: BlockerCoordinator,
-        crashLogger: com.warden.app.CrashLogger
+        crashLogger: CrashLogger,
     ) {
         serviceScope.launch {
             for (event in eventChannel) {
@@ -80,7 +82,9 @@ class WardenService : AccessibilityService() {
                     activeCoordinator.onAccessibilityEvent(event)
                 } catch (c: CancellationException) {
                     throw c
-                } catch (e: Exception) {
+                } catch (e: IllegalStateException) {
+                    crashLogger.logNonFatalError(e)
+                } catch (e: SecurityException) {
                     crashLogger.logNonFatalError(e)
                 } finally {
                     AccessibilityNodeScanner.recycleEventCompat(event)

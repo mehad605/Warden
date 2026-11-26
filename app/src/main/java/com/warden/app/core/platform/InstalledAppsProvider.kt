@@ -15,7 +15,7 @@ import java.util.Locale
  */
 data class LaunchableApp(
     val label: String,
-    val packageName: String
+    val packageName: String,
 ) {
     override fun toString(): String = label
 }
@@ -25,7 +25,7 @@ data class LaunchableApp(
  */
 data class ResolvedAppInfo(
     val label: String,
-    val icon: Drawable?
+    val icon: Drawable?,
 )
 
 /**
@@ -34,22 +34,22 @@ data class ResolvedAppInfo(
  */
 class InstalledAppsProvider(
     private val appContext: Context,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
-
     private val iconCache = LruCache<String, ResolvedAppInfo>(MAX_CACHE_ENTRIES)
 
     /** Returns all launchable installed apps excluding Warden, sorted alphabetically. */
-    suspend fun loadLaunchableApps(): List<LaunchableApp> = withContext(ioDispatcher) {
-        val pm = appContext.packageManager
-        val selfPackage = appContext.packageName
-        pm.getInstalledApplications(PackageManager.GET_META_DATA)
-            .asSequence()
-            .filter { it.packageName != selfPackage && pm.getLaunchIntentForPackage(it.packageName) != null }
-            .map { LaunchableApp(label = it.loadLabel(pm).toString(), packageName = it.packageName) }
-            .sortedBy { it.label.lowercase(Locale.ROOT) }
-            .toList()
-    }
+    suspend fun loadLaunchableApps(): List<LaunchableApp> =
+        withContext(ioDispatcher) {
+            val pm = appContext.packageManager
+            val selfPackage = appContext.packageName
+            pm.getInstalledApplications(PackageManager.GET_META_DATA)
+                .asSequence()
+                .filter { it.packageName != selfPackage && pm.getLaunchIntentForPackage(it.packageName) != null }
+                .map { LaunchableApp(label = it.loadLabel(pm).toString(), packageName = it.packageName) }
+                .sortedBy { it.label.lowercase(Locale.ROOT) }
+                .toList()
+        }
 
     /** Resolves label and icon for [packageName] on [ioDispatcher], caching up to 64 entries. */
     suspend fun resolveAppInfo(packageName: String): ResolvedAppInfo {
@@ -64,16 +64,17 @@ class InstalledAppsProvider(
     /** Returns the cached label for [packageName], or `null` if not yet resolved. */
     fun cachedLabel(packageName: String): String? = iconCache.get(packageName)?.label
 
-    private fun queryPackageInfo(packageName: String): ResolvedAppInfo = try {
-        val pm = appContext.packageManager
-        val info = pm.getApplicationInfo(packageName, 0)
-        ResolvedAppInfo(label = info.loadLabel(pm).toString(), icon = info.loadIcon(pm))
-    } catch (_: PackageManager.NameNotFoundException) {
-        ResolvedAppInfo(
-            label = packageName,
-            icon = ContextCompat.getDrawable(appContext, android.R.drawable.sym_def_app_icon)
-        )
-    }
+    private fun queryPackageInfo(packageName: String): ResolvedAppInfo =
+        try {
+            val pm = appContext.packageManager
+            val info = pm.getApplicationInfo(packageName, 0)
+            ResolvedAppInfo(label = info.loadLabel(pm).toString(), icon = info.loadIcon(pm))
+        } catch (_: PackageManager.NameNotFoundException) {
+            ResolvedAppInfo(
+                label = packageName,
+                icon = ContextCompat.getDrawable(appContext, android.R.drawable.sym_def_app_icon),
+            )
+        }
 
     companion object {
         private const val MAX_CACHE_ENTRIES = 64

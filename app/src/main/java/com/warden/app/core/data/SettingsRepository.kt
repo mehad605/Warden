@@ -17,7 +17,10 @@ interface SettingsRepository {
     suspend fun update(transform: (Settings) -> Settings): Settings
 
     /** Serializes current [Settings] for user export, optionally excluding secrets. */
-    suspend fun exportJson(includePassword: Boolean = true, includeApiKey: Boolean = true): String
+    suspend fun exportJson(
+        includePassword: Boolean = true,
+        includeApiKey: Boolean = true,
+    ): String
 
     /**
      * Parses [json] and merges it into current [Settings] using merge-only semantics

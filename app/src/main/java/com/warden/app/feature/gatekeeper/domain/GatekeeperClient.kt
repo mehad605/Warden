@@ -7,7 +7,6 @@ package com.warden.app.feature.gatekeeper.domain
  * independent of Gemini REST/HTTP details and makes the AI backend trivially replaceable.
  */
 interface GatekeeperClient {
-
     /** Returns available model identifiers that support content generation for [apiKey]. */
     suspend fun fetchModels(apiKey: String): List<String>
 
@@ -16,6 +15,6 @@ interface GatekeeperClient {
         apiKey: String,
         modelName: String,
         request: GatekeeperRequest,
-        image: EncodedImage?
+        image: EncodedImage?,
     ): GatekeeperVerdict
 }

@@ -9,7 +9,6 @@ import java.security.MessageDigest
  * stored password hashes remain valid across upgrades.
  */
 object PasswordPolicy {
-
     private const val MIN_PASSWORD_LENGTH = 6
 
     /** Returns `true` when [password] is at least 6 chars with at least one letter and one digit. */
@@ -28,11 +27,14 @@ object PasswordPolicy {
      * Verifies [candidate] against [expectedHash].
      * When [expectedHash] is `null` (no password configured), verification succeeds.
      */
-    fun verify(candidate: String, expectedHash: String?): Boolean {
+    fun verify(
+        candidate: String,
+        expectedHash: String?,
+    ): Boolean {
         if (expectedHash == null) return true
         return MessageDigest.isEqual(
             hashSha256(candidate).toByteArray(Charsets.US_ASCII),
-            expectedHash.toByteArray(Charsets.US_ASCII)
+            expectedHash.toByteArray(Charsets.US_ASCII),
         )
     }
 }

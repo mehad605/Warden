@@ -29,9 +29,9 @@ import java.time.Duration
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])
 class KeywordBlockerEngineCharacterizationTest {
-
     private class FakeClock(var nowMs: Long = 1_000_000L) : Clock {
         override fun currentTimeMillis(): Long = nowMs
+
         override fun uptimeMillis(): Long = nowMs
     }
 
@@ -46,20 +46,21 @@ class KeywordBlockerEngineCharacterizationTest {
         clock = FakeClock()
         homePressCount = 0
         toasts.clear()
-        coordinator = BlockerCoordinator(
-            rootNodeProvider = { rootNodeProvider?.invoke() },
-            pressHome = { homePressCount++ },
-            showToast = { toasts.add(it) },
-            engine = BlockingDecisionEngine(),
-            graceController = GracePeriodController(Handler(Looper.getMainLooper())),
-            clock = clock
-        )
+        coordinator =
+            BlockerCoordinator(
+                rootNodeProvider = { rootNodeProvider?.invoke() },
+                pressHome = { homePressCount++ },
+                showToast = { toasts.add(it) },
+                engine = BlockingDecisionEngine(),
+                graceController = GracePeriodController(Handler(Looper.getMainLooper())),
+                clock = clock,
+            )
         configureBlocker(
             isTurnedOn = true,
             blocked = listOf("shorts", "breaking news"),
             whitelisted = listOf("basketball shorts"),
             ignoredApps = listOf("com.ignored.app"),
-            graceSeconds = 0
+            graceSeconds = 0,
         )
     }
 
@@ -72,22 +73,23 @@ class KeywordBlockerEngineCharacterizationTest {
         disabledUntil: Long = 0L,
         graceSeconds: Int = 0,
         antiUninstall: Boolean = false,
-        adminRequestedAt: Long = 0L
+        adminRequestedAt: Long = 0L,
     ) {
         coordinator.onSettingsUpdated(
             Settings(
-                keywordBlockerConfig = KeywordBlocker(
-                    isActive = isTurnedOn,
-                    blockedKeywords = blocked,
-                    whitelistedKeywords = whitelisted,
-                    ignoredApps = ignoredApps
-                ),
+                keywordBlockerConfig =
+                    KeywordBlocker(
+                        isActive = isTurnedOn,
+                        blockedKeywords = blocked,
+                        whitelistedKeywords = whitelisted,
+                        ignoredApps = ignoredApps,
+                    ),
                 temporaryIgnoredApps = tempIgnoredApps,
                 blockerDisabledUntil = disabledUntil,
                 ignoreGracePeriodSeconds = graceSeconds,
                 antiUninstallEnabled = antiUninstall,
-                deviceAdminActivationRequestedAt = adminRequestedAt
-            )
+                deviceAdminActivationRequestedAt = adminRequestedAt,
+            ),
         )
     }
 
@@ -96,7 +98,7 @@ class KeywordBlockerEngineCharacterizationTest {
         pkg: String,
         text: String? = null,
         contentDesc: String? = null,
-        children: List<AccessibilityNodeInfo> = emptyList()
+        children: List<AccessibilityNodeInfo> = emptyList(),
     ): AccessibilityNodeInfo {
         val node = AccessibilityNodeInfo.obtain()
         node.packageName = pkg
@@ -111,7 +113,7 @@ class KeywordBlockerEngineCharacterizationTest {
     private fun makeEvent(
         pkg: String,
         type: Int = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-        className: String? = null
+        className: String? = null,
     ): AccessibilityEvent {
         val event = AccessibilityEvent.obtain(type)
         event.packageName = pkg
@@ -132,7 +134,7 @@ class KeywordBlockerEngineCharacterizationTest {
         assertTrue("Expected blocked word toast, got: $toast", toast.contains("Blocked word shorts was found"))
         assertTrue(
             "Expected 7 words before/after context, got: $toast",
-            toast.contains("two three four five six seven eight SHORTS nine ten eleven twelve thirteen fourteen fifteen")
+            toast.contains("two three four five six seven eight SHORTS nine ten eleven twelve thirteen fourteen fifteen"),
         )
         assertFalse("Should not include 8th word before", toast.contains("one two"))
         assertFalse("Should not include 8th word after", toast.contains("fifteen sixteen"))
@@ -198,7 +200,7 @@ class KeywordBlockerEngineCharacterizationTest {
         configureBlocker(
             isTurnedOn = true,
             blocked = listOf("shorts"),
-            tempIgnoredApps = mapOf("com.temp.app" to clock.nowMs + 60_000L)
+            tempIgnoredApps = mapOf("com.temp.app" to clock.nowMs + 60_000L),
         )
         rootNodeProvider = { makeNode("com.temp.app", text = "shorts") }
         coordinator.onAccessibilityEvent(makeEvent("com.temp.app"))
@@ -208,7 +210,7 @@ class KeywordBlockerEngineCharacterizationTest {
         configureBlocker(
             isTurnedOn = true,
             blocked = listOf("shorts"),
-            tempIgnoredApps = mapOf("com.temp.app" to clock.nowMs - 1_000L)
+            tempIgnoredApps = mapOf("com.temp.app" to clock.nowMs - 1_000L),
         )
         rootNodeProvider = { makeNode("com.temp.app", text = "shorts") }
         coordinator.onAccessibilityEvent(makeEvent("com.temp.app"))
@@ -248,10 +250,11 @@ class KeywordBlockerEngineCharacterizationTest {
         rootNodeProvider = {
             makeNode(
                 "com.android.settings",
-                children = listOf(
-                    makeNode("com.android.settings", text = "Warden"),
-                    makeNode("com.android.settings", text = "Force stop")
-                )
+                children =
+                    listOf(
+                        makeNode("com.android.settings", text = "Warden"),
+                        makeNode("com.android.settings", text = "Force stop"),
+                    ),
             )
         }
         coordinator.onAccessibilityEvent(makeEvent("com.android.settings"))
@@ -260,9 +263,10 @@ class KeywordBlockerEngineCharacterizationTest {
         rootNodeProvider = {
             makeNode(
                 "com.android.settings",
-                children = listOf(
-                    makeNode("com.android.settings", text = "Stop Warden?")
-                )
+                children =
+                    listOf(
+                        makeNode("com.android.settings", text = "Stop Warden?"),
+                    ),
             )
         }
         coordinator.onAccessibilityEvent(makeEvent("com.android.settings"))
@@ -274,30 +278,31 @@ class KeywordBlockerEngineCharacterizationTest {
         configureBlocker(
             isTurnedOn = false,
             antiUninstall = true,
-            adminRequestedAt = clock.nowMs - 10_000L
+            adminRequestedAt = clock.nowMs - 10_000L,
         )
         rootNodeProvider = {
             makeNode(
                 "com.android.settings",
-                children = listOf(
-                    makeNode("com.android.settings", text = "Warden"),
-                    makeNode("com.android.settings", text = "Device admin app"),
-                    makeNode("com.android.settings", text = "Deactivate")
-                )
+                children =
+                    listOf(
+                        makeNode("com.android.settings", text = "Warden"),
+                        makeNode("com.android.settings", text = "Device admin app"),
+                        makeNode("com.android.settings", text = "Deactivate"),
+                    ),
             )
         }
         coordinator.onAccessibilityEvent(
-            makeEvent("com.android.settings", className = "com.android.settings.DeviceAdminAdd")
+            makeEvent("com.android.settings", className = "com.android.settings.DeviceAdminAdd"),
         )
         assertEquals("Should allow Device Admin screen during 180s activation window", 0, homePressCount)
 
         configureBlocker(
             isTurnedOn = false,
             antiUninstall = true,
-            adminRequestedAt = clock.nowMs - 200_000L
+            adminRequestedAt = clock.nowMs - 200_000L,
         )
         coordinator.onAccessibilityEvent(
-            makeEvent("com.android.settings", className = "com.android.settings.DeviceAdminAdd")
+            makeEvent("com.android.settings", className = "com.android.settings.DeviceAdminAdd"),
         )
         assertEquals("Should block Device Admin deactivation after 180s window", 1, homePressCount)
     }
@@ -308,9 +313,10 @@ class KeywordBlockerEngineCharacterizationTest {
         rootNodeProvider = {
             makeNode(
                 "com.android.chrome",
-                children = listOf(
-                    makeNode("com.android.chrome", text = "How to uninstall Warden app")
-                )
+                children =
+                    listOf(
+                        makeNode("com.android.chrome", text = "How to uninstall Warden app"),
+                    ),
             )
         }
         coordinator.onAccessibilityEvent(makeEvent("com.android.chrome"))

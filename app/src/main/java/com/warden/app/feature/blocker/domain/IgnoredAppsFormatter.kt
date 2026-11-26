@@ -7,7 +7,7 @@ import java.util.Locale
  */
 data class IgnoredAppRow(
     val packageName: String,
-    val expiryMs: Long?
+    val expiryMs: Long?,
 ) {
     /** `true` when this app has a finite expiration timestamp rather than a permanent exemption. */
     val isTemporary: Boolean get() = expiryMs != null
@@ -18,7 +18,6 @@ data class IgnoredAppRow(
  * and formatting countdown labels.
  */
 object IgnoredAppsFormatter {
-
     private const val MS_PER_SECOND = 1_000L
     private const val SECONDS_PER_MINUTE = 60L
     private const val MS_PER_MINUTE = MS_PER_SECOND * SECONDS_PER_MINUTE
@@ -27,7 +26,7 @@ object IgnoredAppsFormatter {
     fun buildActiveRows(
         permanentApps: List<String>,
         temporaryApps: Map<String, Long>,
-        nowMs: Long
+        nowMs: Long,
     ): List<IgnoredAppRow> {
         val activeTemp = temporaryApps.filterValues { it > nowMs }
         val allPackages = (permanentApps + activeTemp.keys).distinct()
@@ -35,14 +34,20 @@ object IgnoredAppsFormatter {
     }
 
     /** Returns a filtered map excluding expired entries, or `null` if nothing expired. */
-    fun pruneExpired(temporaryApps: Map<String, Long>, nowMs: Long): Map<String, Long>? {
+    fun pruneExpired(
+        temporaryApps: Map<String, Long>,
+        nowMs: Long,
+    ): Map<String, Long>? {
         val hasExpired = temporaryApps.values.any { nowMs >= it }
         if (!hasExpired) return null
         return temporaryApps.filterValues { nowMs < it }
     }
 
     /** Formats remaining time from [nowMs] until [expiryMs] as `"%dm %02ds"` or `"0m 00s"`. */
-    fun formatRemaining(expiryMs: Long, nowMs: Long): String {
+    fun formatRemaining(
+        expiryMs: Long,
+        nowMs: Long,
+    ): String {
         val remainingMs = expiryMs - nowMs
         if (remainingMs <= 0L) return "0m 00s"
         val remainingSeconds = (remainingMs / MS_PER_SECOND) % SECONDS_PER_MINUTE
@@ -51,7 +56,10 @@ object IgnoredAppsFormatter {
     }
 
     /** Computes remaining whole minutes (`>= 1` while still active) for the decrease-time slider. */
-    fun remainingMinutesForSlider(expiryMs: Long, nowMs: Long): Pair<Int, Int>? {
+    fun remainingMinutesForSlider(
+        expiryMs: Long,
+        nowMs: Long,
+    ): Pair<Int, Int>? {
         val remainingMs = expiryMs - nowMs
         if (remainingMs <= 0L) return null
         val remainingMinutes = (remainingMs / MS_PER_MINUTE).toInt()

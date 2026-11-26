@@ -21,7 +21,6 @@ import kotlinx.coroutines.withContext
  * existing home-screen shortcuts survive upgrades from `baseline-v1`.
  */
 class FragmentActivity : AppCompatActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_BlockWords)
         super.onCreate(savedInstanceState)
@@ -31,10 +30,11 @@ class FragmentActivity : AppCompatActivity() {
 
         val shouldMountFresh = savedInstanceState == null
         lifecycleScope.launch {
-            val agreed = withContext(Dispatchers.IO) {
-                getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .getBoolean(KEY_AGREED_TO_TERMS, false)
-            }
+            val agreed =
+                withContext(Dispatchers.IO) {
+                    getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                        .getBoolean(KEY_AGREED_TO_TERMS, false)
+                }
             if (isFinishing || isDestroyed) return@launch
             if (!agreed) {
                 showDisclaimerDialog(shouldMountFresh)
@@ -45,7 +45,7 @@ class FragmentActivity : AppCompatActivity() {
     }
 
     private fun applySystemBarInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.fragment_holder)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets

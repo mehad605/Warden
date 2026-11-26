@@ -11,5 +11,5 @@ data class Settings(
     val selectedGeminiModel: String = "",
     val availableGeminiModels: List<String> = emptyList(),
     val antiUninstallEnabled: Boolean = false,
-    val deviceAdminActivationRequestedAt: Long = 0L
+    val deviceAdminActivationRequestedAt: Long = 0L,
 )

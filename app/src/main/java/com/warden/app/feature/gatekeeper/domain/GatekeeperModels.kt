@@ -12,7 +12,7 @@ data class GatekeeperVerdict(
     val approved: Boolean,
     val durationMinutes: Int,
     val reasoning: String,
-    val botResponse: String
+    val botResponse: String,
 )
 
 /**
@@ -23,7 +23,7 @@ data class GatekeeperVerdict(
  */
 data class EncodedImage(
     val mimeType: String,
-    val base64Data: String
+    val base64Data: String,
 )
 
 /**
@@ -41,7 +41,7 @@ sealed class GatekeeperRequest {
         val appName: String,
         val packageName: String,
         override val userPrompt: String,
-        override val rejectionCount: Int
+        override val rejectionCount: Int,
     ) : GatekeeperRequest()
 
     /** Request to remove [packageName] from the ignore list and restore keyword blocking. */
@@ -49,13 +49,13 @@ sealed class GatekeeperRequest {
         val appName: String,
         val packageName: String,
         override val userPrompt: String,
-        override val rejectionCount: Int
+        override val rejectionCount: Int,
     ) : GatekeeperRequest()
 
     /** Request to temporarily pause the entire keyword blocker. */
     data class PauseBlocker(
         override val userPrompt: String,
-        override val rejectionCount: Int
+        override val rejectionCount: Int,
     ) : GatekeeperRequest()
 
     /** Request to extend an active temporary exemption for [packageName]. */
@@ -63,6 +63,6 @@ sealed class GatekeeperRequest {
         val appName: String,
         val packageName: String,
         override val userPrompt: String,
-        override val rejectionCount: Int
+        override val rejectionCount: Int,
     ) : GatekeeperRequest()
 }

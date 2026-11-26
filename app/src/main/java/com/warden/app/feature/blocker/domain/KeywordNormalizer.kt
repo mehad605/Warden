@@ -12,18 +12,18 @@ import java.util.Locale
 data class NormalizedKeyword(
     val normalized: String,
     val wasUrl: Boolean,
-    val isRisky: Boolean
+    val isRisky: Boolean,
 )
 
 /**
  * Pure Kotlin keyword normalization and risky-word checks (no Android framework dependency).
  */
 object KeywordNormalizer {
-
-    private val URL_REGEX = Regex(
-        pattern = "^(?:https?://|www\\.)[^\\s]+$|^[a-z0-9-]+\\.[a-z]{2,}(?:/[^\\s]*)?$",
-        option = RegexOption.IGNORE_CASE
-    )
+    private val URL_REGEX =
+        Regex(
+            pattern = "^(?:https?://|www\\.)[^\\s]+$|^[a-z0-9-]+\\.[a-z]{2,}(?:/[^\\s]*)?$",
+            option = RegexOption.IGNORE_CASE,
+        )
     private const val RISKY_WORD_SEX = "sex"
 
     /** Normalizes [rawInput], returning `null` if [rawInput] is blank. */
@@ -32,20 +32,21 @@ object KeywordNormalizer {
         if (trimmed.isEmpty()) return null
 
         val wasUrl = URL_REGEX.matches(trimmed)
-        val stripped = if (wasUrl) {
-            trimmed
-                .removePrefix("https://")
-                .removePrefix("http://")
-                .removePrefix("www.")
-        } else {
-            trimmed
-        }
+        val stripped =
+            if (wasUrl) {
+                trimmed
+                    .removePrefix("https://")
+                    .removePrefix("http://")
+                    .removePrefix("www.")
+            } else {
+                trimmed
+            }
         val lower = stripped.trim().lowercase(Locale.ROOT)
         if (lower.isEmpty()) return null
         return NormalizedKeyword(
             normalized = lower,
             wasUrl = wasUrl,
-            isRisky = lower == RISKY_WORD_SEX
+            isRisky = lower == RISKY_WORD_SEX,
         )
     }
 }

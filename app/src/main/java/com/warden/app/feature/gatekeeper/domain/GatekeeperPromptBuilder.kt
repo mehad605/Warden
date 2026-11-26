@@ -4,24 +4,30 @@ package com.warden.app.feature.gatekeeper.domain
  * Constructs the system instruction prompts for each [GatekeeperRequest] variant.
  */
 object GatekeeperPromptBuilder {
-
     /** Returns the adversarial or lenient system prompt corresponding to [request]. */
-    fun buildSystemPrompt(request: GatekeeperRequest): String = when (request) {
-        is GatekeeperRequest.RemoveFromIgnore -> removeFromIgnorePrompt(request.appName, request.packageName)
-        is GatekeeperRequest.AppExemption -> appExemptionPrompt(
-            appName = request.appName,
-            packageName = request.packageName,
-            noCount = request.rejectionCount
-        )
-        is GatekeeperRequest.PauseBlocker -> pauseBlockerPrompt(request.rejectionCount)
-        is GatekeeperRequest.ExtendExemption -> extendExemptionPrompt(
-            appName = request.appName,
-            packageName = request.packageName,
-            noCount = request.rejectionCount
-        )
-    }
+    fun buildSystemPrompt(request: GatekeeperRequest): String =
+        when (request) {
+            is GatekeeperRequest.RemoveFromIgnore -> removeFromIgnorePrompt(request.appName, request.packageName)
+            is GatekeeperRequest.AppExemption ->
+                appExemptionPrompt(
+                    appName = request.appName,
+                    packageName = request.packageName,
+                    noCount = request.rejectionCount,
+                )
+            is GatekeeperRequest.PauseBlocker -> pauseBlockerPrompt(request.rejectionCount)
+            is GatekeeperRequest.ExtendExemption ->
+                extendExemptionPrompt(
+                    appName = request.appName,
+                    packageName = request.packageName,
+                    noCount = request.rejectionCount,
+                )
+        }
 
-    private fun removeFromIgnorePrompt(appName: String, packageName: String): String = """
+    private fun removeFromIgnorePrompt(
+        appName: String,
+        packageName: String,
+    ): String =
+        """
         You are the Gatekeeper of Block Words. The user wants to REMOVE '$appName' (package: '$packageName') from their whitelists/ignore lists so that keyword blocking starts active on it again.
 
         Strict Guidelines:
@@ -35,9 +41,14 @@ object GatekeeperPromptBuilder {
           "reasoning": "user wants to block app again, approved eagerly",
           "botResponse": "Excellence decision. I have removed $appName from the ignore list. Keywords will be blocked on it again."
         }
-    """.trimIndent()
+        """.trimIndent()
 
-    private fun appExemptionPrompt(appName: String, packageName: String, noCount: Int): String = """
+    private fun appExemptionPrompt(
+        appName: String,
+        packageName: String,
+        noCount: Int,
+    ): String =
+        """
         You are the Gatekeeper of Block Words. The user wants to temporarily add '$appName' (package: '$packageName') to the ignore list (bypassing keyword blocking).
         User's historical rejection count: $noCount.
 
@@ -52,9 +63,10 @@ object GatekeeperPromptBuilder {
           "reasoning": "your internal logic for this decision",
           "botResponse": "message to display to the user explaining your decision"
         }
-    """.trimIndent()
+        """.trimIndent()
 
-    private fun pauseBlockerPrompt(noCount: Int): String = """
+    private fun pauseBlockerPrompt(noCount: Int): String =
+        """
         You are the Gatekeeper of Block Words. The user is requesting to temporarily disable the entire keyword blocker.
         User's historical rejection count: $noCount.
 
@@ -73,9 +85,14 @@ object GatekeeperPromptBuilder {
           "reasoning": "your internal logic for this decision",
           "botResponse": "message explaining your decision. If rejected due to missing proof, explicitly tell the user that they must include an email, a link, or an image."
         }
-    """.trimIndent()
+        """.trimIndent()
 
-    private fun extendExemptionPrompt(appName: String, packageName: String, noCount: Int): String = """
+    private fun extendExemptionPrompt(
+        appName: String,
+        packageName: String,
+        noCount: Int,
+    ): String =
+        """
         You are the Gatekeeper of Block Words. The user is requesting to EXTEND their current temporary ignore/whitelist duration for the app '$appName' (package: '$packageName').
         User's historical rejection count: $noCount.
 
@@ -90,5 +107,5 @@ object GatekeeperPromptBuilder {
           "reasoning": "your internal logic for this decision",
           "botResponse": "message explaining your decision"
         }
-    """.trimIndent()
+        """.trimIndent()
 }

@@ -5,9 +5,9 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.provider.Settings as AndroidSettings
 import androidx.test.core.app.ApplicationProvider
 import com.warden.app.core.platform.AndroidAccessibilityPermissionChecker
+import com.warden.app.core.platform.CrashLogger
 import com.warden.app.feature.blocker.domain.IgnoredAppsFormatter
 import com.warden.app.feature.blocker.domain.KeywordNormalizer
 import com.warden.app.feature.security.domain.PasswordPolicy
@@ -27,6 +27,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
 import java.io.File
+import android.provider.Settings as AndroidSettings
 
 /**
  * Characterization tests locking in C1 (disclaimer prefs), C2 (accessibility checker),
@@ -37,7 +38,6 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])
 class AppCoreFlowsCharacterizationTest {
-
     private lateinit var app: Application
 
     @Before
@@ -54,7 +54,7 @@ class AppCoreFlowsCharacterizationTest {
         AndroidSettings.Secure.putString(
             app.contentResolver,
             AndroidSettings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
-            ""
+            "",
         )
         assertFalse(checker.isServiceEnabled(WardenService::class.java))
 
@@ -62,7 +62,7 @@ class AppCoreFlowsCharacterizationTest {
         AndroidSettings.Secure.putString(
             app.contentResolver,
             AndroidSettings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
-            "com.other.app/.OtherService:$component"
+            "com.other.app/.OtherService:$component",
         )
         assertTrue(checker.isServiceEnabled(WardenService::class.java))
     }
@@ -124,10 +124,11 @@ class AppCoreFlowsCharacterizationTest {
     @Test
     fun c14_ignoredAppsFormatterBuildsRowsPrunesExpiredAndFormatsCountdown() {
         val now = 100_000L
-        val temp = mapOf(
-            "com.active.app" to now + 125_000L,
-            "com.expired.app" to now - 5_000L
-        )
+        val temp =
+            mapOf(
+                "com.active.app" to now + 125_000L,
+                "com.expired.app" to now - 5_000L,
+            )
         val rows = IgnoredAppsFormatter.buildActiveRows(listOf("com.perm.app"), temp, now)
         assertEquals(2, rows.size)
         assertEquals("com.perm.app", rows[0].packageName)

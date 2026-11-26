@@ -22,9 +22,8 @@ class KeywordsSectionBinder(
     private val binding: FragmentKeywordBlockerBinding,
     private val hasPassword: () -> Boolean,
     private val passwordDialogs: PasswordDialogController,
-    private val dispatch: (BlockerAction) -> Unit
+    private val dispatch: (BlockerAction) -> Unit,
 ) {
-
     /** Wires add-icon click listeners and Enter key submission for both keyword inputs. */
     fun bindListeners() {
         binding.tilAddWord.setEndIconOnClickListener { submitBlockedKeyword() }
@@ -38,7 +37,10 @@ class KeywordsSectionBinder(
     }
 
     /** Renders both blocked and whitelisted chip clouds and their pluralized counts. */
-    fun render(blockedKeywords: List<String>, whitelistedKeywords: List<String>) {
+    fun render(
+        blockedKeywords: List<String>,
+        whitelistedKeywords: List<String>,
+    ) {
         renderChips(binding.cgKeywords, binding.tvKeywordCount, blockedKeywords, isWhitelist = false)
         renderChips(binding.cgWhitelistKeywords, binding.tvWhitelistKeywordCount, whitelistedKeywords, isWhitelist = true)
     }
@@ -47,16 +49,17 @@ class KeywordsSectionBinder(
         chipGroup: ChipGroup,
         countView: TextView,
         keywords: List<String>,
-        isWhitelist: Boolean
+        isWhitelist: Boolean,
     ) {
         chipGroup.removeAllViews()
         countView.text = context.resources.getQuantityString(R.plurals.word_count, keywords.size, keywords.size)
         keywords.forEach { keyword ->
-            val chip = Chip(context).apply {
-                text = keyword
-                isCloseIconVisible = true
-                setOnCloseIconClickListener { requestRemove(keyword, isWhitelist) }
-            }
+            val chip =
+                Chip(context).apply {
+                    text = keyword
+                    isCloseIconVisible = true
+                    setOnCloseIconClickListener { requestRemove(keyword, isWhitelist) }
+                }
             chipGroup.addView(chip)
         }
     }
@@ -80,7 +83,10 @@ class KeywordsSectionBinder(
         commitKeyword(normalized, isWhitelist = true)
     }
 
-    private fun commitKeyword(normalized: NormalizedKeyword, isWhitelist: Boolean) {
+    private fun commitKeyword(
+        normalized: NormalizedKeyword,
+        isWhitelist: Boolean,
+    ) {
         if (normalized.wasUrl) {
             Toast.makeText(context, R.string.warning_link_blocker_may_not_work, Toast.LENGTH_LONG).show()
         }
@@ -93,20 +99,23 @@ class KeywordsSectionBinder(
         }
     }
 
-    private fun requestRemove(keyword: String, isWhitelist: Boolean) {
+    private fun requestRemove(
+        keyword: String,
+        isWhitelist: Boolean,
+    ) {
         val remove = {
             dispatch(
                 if (isWhitelist) {
                     BlockerAction.RemoveWhitelistedKeyword(keyword)
                 } else {
                     BlockerAction.RemoveBlockedKeyword(keyword)
-                }
+                },
             )
         }
         if (hasPassword()) {
             passwordDialogs.showVerifyDialog(
                 title = context.getString(R.string.password_prompt_title),
-                message = context.getString(R.string.password_required_to_delete)
+                message = context.getString(R.string.password_required_to_delete),
             ) {
                 remove()
                 val toastRes = if (isWhitelist) R.string.whitelist_keyword_removed else R.string.keyword_removed
@@ -117,7 +126,11 @@ class KeywordsSectionBinder(
         }
     }
 
-    private fun handleEnterKey(keyCode: Int, event: KeyEvent?, onEnter: () -> Unit): Boolean {
+    private fun handleEnterKey(
+        keyCode: Int,
+        event: KeyEvent?,
+        onEnter: () -> Unit,
+    ): Boolean {
         if (keyCode == KeyEvent.KEYCODE_ENTER && (event == null || event.action == KeyEvent.ACTION_UP)) {
             onEnter()
             return true

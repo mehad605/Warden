@@ -7,11 +7,10 @@ import com.warden.app.data.models.Settings
  * evaluates self-protection, app exemptions, and keyword matches.
  */
 class BlockingDecisionEngine(initialSettings: Settings = Settings()) {
-
     private data class CompiledState(
         val settings: Settings,
         val matcher: KeywordMatcher,
-        val ignoredApps: Set<String>
+        val ignoredApps: Set<String>,
     )
 
     @Volatile
@@ -29,15 +28,14 @@ class BlockingDecisionEngine(initialSettings: Settings = Settings()) {
     val matcher: KeywordMatcher get() = state.matcher
 
     /** Evaluates whether [packageName] should be inspected for self-protection. */
-    fun shouldInspectSelfProtection(packageName: String): Boolean =
-        SelfProtectionEvaluator.shouldInspectPackage(packageName)
+    fun shouldInspectSelfProtection(packageName: String): Boolean = SelfProtectionEvaluator.shouldInspectPackage(packageName)
 
     /** Returns a self-protection warning message if the screen must be closed, or `null`. */
     fun evaluateSelfProtection(
         packageName: String,
         eventClassName: String,
         screenTexts: List<String>,
-        nowMs: Long
+        nowMs: Long,
     ): String? {
         val current = state.settings
         return SelfProtectionEvaluator.evaluate(
@@ -46,34 +44,42 @@ class BlockingDecisionEngine(initialSettings: Settings = Settings()) {
             screenTexts = screenTexts,
             antiUninstallEnabled = current.antiUninstallEnabled,
             deviceAdminActivationRequestedAt = current.deviceAdminActivationRequestedAt,
-            nowMs = nowMs
+            nowMs = nowMs,
         )
     }
 
     /** Returns `true` if keyword scanning is active and [packageName] is not exempt at [nowMs]. */
-    fun shouldScanPackage(packageName: String, nowMs: Long): Boolean {
+    fun shouldScanPackage(
+        packageName: String,
+        nowMs: Long,
+    ): Boolean {
         val current = state
-        if (!current.settings.keywordBlockerConfig.isActive) return false
-        if (nowMs < current.settings.blockerDisabledUntil) return false
-        if (packageName.isEmpty() || packageName == WARDEN_PACKAGE) return false
-        if (!current.matcher.hasBlockedKeywords) return false
-        if (current.ignoredApps.contains(packageName)) return false
+        val isActiveAndEnabled =
+            current.settings.keywordBlockerConfig.isActive &&
+                nowMs >= current.settings.blockerDisabledUntil &&
+                current.matcher.hasBlockedKeywords
+        val isTargetPackage =
+            packageName.isNotEmpty() &&
+                packageName != WARDEN_PACKAGE &&
+                !current.ignoredApps.contains(packageName)
+        if (!isActiveAndEnabled || !isTargetPackage) return false
         val tempExpiry = current.settings.temporaryIgnoredApps[packageName]
         return tempExpiry == null || nowMs >= tempExpiry
     }
 
     /** Formats the standard user-facing toast message for a [KeywordMatch]. */
-    fun formatBlockedMessage(match: KeywordMatch): String =
-        "Blocked word ${match.keyword} was found : \" ${match.context} \""
+    fun formatBlockedMessage(match: KeywordMatch): String = "Blocked word ${match.keyword} was found : \" ${match.context} \""
 
-    private fun compile(settings: Settings): CompiledState = CompiledState(
-        settings = settings,
-        matcher = KeywordMatcher(
-            blockedKeywords = settings.keywordBlockerConfig.blockedKeywords,
-            whitelistedKeywords = settings.keywordBlockerConfig.whitelistedKeywords
-        ),
-        ignoredApps = settings.keywordBlockerConfig.ignoredApps.toHashSet()
-    )
+    private fun compile(settings: Settings): CompiledState =
+        CompiledState(
+            settings = settings,
+            matcher =
+                KeywordMatcher(
+                    blockedKeywords = settings.keywordBlockerConfig.blockedKeywords,
+                    whitelistedKeywords = settings.keywordBlockerConfig.whitelistedKeywords,
+                ),
+            ignoredApps = settings.keywordBlockerConfig.ignoredApps.toHashSet(),
+        )
 
     companion object {
         private const val WARDEN_PACKAGE = "com.warden.app"

@@ -3,6 +3,8 @@ import java.util.Locale
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
 }
 
 android {
@@ -10,15 +12,17 @@ android {
     compileSdk = 34
 
     lint {
-        disable.add("NullSafeMutableLiveData")
-        abortOnError = false
+        lintConfig = file("lint.xml")
+        abortOnError = true
+        warningsAsErrors = true
+        checkReleaseBuilds = true
     }
 
     defaultConfig {
         applicationId = "com.warden.app"
         minSdk = 26
         targetSdk = 34
-        
+
         val propVersionCode = (project.findProperty("VERSION_CODE") as? String)?.toIntOrNull() ?: 50
         val propVersionName = (project.findProperty("VERSION_NAME") as? String) ?: "1.1.0"
 
@@ -28,11 +32,9 @@ android {
         resourceConfigurations += listOf("en")
     }
 
-
     splits {
         abi {
             isEnable = false
-
         }
     }
 
@@ -52,7 +54,7 @@ android {
             signingConfig = if (System.getenv("KEYSTORE_PATH") != null) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
 
             applicationVariants.all {
@@ -68,16 +70,17 @@ android {
     }
     packaging {
         resources {
-            excludes += setOf(
-                "META-INF/LICENSE*",
-                "META-INF/**/LICENSE*",
-                "META-INF/NOTICE*",
-                "META-INF/AL2.0",
-                "META-INF/LGPL2.1",
-                "DebugProbesKt.bin",
-                "kotlin/*.kotlin_builtins",
-                "kotlin/**/*.kotlin_builtins"
-            )
+            excludes +=
+                setOf(
+                    "META-INF/LICENSE*",
+                    "META-INF/**/LICENSE*",
+                    "META-INF/NOTICE*",
+                    "META-INF/AL2.0",
+                    "META-INF/LGPL2.1",
+                    "DebugProbesKt.bin",
+                    "kotlin/*.kotlin_builtins",
+                    "kotlin/**/*.kotlin_builtins",
+                )
         }
     }
     compileOptions {
@@ -100,8 +103,6 @@ android {
     }
 }
 
-
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -117,6 +118,21 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    parallel = true
+}
+
+ktlint {
+    android.set(true)
+    ignoreFailures.set(false)
+    filter {
+        exclude("**/generated/**")
+    }
+}
 androidComponents {
     onVariants { variant ->
         val variantName = variant.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
@@ -124,7 +140,7 @@ androidComponents {
             group = "install"
             description = "Installs the app, grants Accessibility permission, and launches it"
             dependsOn("install$variantName")
-            
+
             doLast {
                 val adbPath = sdkComponents.adb.get().asFile.absolutePath
                 val appId = "com.warden.app"
@@ -135,7 +151,7 @@ androidComponents {
 
                     commandLine(adbPath, "shell", "settings", "put", "secure", "enabled_accessibility_services", combinedServices)
                 }
-                
+
                 // Launch MainActivity
                 exec {
                     commandLine(adbPath, "shell", "am", "start", "-n", "$appId/$appId.ui.activity.FragmentActivity")

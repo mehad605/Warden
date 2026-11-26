@@ -22,9 +22,8 @@ class GeminiSectionBinder(
     private val dispatch: (BlockerAction) -> Unit,
     private val onRefreshModels: suspend () -> List<String>,
     private val onRequestTempIgnore: () -> Unit,
-    private val isViewAlive: () -> Boolean
+    private val isViewAlive: () -> Boolean,
 ) {
-
     private var lastRenderedModels: List<String> = emptyList()
     private var isUpdatingSpinner = false
 
@@ -34,17 +33,23 @@ class GeminiSectionBinder(
         binding.cardExemption.setOnClickListener { onRequestTempIgnore() }
         binding.btnAskAiIgnore.setOnClickListener { onRequestTempIgnore() }
         binding.btnRefreshModels.setOnClickListener { refreshModels() }
-        binding.spinnerGeminiModels.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if (isUpdatingSpinner) return
-                val models = currentSettings().availableGeminiModels
-                if (position in models.indices) {
-                    dispatch(BlockerAction.SelectGeminiModel(models[position]))
+        binding.spinnerGeminiModels.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    if (isUpdatingSpinner) return
+                    val models = currentSettings().availableGeminiModels
+                    if (position in models.indices) {
+                        dispatch(BlockerAction.SelectGeminiModel(models[position]))
+                    }
                 }
-            }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-        }
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
     }
 
     /** Renders the Gemini API status banner, masked key input, and model dropdown from [settings]. */
@@ -69,13 +74,16 @@ class GeminiSectionBinder(
         }
     }
 
-    private fun renderStatusBanner(hasKey: Boolean, hasModels: Boolean) {
+    private fun renderStatusBanner(
+        hasKey: Boolean,
+        hasModels: Boolean,
+    ) {
         if (hasKey) {
             binding.ivApiStatusIcon.visibility = View.VISIBLE
             binding.btnRefreshModels.isEnabled = true
             binding.etApiKey.setText(MASKED_API_KEY)
             binding.tvApiStatus.setText(
-                if (hasModels) R.string.api_status_active else R.string.api_status_sync_models
+                if (hasModels) R.string.api_status_active else R.string.api_status_sync_models,
             )
             binding.btnAskAiIgnore.isEnabled = hasModels
         } else {
@@ -89,17 +97,18 @@ class GeminiSectionBinder(
 
     private fun saveApiKeyInput() {
         val input = binding.etApiKey.text?.toString()?.trim().orEmpty()
-        val toastRes = when {
-            input == MASKED_API_KEY -> R.string.api_key_unchanged
-            input.isEmpty() -> {
-                dispatch(BlockerAction.SetGeminiApiKey(null))
-                R.string.api_key_removed
+        val toastRes =
+            when {
+                input == MASKED_API_KEY -> R.string.api_key_unchanged
+                input.isEmpty() -> {
+                    dispatch(BlockerAction.SetGeminiApiKey(null))
+                    R.string.api_key_removed
+                }
+                else -> {
+                    dispatch(BlockerAction.SetGeminiApiKey(input))
+                    R.string.api_key_saved
+                }
             }
-            else -> {
-                dispatch(BlockerAction.SetGeminiApiKey(input))
-                R.string.api_key_saved
-            }
-        }
         Toast.makeText(context, toastRes, Toast.LENGTH_SHORT).show()
     }
 

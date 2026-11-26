@@ -9,7 +9,6 @@ import java.util.Locale
  * immediate feedback to the user.
  */
 object JustificationValidator {
-
     private const val MIN_SENTENCES = 7
     private const val MIN_WORDS_PER_SENTENCE = 5
 
@@ -23,12 +22,16 @@ object JustificationValidator {
      * @param isRemoval When `true`, validation is bypassed because re-enabling blocking is encouraged.
      * @return An error message if invalid, or `null` when valid.
      */
-    fun validate(text: String, isRemoval: Boolean = false): String? {
+    fun validate(
+        text: String,
+        isRemoval: Boolean = false,
+    ): String? {
         if (isRemoval) return null
 
-        val sentences = text.split(SENTENCE_SPLIT_REGEX)
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
+        val sentences =
+            text.split(SENTENCE_SPLIT_REGEX)
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
 
         if (sentences.size < MIN_SENTENCES) {
             return "Your reasoning must contain at least $MIN_SENTENCES sentences (currently: ${sentences.size})."
@@ -41,7 +44,10 @@ object JustificationValidator {
         return null
     }
 
-    private fun validateSentence(sentence: String, number: Int): String? {
+    private fun validateSentence(
+        sentence: String,
+        number: Int,
+    ): String? {
         val words = sentence.split(WHITESPACE_REGEX).filter { it.isNotBlank() }
         if (words.size < MIN_WORDS_PER_SENTENCE) {
             return "Sentence $number is too short (\"$sentence\"). Each sentence must contain at least $MIN_WORDS_PER_SENTENCE words."
