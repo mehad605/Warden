@@ -5,6 +5,10 @@
     <issue id="GradleDependency" severity="ignore" />
     <issue id="AndroidGradlePluginVersion" severity="ignore" />
 
+    <!-- targetSdk is intentionally pinned to 34 (matching compileSdk = 34 and baseline-v1) to preserve
+         layout/insets parity on API 30-34 without introducing unrequested Android 15 edge-to-edge changes. -->
+    <issue id="OldTargetApi" severity="ignore" />
+
     <!-- Upstream AndroidX Lifecycle 2.10.0 lint detector crashes under AGP 8.7.2 (Kotlin Analysis API
          version mismatch: KaCallableMemberCall). Warden uses StateFlow, never MutableLiveData. -->
     <issue id="NullSafeMutableLiveData" severity="ignore" />
