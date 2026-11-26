@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png" alt="Warden Icon" width="120" />
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp" alt="Warden Icon" width="120" />
 
 # Warden
 
