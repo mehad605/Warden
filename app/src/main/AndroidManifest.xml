@@ -32,10 +32,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ui.activity.SelectAppsActivity"
-            android:exported="false" />
-
         <service
             android:name=".services.WardenService"
             android:exported="true"
@@ -63,6 +59,22 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+
+        <!-- Remove unused Jetpack Startup initializers to keep process boot minimal.
+             MissingClass is suppressed because InitializationProvider is resolved transitively at runtime. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:ignore="MissingClass"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                tools:node="remove" />
+            <meta-data
+                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                tools:node="remove" />
+        </provider>
 
     </application>
 

@@ -1,0 +1,12 @@
+# ART Baseline Profile for Warden
+# Pre-compiles cold startup and AccessibilityService hot paths on API 28+ (including Realme Narzo 20 / Android 11).
+HSPLcom/warden/app/Warden;->onCreate()V
+HSPLcom/warden/app/core/di/AppContainer;-><init>(Landroid/content/Context;)V
+HSPLcom/warden/app/core/data/JsonSettingsRepository;-><init>(Ljava/io/File;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;)V
+HSPLcom/warden/app/core/data/SettingsJsonCodec;->decodeOrNull(Ljava/lang/String;)Lcom/warden/app/data/models/Settings;
+HSPLcom/warden/app/ui/activity/FragmentActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/warden/app/services/WardenService;->onServiceConnected()V
+HSPLcom/warden/app/services/WardenService;->onAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V
+HSPLcom/warden/app/feature/blocker/service/BlockerCoordinator;->onAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V
+HSPLcom/warden/app/feature/blocker/domain/BlockingDecisionEngine;->shouldScanPackage(Ljava/lang/String;J)Z
+HSPLcom/warden/app/feature/blocker/domain/KeywordMatcher;->findMatch(Ljava/lang/String;)Lcom/warden/app/feature/blocker/domain/KeywordMatch;

@@ -1,0 +1,61 @@
+name: CI Verification
+
+on:
+  push:
+    branches:
+      - main
+      - 'overhaul/**'
+  pull_request:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Format, Static Analysis, Lint, Test & Release Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Android build environment
+        uses: $/.github/actions/setup-android-build
+        with:
+          cache-enabled: 'true'
+
+      - name: Run ktlint, detekt, Android Lint, unit tests, release APK & SBOM
+        run: |
+          ./gradlew ktlintCheck detekt lint testDebugUnitTest assembleRelease generateReleaseSbom \
+            --no-daemon \
+            --stacktrace
+
+      - name: Verify release APK integrity and size budget
+        run: bash scripts/verify_release_apk.sh app/build/outputs/apk/release/Warden-release.apk
+
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan dependency changes
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
+        with:
+          fail-on-severity: high

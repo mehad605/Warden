@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:fillViewport="true">
@@ -15,7 +16,7 @@
             android:id="@+id/tv_dialog_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Convince AI Gatekeeper"
+            android:text="@string/ai_dialog_default_title"
             android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
             android:layout_marginBottom="8dp" />
 
@@ -23,17 +24,16 @@
             android:id="@+id/tv_dialog_subtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Please provide a valid study/work emergency justification. You must write at least 7 complete sentences."
+            android:text="@string/ai_dialog_default_subtitle"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginBottom="20dp" />
 
-        <!-- App Selector -->
         <TextView
             android:id="@+id/tv_select_app_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select Target App:"
+            android:text="@string/select_target_app"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textStyle="bold"
             android:textColor="?attr/colorOnSurface"
@@ -45,12 +45,11 @@
             android:layout_height="48dp"
             android:layout_marginBottom="20dp" />
 
-        <!-- Justification -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_justification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Your justification"
+            android:hint="@string/your_justification_hint"
             android:layout_marginBottom="20dp"
             app:counterEnabled="true"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
@@ -64,7 +63,6 @@
                 android:inputType="textMultiLine" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Screenshot Attachment -->
         <LinearLayout
             android:id="@+id/layout_attachment"
             android:layout_width="match_parent"
@@ -77,7 +75,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Attach Screenshot"
+                android:text="@string/attach_screenshot"
                 app:icon="@android:drawable/ic_menu_camera" />
 
             <com.google.android.material.card.MaterialCardView
@@ -98,6 +96,7 @@
                         android:id="@+id/iv_preview"
                         android:layout_width="160dp"
                         android:layout_height="120dp"
+                        android:contentDescription="@string/cd_screenshot_preview"
                         android:scaleType="centerCrop" />
 
                     <ImageButton
@@ -106,13 +105,13 @@
                         android:layout_height="32dp"
                         android:layout_gravity="top|end"
                         android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/cd_remove_screenshot"
                         android:src="@drawable/baseline_close_24"
                         app:tint="?attr/colorError" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- Loading -->
         <LinearLayout
             android:id="@+id/layout_loading"
             android:layout_width="match_parent"
@@ -130,13 +129,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Consulting Gemini AI Gatekeeper..."
+                android:text="@string/consulting_gemini"
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginTop="12dp" />
         </LinearLayout>
 
-        <!-- AI Verdict -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_ai_verdict"
             android:layout_width="match_parent"
@@ -156,7 +154,7 @@
                     android:id="@+id/tv_verdict_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Verdict: REJECTED"
+                    tools:text="@string/verdict_rejected"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                     android:layout_marginBottom="4dp" />
 
@@ -164,13 +162,12 @@
                     android:id="@+id/tv_verdict_message"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="AI response text goes here"
+                    tools:text="AI response text goes here"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Actions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -182,14 +179,14 @@
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cancel"
+                android:text="@string/cancel"
                 android:layout_marginEnd="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_submit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Submit Request" />
+                android:text="@string/submit_request" />
         </LinearLayout>
 
     </LinearLayout>

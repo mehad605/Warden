@@ -1,18 +1,6 @@
 # Contributing to Warden
 
-Thank you for your interest in contributing. This document covers the development environment setup, code conventions, and the pull request process.
-
----
-
-## Table of Contents
-
-- [Prerequisites](#prerequisites)
-- [Development Setup](#development-setup)
-- [Project Structure](#project-structure)
-- [Code Style](#code-style)
-- [Submitting Changes](#submitting-changes)
-- [Reporting Issues](#reporting-issues)
-- [Security Disclosures](#security-disclosures)
+Thank you for contributing to Warden. This guide explains local setup, code style, architectural boundaries, verification commands, and the pull request workflow.
 
 ---
 
@@ -20,96 +8,65 @@ Thank you for your interest in contributing. This document covers the developmen
 
 | Tool | Version |
 |---|---|
-| Android Studio | Hedgehog (2023.1.1) or newer |
-| JDK | 17 |
-| Android SDK | API 34 |
-| Gradle | Handled by wrapper (`./gradlew`) |
+| JDK | 17 (Temurin recommended; JDK 21 also supported) |
+| Android SDK | `compileSdk = 34`, `minSdk = 26`, Build-Tools 34/35 |
+| Gradle | Handled automatically by `./gradlew` (`8.10.2`) |
 
 ---
 
-## Development Setup
+## Local Setup
 
 ```bash
-# 1. Fork the repository, then clone your fork
 git clone https://github.com/YOUR_USERNAME/Warden.git
 cd Warden
+./gradlew ktlintCheck detekt lint testDebugUnitTest assembleRelease
+```
 
-# 2. Open in Android Studio
-# File → Open → select the Warden directory
+To install and auto-grant Accessibility on a connected debug device:
 
-# 3. Let Gradle sync automatically, or run manually:
-./gradlew build
-
-# 4. Connect a physical device (API 26+) or start an emulator
-# Note: The Accessibility Service does not function on all emulator configurations
-
-# 5. Install and grant permissions
-./gradlew installDebug
+```bash
+./gradlew installAndGrantAccessibilityDebug
 ```
 
 ---
 
-## Project Structure
+## Architecture & Coding Standards
 
-See [Architecture](docs/architecture.md) for the full component map. Key files for contributors:
-
-| File | Role |
-|---|---|
-| `KeywordBlocker.kt` | Core blocking logic — most feature work happens here |
-| `WardenService.kt` | Accessibility event dispatcher |
-| `GeminiManager.kt` | All AI gatekeeper prompts and API calls |
-| `DataStore.kt` | Settings persistence layer |
-| `KeywordBlockerFragment.kt` | Main settings UI |
-| `KeywordBlockerViewModel.kt` | UI state and AI orchestration |
+- **Strict layering:** `domain` packages must remain pure Kotlin (zero `android.*`, `androidx.*`, `ui`, `data`, or `service` imports). `data` never imports `ui` or `service`. Enforced automatically by `ArchitectureRulesTest`.
+- **Size & complexity caps:** Max **300 lines per file**, max **40 lines per function**, max **cyclomatic complexity 10**, zero `!!`, zero `lateinit var`, zero global mutable singletons, zero swallowed exceptions. Enforced by `detekt` (`config/detekt/detekt.yml`) and `ArchitectureRulesTest`.
+- **Formatting:** Enforced automatically by `ktlint` (`.editorconfig`). Run `./gradlew ktlintFormat` before committing.
+- **Android Lint:** Runs with `abortOnError = true` and `warningsAsErrors = true` (`app/lint.xml`). No hardcoded UI strings — always add entries to `app/src/main/res/values/strings.xml`.
+- **Footprint discipline:** Never add a runtime dependency without updating `docs/DEPENDENCIES.md` and proving a platform API cannot replace it. Keep `Warden.onCreate()` free of synchronous disk/network I/O.
+- **Upgrade safety:** Never rename manifest component FQCNs (`FragmentActivity`, `WardenService`, `WardenDeviceAdminReceiver`) or break `filesDir/datastore/settings.json` JSON keys.
+- **Documentation:** Every public class, interface, object, and function requires KDoc explaining *what* and *why*.
 
 ---
 
-## Code Style
+## Running All Checks Locally
 
-- **Language:** Kotlin only — no Java in new code
-- **Formatting:** Follow standard Kotlin coding conventions (enforced by Android Studio's default formatter)
-- **Naming:** Use descriptive names; avoid abbreviations unless they are widely understood (`pkg`, `vm`, `ctx`)
-- **Comments:** Comment *why*, not *what*. The code should be self-explanatory for the *what*
-- **Coroutines:** Use `Dispatchers.IO` for DataStore and network calls; `Dispatchers.Main` for UI updates
-- **No hardcoded strings:** All user-visible text must go in `res/values/strings.xml`
+```bash
+# 1. Auto-format Kotlin & Kotlin DSL scripts
+./gradlew ktlintFormat
 
----
+# 2. Run the exact CI quality gate
+./gradlew ktlintCheck detekt lint testDebugUnitTest assembleRelease
 
-## Submitting Changes
-
-1. **Create a branch** from `main`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Make your changes.** Keep commits focused — one logical change per commit.
-
-3. **Verify the build passes:**
-   ```bash
-   ./gradlew compileDebugKotlin
-   ./gradlew assembleDebug
-   ```
-
-4. **Open a pull request** against `main` with:
-   - A clear title describing the change
-   - A description of *why* the change is needed
-   - Any relevant issue numbers (`Closes #123`)
-
-5. A maintainer will review your PR. Please be responsive to feedback.
+# 3. Optional: check code duplication (< 3%)
+npx --yes jscpd app/src/main/java --silent --reporters console
+```
 
 ---
 
-## Reporting Issues
+## Branch & PR Workflow
 
-Open a GitHub Issue and include:
-
-- Android version and device model
-- Steps to reproduce
-- Expected vs. actual behavior
-- Crash log if applicable (available in Warden's **System Diagnostics** screen)
+1. Branch from `main`: `git checkout -b feat/short-description` (or `fix/...`, `refactor/...`, `opt/...`).
+2. Keep commits small, single-purpose, and buildable (`type(scope): summary`).
+3. Ensure `./gradlew ktlintCheck detekt lint testDebugUnitTest assembleRelease` passes locally.
+4. Open a pull request against `main` describing *why* the change is needed, test evidence, and any APK/runtime impact.
+5. Wait for CI checks and maintainer review.
 
 ---
 
 ## Security Disclosures
 
-If you discover a security vulnerability (e.g., a way to bypass the blocker or extract the stored password hash), please **do not open a public issue**. Instead, contact the maintainers privately via GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability) feature.
+Do **not** open public issues for security vulnerabilities or bypass exploits. Use GitHub's private vulnerability reporting feature instead.

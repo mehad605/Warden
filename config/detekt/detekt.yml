@@ -1,0 +1,59 @@
+build:
+  maxIssues: 0
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 40
+  LongParameterList:
+    active: true
+    functionThreshold: 10
+    constructorThreshold: 10
+    ignoreDefaultParameters: true
+  LargeClass:
+    active: true
+    threshold: 300
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 10
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 20
+    thresholdInClasses: 16
+    ignorePrivate: true
+
+exceptions:
+  SwallowedException:
+    active: true
+    ignoredExceptionTypes:
+      - InterruptedException
+      - NumberFormatException
+      - ParseException
+      - MalformedURLException
+      - JSONException
+      - NameNotFoundException
+      - ActivityNotFoundException
+      - SecurityException
+      - IOException
+  TooGenericExceptionCaught:
+    active: true
+
+style:
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+  MagicNumber:
+    active: false
+  ReturnCount:
+    active: true
+    max: 5
+  WildcardImport:
+    active: true
+  UnusedImports:
+    active: true
+  UnusedPrivateMember:
+    active: true
+
+potential-bugs:
+  UnsafeCallOnNullableType:
+    active: true

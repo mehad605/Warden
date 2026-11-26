@@ -1,5 +1,11 @@
 package com.warden.app.data.models
 
+/**
+ * Single immutable source of truth for all persisted Warden application settings.
+ *
+ * Serialized to `filesDir/datastore/settings.json` by `SettingsJsonCodec` using the exact
+ * `baseline-v1` JSON field names so upgrades preserve all user configuration.
+ */
 data class Settings(
     val keywordBlockerConfig: KeywordBlocker = KeywordBlocker(),
     val passwordHash: String? = null,
@@ -11,5 +17,5 @@ data class Settings(
     val selectedGeminiModel: String = "",
     val availableGeminiModels: List<String> = emptyList(),
     val antiUninstallEnabled: Boolean = false,
-    val deviceAdminActivationRequestedAt: Long = 0L
+    val deviceAdminActivationRequestedAt: Long = 0L,
 )

@@ -16,12 +16,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven {
-            setUrl("https://jitpack.io")
-        }
     }
 }
 
-rootProject.name = "BlockWords"
+rootProject.name = "Warden"
 include(":app")
- 
