@@ -94,8 +94,6 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.fragment.ktx)
-    implementation(libs.gson)
-    implementation(libs.generativeai)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

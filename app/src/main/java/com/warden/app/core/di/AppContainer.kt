@@ -4,6 +4,8 @@ import android.content.Context
 import com.warden.app.CrashLogger
 import com.warden.app.core.data.JsonSettingsRepository
 import com.warden.app.core.data.SettingsRepository
+import com.warden.app.feature.gatekeeper.data.HttpGeminiGatekeeperClient
+import com.warden.app.feature.gatekeeper.domain.GatekeeperClient
 import java.io.File
 
 /**
@@ -22,6 +24,13 @@ class AppContainer(private val appContext: Context) {
         val file = File(appContext.filesDir, "datastore/settings.json")
         JsonSettingsRepository(
             settingsFile = file,
+            onError = { crashLogger.logNonFatalError(it) }
+        )
+    }
+
+    /** AI Gatekeeper transport client backed by platform `HttpURLConnection`. */
+    val gatekeeperClient: GatekeeperClient by lazy {
+        HttpGeminiGatekeeperClient(
             onError = { crashLogger.logNonFatalError(it) }
         )
     }

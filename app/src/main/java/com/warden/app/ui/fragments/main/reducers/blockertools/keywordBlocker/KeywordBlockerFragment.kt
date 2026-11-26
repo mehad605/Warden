@@ -43,9 +43,14 @@ import android.widget.TextView
 import com.warden.app.databinding.FragmentKeywordBlockerBinding
 import com.warden.app.databinding.DialogAiChatBinding
 import com.warden.app.databinding.ItemIgnoredAppBinding
+import com.warden.app.Warden
+import com.warden.app.feature.gatekeeper.data.HttpGeminiGatekeeperClient
+import com.warden.app.feature.gatekeeper.domain.GatekeeperClient
+import com.warden.app.feature.gatekeeper.domain.GatekeeperRequest
+import com.warden.app.feature.gatekeeper.domain.JustificationValidator
+import com.warden.app.feature.gatekeeper.ui.BitmapImageEncoder
 import com.warden.app.utils.PermissionUtils
 import com.warden.app.services.WardenService
-import com.warden.app.utils.GeminiManager
 import com.warden.app.receivers.WardenDeviceAdminReceiver
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
@@ -57,6 +62,10 @@ class KeywordBlockerFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: KeywordBlockerViewModel by activityViewModels()
+    private val gatekeeperClient: GatekeeperClient by lazy {
+        (requireContext().applicationContext as? Warden)?.container?.gatekeeperClient
+            ?: HttpGeminiGatekeeperClient()
+    }
     private var isUpdatingUi = false
 
     private var currentIgnoredApps = listOf<String>()
@@ -332,7 +341,7 @@ class KeywordBlockerFragment : Fragment() {
             binding.btnRefreshModels.isEnabled = false
             Toast.makeText(requireContext(), "Refreshing model list...", Toast.LENGTH_SHORT).show()
             lifecycleScope.launch {
-                val list = GeminiManager.fetchModelsList(apiKey)
+                val list = gatekeeperClient.fetchModels(apiKey)
                 viewModel.setAvailableGeminiModels(list)
                 binding.btnRefreshModels.isEnabled = true
                 Toast.makeText(requireContext(), "Model list refreshed!", Toast.LENGTH_SHORT).show()
@@ -884,7 +893,7 @@ class KeywordBlockerFragment : Fragment() {
             val isAlreadyIgnored = type == DialogType.TEMPORARY_IGNORE && selectedApp != null &&
                     currentIgnoredApps.contains(selectedApp.packageName)
 
-            val validationError = GeminiManager.validateUserText(justification, isRemoval = isAlreadyIgnored)
+            val validationError = JustificationValidator.validate(justification, isRemoval = isAlreadyIgnored)
             if (validationError != null) {
                 Toast.makeText(requireContext(), validationError, Toast.LENGTH_LONG).show()
                 return@setOnClickListener
@@ -898,14 +907,24 @@ class KeywordBlockerFragment : Fragment() {
                 try {
                     val noCount = viewModel.noCount.value
                     val selectedModel = viewModel.selectedGeminiModel.value
-                    val result = when (type) {
-                        DialogType.TEMPORARY_IGNORE -> GeminiManager.requestExemption(apiKey, selectedModel, selectedApp!!.label, selectedApp.packageName, justification, attachedBitmap, noCount, isAlreadyIgnored)
-                        DialogType.PAUSE_BLOCKER -> GeminiManager.requestPauseBlocker(apiKey, selectedModel, justification, attachedBitmap, noCount)
-                        DialogType.EXTEND_IGNORE -> GeminiManager.requestExtension(apiKey, selectedModel, selectedApp!!.label, selectedApp.packageName, justification, attachedBitmap, noCount)
-                        else -> null
+                    val encodedImage = attachedBitmap?.let { bmp ->
+                        withContext(Dispatchers.Default) { BitmapImageEncoder.encode(bmp) }
                     }
+                    val request = when (type) {
+                        DialogType.TEMPORARY_IGNORE -> if (isAlreadyIgnored) {
+                            GatekeeperRequest.RemoveFromIgnore(selectedApp!!.label, selectedApp.packageName, justification, noCount)
+                        } else {
+                            GatekeeperRequest.AppExemption(selectedApp!!.label, selectedApp.packageName, justification, noCount)
+                        }
+                        DialogType.PAUSE_BLOCKER -> GatekeeperRequest.PauseBlocker(justification, noCount)
+                        DialogType.EXTEND_IGNORE -> GatekeeperRequest.ExtendExemption(selectedApp!!.label, selectedApp.packageName, justification, noCount)
+                    }
+                    val result = gatekeeperClient.evaluate(apiKey, selectedModel, request, encodedImage)
 
-                    if (result?.approved == true) {
+                    dialogBinding.layoutLoading.visibility = View.GONE
+                    dialogBinding.cardAiVerdict.visibility = View.VISIBLE
+
+                    if (result.approved) {
                         dialogBinding.tvVerdictTitle.text = "Verdict: APPROVED"
                         dialogBinding.tvVerdictTitle.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
                         dialogBinding.tvVerdictMessage.text = result.botResponse
@@ -938,7 +957,7 @@ class KeywordBlockerFragment : Fragment() {
                     } else {
                         dialogBinding.tvVerdictTitle.text = "Verdict: REJECTED"
                         dialogBinding.tvVerdictTitle.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
-                        dialogBinding.tvVerdictMessage.text = result?.botResponse ?: "Error"
+                        dialogBinding.tvVerdictMessage.text = result.botResponse
                         viewModel.setNoCount(noCount + 1)
                         dialogBinding.btnSubmit.isEnabled = true
                         dialogBinding.btnCancel.isEnabled = true
