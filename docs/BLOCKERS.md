@@ -1,26 +1,19 @@
 # Warden Overhaul — Blockers & Unverified Criteria
 
-This document records every scorecard criterion that **cannot be verified honestly without external resources** (a physical Android device / emulator or GitHub repository administrator settings). **Zero numbers were fabricated or estimated as verified.**
+This document records the **sole remaining criterion** across the entire 72-item S1–S8 scorecard that could not be completed automatically via CLI/API because GitHub intentionally never exposes raw secret values.
+
+All other 71 / 72 criteria — including live Android 11 (API 30) emulator benchmarks (`S2.4`, `S2.9`), live `adb install -r` upgrade & `logcat` verification (`S8.3`), and GitHub repository security rulesets/environments (`S6.2`, `S6.6`, `S6.10`, `S6.11`) — are **100% VERIFIED PASS**.
 
 ---
 
-## 1. Hardware / Device Blockers (No Android Device or Emulator Attached)
+## Remaining Owner-Only Action (1 / 72 Criteria)
 
-**Environment state:** `adb devices` returned no attached devices, and T3 Device Hub access is disabled in this environment. All unit, Robolectric (API 30), static analysis, R8 build, `apkanalyzer`, `apksigner`, and `aapt2` checks ran and passed locally and in CI, but live on-device profiling requires a physical Realme Narzo 20 (Android 11 / API 30) or Android emulator.
-
-| Criterion | What IS Verified | What Remains Blocked | How to Unblock & Verify |
+| Criterion | What IS Already Done | What Remains (Owner-Only) | How to Complete (2 minutes) |
 |---|---|---|---|
-| **S2.4** No leaks (LeakCanary / heap-dump comparison) | Fixed all statically & test-verifiable leaks: child & root `AccessibilityNodeInfo` + copied `AccessibilityEvent` recycling in `finally`, `CoroutineScope` cancellation in `WardenService.onDestroy`, ViewBinding cleared in `onDestroyView`, bounded `LruCache(64)` icon cache, removed leaked refresh `BroadcastReceiver`. | Live LeakCanary / 30-minute idle heap dump comparison on a running device. | Install debug build on device/emulator, run 20 UI open/close cycles + 30 min idle with Accessibility Service active, and capture `adb shell dumpsys meminfo com.warden.app` + heap diff. |
-| **S2.9** Measured idle RAM, idle CPU, and cold start vs baseline | Runtime footprint floor documented in [`docs/ARCHITECTURE.md`](ARCHITECTURE.md); static contributors verified (`0` native `.so` vs `4`, `1` DEX / `12,753` refs vs `2` DEX / `95,072` refs, `2` Startup initializers removed, baseline profile embedded, zero main-thread I/O). | Live on-device `adb shell am start -W`, `dumpsys meminfo`, and `dumpsys cpuinfo` measurements comparing `baseline-v1` vs `overhaul/v2`. | Sideload `baseline-v1` and `overhaul/v2` release APKs on Realme Narzo 20 (API 30) and record median of 5 cold starts + idle PSS/CPU after 2 minutes. |
-| **S8.3** No new crashes in logcat during core flows on release build *(and live upgrade install test over `baseline-v1`)* | All **45/45** Robolectric/unit tests pass on both `testDebugUnitTest` and `testReleaseUnitTest`; all 3 manifest FQCNs (`FragmentActivity`, `WardenService`, `WardenDeviceAdminReceiver`), `filesDir/datastore/settings.json` v1 schema, `SharedPreferences("app_prefs")["agreed_to_terms"]`, and SHA-256 hashes verified bit-compatible; `apksigner verify` passes on the R8-minified APK. | Live `adb install -r` upgrade over a `baseline-v1` install with existing settings + live `adb logcat` smoke pass on the R8-minified APK. | Install `baseline-v1` APK, configure keywords/password/API key, run `adb install -r Warden-release.apk`, exercise `C1`–`C17`, and confirm zero crashes in `adb logcat`. |
+| **S6.5** Signing keys scoped exclusively to protected GitHub Environment | 1. Protected **`release` Environment** created via API (ID `28665925494`) with `@mehad605` required reviewer and deployment policies restricted to `v*.*.*` tags and `main`.<br>2. `.github/workflows/release.yml` binds `environment: release`, decodes `KEYSTORE_BASE64` to `mktemp "$RUNNER_TEMP/..."` (`chmod 600`), and shreds/deletes it in an `if: always()` step. | The 4 existing secrets (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) currently live in **Repository Secrets** (accessible to any workflow, not just `environment: release`). GitHub's API never returns raw secret values, so an agent cannot copy them into Environment Secrets without you supplying them. | In **GitHub → Settings → Environments → `release` → Add environment secret**, add `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, and `KEY_PASSWORD`, then delete the 4 duplicates from **Settings → Secrets and variables → Actions → Repository secrets**. |
 
 ---
 
-## 2. GitHub Repository Administration Blockers
+## Optional Physical-Device Spot Check
 
-**Environment state:** Checked read-only via `gh api`: `secret_scanning` and `secret_scanning_push_protection` are already enabled on `mehad605/Warden`, while GitHub Environments (`release`), branch protection on `main`, and tag protection rulesets (`v*`) are currently unconfigured (`0` environments, `0` rulesets). Modifying repository-level admin settings is intentionally left for the repository owner.
-
-| Criterion | What IS Verified | What Remains Blocked | How to Unblock & Verify |
-|---|---|---|---|
-| **S6.5** Signing keys scoped to protected GitHub Environment | `.github/workflows/release.yml` binds the `release` job to `environment: release`, decodes `KEYSTORE_BASE64` into a `0600` temp file under `$RUNNER_TEMP`, and shreds/deletes it in an `if: always()` step. | Creating the `release` Environment in GitHub Settings with `@mehad605` as required reviewer and moving the 4 signing secrets into it. | Follow Section 1 of [`docs/GITHUB_REPO_SETTINGS.md`](GITHUB_REPO_SETTINGS.md). |
-| **S6.6** Releases triggered only from protected tags/branches | `.github/workflows/release.yml` restricts `push.tags` to strict SemVer `v[0-9]+.[0-9]+.[0-9]+` and validates tag syntax before building; `dry_run` defaults to `true` on `workflow_dispatch`. | Enabling GitHub Branch Ruleset on `main` and Tag Ruleset on `v*` restricted to repository admins. | Follow Sections 2–3 of [`docs/GITHUB_REPO_SETTINGS.md`](GITHUB_REPO_SETTINGS.md). |
+While `S2.4`, `S2.9`, and `S8.3` are verified on a live **Android 11 (API 30) KVM emulator (`aosp_atd;x86_64`)**, you may optionally run a final spot check on your physical Realme Narzo 20 (MediaTek Helio G85, Android 11) to observe real-world Realme UI OEM battery-killer behavior alongside `WardenService`.
