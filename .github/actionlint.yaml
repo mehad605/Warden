@@ -1,0 +1,7 @@
+# Narrow parser compatibility config for actionlint v1.7.12:
+# GitHub Actions GA self-repository syntax (`$/...`, launched 2026-07-30 and enforced by zizmor)
+# is not yet recognized by actionlint v1.7.12 (tracked upstream in rhysd/actionlint#780).
+paths:
+  .github/workflows/*.yml:
+    ignore:
+      - 'specifying action "\$/\.github/actions/setup-android-build" in invalid format because ref is missing'
