@@ -117,6 +117,22 @@ class AppCoreFlowsCharacterizationTest {
     }
 
     @Test
+    fun c16_crashLoggerRotatesWhenExceedingMaxSize() {
+        val logFile = File(app.filesDir, "crash_log.txt")
+        val backupFile = File(app.filesDir, "crash_log.prev.txt")
+        logFile.delete()
+        backupFile.delete()
+
+        val logger = CrashLogger(app, maxLogBytes = 256L)
+        logger.logNonFatalError(IllegalStateException("first-entry"))
+        assertTrue(logFile.length() > 0L)
+        logger.logNonFatalError(IllegalStateException("second-entry-triggers-rotation"))
+
+        assertTrue("Rotated backup file should exist", backupFile.exists())
+        assertTrue("Active log should contain newest entry", logFile.readText().contains("second-entry-triggers-rotation"))
+    }
+
+    @Test
     fun c1_disclaimerPreferenceKeyAndDefaultArePreserved() {
         val prefs = app.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         assertFalse(prefs.getBoolean("agreed_to_terms", false))

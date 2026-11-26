@@ -7,4 +7,6 @@ HSPLcom/warden/app/core/data/SettingsJsonCodec;->decodeOrNull(Ljava/lang/String;
 HSPLcom/warden/app/ui/activity/FragmentActivity;->onCreate(Landroid/os/Bundle;)V
 HSPLcom/warden/app/services/WardenService;->onServiceConnected()V
 HSPLcom/warden/app/services/WardenService;->onAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V
-HSPLcom/warden/app/services/BaseBlockingService;->pressHome()V
+HSPLcom/warden/app/feature/blocker/service/BlockerCoordinator;->onAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V
+HSPLcom/warden/app/feature/blocker/domain/BlockingDecisionEngine;->shouldScanPackage(Ljava/lang/String;J)Z
+HSPLcom/warden/app/feature/blocker/domain/KeywordMatcher;->findMatch(Ljava/lang/String;)Lcom/warden/app/feature/blocker/domain/KeywordMatch;

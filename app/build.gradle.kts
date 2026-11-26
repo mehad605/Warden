@@ -70,10 +70,12 @@ android {
         resources {
             excludes += setOf(
                 "META-INF/LICENSE*",
+                "META-INF/**/LICENSE*",
                 "META-INF/NOTICE*",
                 "META-INF/AL2.0",
                 "META-INF/LGPL2.1",
                 "DebugProbesKt.bin",
+                "kotlin/*.kotlin_builtins",
                 "kotlin/**/*.kotlin_builtins"
             )
         }

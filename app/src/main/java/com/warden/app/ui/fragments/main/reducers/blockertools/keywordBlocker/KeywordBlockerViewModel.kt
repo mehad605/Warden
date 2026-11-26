@@ -80,15 +80,9 @@ class KeywordBlockerViewModel(
         }
     }
 
-    private fun requestKeywordBlockerRefresh() {
-        val intent = Intent(com.warden.app.blockers.KeywordBlocker.INTENT_ACTION_REFRESH_CONFIG)
-        getApplication<Application>().sendBroadcast(intent)
-    }
-
     private fun updateConfig(newConfig: KeywordBlocker) {
         viewModelScope.launch {
             settingsRepository.update { it.copy(keywordBlockerConfig = newConfig) }
-            requestKeywordBlockerRefresh()
         }
     }
 
@@ -173,35 +167,30 @@ class KeywordBlockerViewModel(
     fun setTemporaryIgnoredApps(apps: Map<String, Long>) {
         viewModelScope.launch {
             settingsRepository.update { it.copy(temporaryIgnoredApps = apps) }
-            requestKeywordBlockerRefresh()
         }
     }
 
     fun setBlockerDisabledUntil(timestamp: Long) {
         viewModelScope.launch {
             settingsRepository.update { it.copy(blockerDisabledUntil = timestamp) }
-            requestKeywordBlockerRefresh()
         }
     }
 
     fun setIgnoreGracePeriodSeconds(seconds: Int) {
         viewModelScope.launch {
             settingsRepository.update { it.copy(ignoreGracePeriodSeconds = seconds) }
-            requestKeywordBlockerRefresh()
         }
     }
 
     fun setAntiUninstallEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.update { it.copy(antiUninstallEnabled = enabled) }
-            requestKeywordBlockerRefresh()
         }
     }
 
     fun setDeviceAdminActivationRequestedAt(timestamp: Long) {
         viewModelScope.launch {
             settingsRepository.update { it.copy(deviceAdminActivationRequestedAt = timestamp) }
-            requestKeywordBlockerRefresh()
         }
     }
 
@@ -226,9 +215,6 @@ class KeywordBlockerViewModel(
     fun importSettings(json: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val success = settingsRepository.importJson(json)
-            if (success) {
-                requestKeywordBlockerRefresh()
-            }
             onResult(success)
         }
     }
