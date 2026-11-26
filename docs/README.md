@@ -33,6 +33,7 @@ Welcome to the Warden technical documentation.
 | [Cold-Read Test](COLD_READ_TEST.md) | Blind onboarding verification by an independent reader |
 | [Extension Proof](EXTENSION_PROOF.md) | Verified walkthrough of adding and removing a feature using `HOW_TO.md` |
 | [Results](RESULTS.md) | Baseline vs. final metrics, key changes, and rollback guide |
+| [Blockers](BLOCKERS.md) | Transparent log of hardware- and GitHub-admin-blocked criteria |
 
 ## Contributing
 
