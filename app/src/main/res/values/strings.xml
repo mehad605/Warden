@@ -6,18 +6,102 @@
     <string name="admin_permission_desc">Warden Anti-Uninstall Protection</string>
     <string name="proceed">Proceed</string>
     <string name="cancel">Cancel</string>
-    <string name="failed_to_export_data">Failed to export data</string>
+    <string name="disable">Disable</string>
+    <string name="apply_action">Apply</string>
+    <string name="export_action">Export</string>
+    <string name="import_action">Import</string>
+    <string name="add_anyway">Add Anyway</string>
+    <string name="status_on">On</string>
+    <string name="grace_period_off">Off</string>
+    <string name="grace_period_seconds_fmt">%1$ds</string>
+    <string name="permanent_label">Permanent</string>
+
+    <plurals name="word_count">
+        <item quantity="one">%1$d word</item>
+        <item quantity="other">%1$d words</item>
+    </plurals>
+
+    <!-- Disclaimer -->
+    <string name="disclaimer_title">Disclaimer &amp; Warning</string>
+    <string name="disclaimer_message">Warning: This app is strictly for those struggling with digital habits. Once you install and enable protection, you may not be able to uninstall it. You cannot just click uninstall, and if you grant Device Administrator privileges, even standard ADB methods may fail. There is a way to uninstall it, but it is intentionally hidden. Install and use this app at your own risk.\n\nThis app does not collect or transmit any of your personal data.\n\nBy continuing, you agree not to hold the developer accountable for any issues or inability to uninstall the app.</string>
+    <string name="disclaimer_agree">I Agree</string>
+    <string name="disclaimer_exit">Exit</string>
+
+    <!-- Keywords & Whitelist -->
     <string name="warning_link_blocker_may_not_work">WARNING: Link blocker may not work everywhere.</string>
+    <string name="risky_keyword_title">Warning: Risky Keyword</string>
+    <string name="risky_keyword_message">Using \'sex\' as a blocked keyword is dangerous because legitimate forms often ask for your sex/gender. We strongly advise against using this exact word. Consider using alternatives like \'sexy\' instead to avoid breaking regular apps.</string>
+    <string name="keyword_removed">Keyword removed!</string>
+    <string name="whitelist_keyword_removed">Whitelist keyword removed!</string>
+
+    <!-- Password -->
     <string name="set_password">Set Password</string>
     <string name="change_password">Change Password</string>
     <string name="enter_password">Enter Password</string>
     <string name="password_required_to_delete">Password is required to delete keywords</string>
     <string name="password_prompt_title">Password Verification</string>
     <string name="incorrect_password">Incorrect password!</string>
-    <string name="state_exported">Settings exported successfully</string>
-    <string name="state_imported">Settings imported successfully</string>
-    <string name="failed_to_import">Failed to import settings</string>
     <string name="strong_password_rules">Password must be strong (at least 6 characters, including a letter and a number).</string>
     <string name="password_hint">Enter strong password</string>
     <string name="password_cleared">Password removed successfully</string>
+    <string name="password_updated">Password updated successfully!</string>
+    <string name="password_required_status">Required to remove blocked words</string>
+    <string name="no_password_set">No password set</string>
+    <string name="verify_old_password_title">Verify Old Password</string>
+    <string name="verify_old_password_message">Enter your current password to set a new one</string>
+    <string name="remove_password_title">Remove Password</string>
+    <string name="remove_password_message">Enter your password to disable protection</string>
+
+    <!-- Anti-Uninstall -->
+    <string name="anti_uninstall_admin_explanation">Enable this to prevent Block Words from being uninstalled without permission.</string>
+    <string name="disable_anti_uninstall_title">Disable Anti-Uninstall</string>
+    <string name="disable_anti_uninstall_password_msg">Enter your password to deactivate anti-uninstall protection.</string>
+    <string name="disable_anti_uninstall_confirm_msg">Are you sure you want to disable anti-uninstall protection? Your app can now be uninstalled normally.</string>
+    <string name="anti_uninstall_disabled">Anti-Uninstall protection disabled.</string>
+    <string name="anti_uninstall_disable_error">Error disabling: %1$s</string>
+
+    <!-- Gemini AI Gatekeeper -->
+    <string name="api_status_active">API key configured · Gatekeeper active</string>
+    <string name="api_status_sync_models">API Key configured · Sync models to enable</string>
+    <string name="api_status_none">No API Key configured · AI features disabled</string>
+    <string name="api_key_unchanged">API Key kept unchanged.</string>
+    <string name="api_key_removed">API Key removed.</string>
+    <string name="api_key_saved">API Key saved.</string>
+    <string name="configure_api_key_first">Please configure an API key first.</string>
+    <string name="configure_gemini_key_first">Please configure a Gemini API key first.</string>
+    <string name="refreshing_models">Refreshing model list…</string>
+    <string name="models_refreshed">Model list refreshed!</string>
+    <string name="ai_ignore_title">Convince AI: Ignore App</string>
+    <string name="ai_ignore_subtitle">Tell the AI why you must temporarily ignore keyword blocking in this app. (Min 7 sentences)</string>
+    <string name="ai_ignore_app_subtitle">Explain why you must temporarily ignore keyword blocking in %1$s. (Min 7 sentences)</string>
+    <string name="ai_remove_ignore_title">Convince AI: Remove from Ignore List</string>
+    <string name="ai_remove_ignore_subtitle">Ask the AI to restore blocking on %1$s. The AI will approve this request eagerly.</string>
+    <string name="ai_pause_title">Convince AI: Pause Blocker</string>
+    <string name="ai_pause_subtitle">Explain the emergency reason to temporarily disable ALL keyword blocking. (Min 7 sentences)</string>
+    <string name="ai_extend_title">Convince AI: Extend Ignore</string>
+    <string name="ai_extend_subtitle">Explain why you must extend the ignore duration for %1$s. (Min 7 sentences)</string>
+    <string name="ai_default_app_label">app</string>
+    <string name="ai_justification_hint">Your justification (Min 7 sentences, 5 words/sentence)</string>
+    <string name="ai_removal_justification_hint">Your justification (No restrictions, min 1 word)</string>
+    <string name="loading_installed_apps">Loading installed apps…</string>
+    <string name="select_app_prompt">Please select an app.</string>
+    <string name="verdict_approved">Verdict: APPROVED</string>
+    <string name="verdict_rejected">Verdict: REJECTED</string>
+    <string name="ai_request_error">Error: %1$s</string>
+
+    <!-- Ignored Apps Decrease Dialog -->
+    <string name="decrease_ignore_title">Decrease Ignore Time</string>
+    <string name="decrease_ignore_message">Set a shorter duration for %1$s. You cannot increase the time.</string>
+    <string name="new_duration_minutes">New Duration: %1$d minutes</string>
+    <string name="duration_updated">Duration updated.</string>
+
+    <!-- Backup & Restore -->
+    <string name="export_options_title">Export Options</string>
+    <string name="export_options_info">Currently password and API key are also exported. If you want to exclude any of the two, toggle it off and it won\'t be exported.</string>
+    <string name="export_password_hash">Export Password Hash</string>
+    <string name="export_api_key">Export API Key</string>
+    <string name="state_exported">Settings exported successfully</string>
+    <string name="failed_to_export_data">Failed to export data</string>
+    <string name="state_imported">Settings imported successfully</string>
+    <string name="failed_to_import">Failed to import settings</string>
 </resources>
