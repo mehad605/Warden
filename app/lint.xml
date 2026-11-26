@@ -13,9 +13,6 @@
          version mismatch: KaCallableMemberCall). Warden uses StateFlow, never MutableLiveData. -->
     <issue id="NullSafeMutableLiveData" severity="ignore" />
 
-    <!-- Monochrome adaptive icon was intentionally removed in commit b40d026 per product design. -->
-    <issue id="MonochromeLauncherIcon" severity="ignore" />
-
     <!-- Dashboard layout intentionally houses all single-screen settings cards; view hierarchy depth
          was flattened (< 10 levels) and the card count is bounded. -->
     <issue id="TooManyViews" severity="ignore" />

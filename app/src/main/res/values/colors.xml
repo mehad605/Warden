@@ -48,7 +48,7 @@
     <color name="md_theme_surfaceContainerHigh">#E6E7EF</color>
     <color name="md_theme_surfaceContainerHighest">#E1E1EA</color>
 
-    <color name="splash_background">#0E0E15</color>
+    <color name="splash_background">#F8F9FF</color>
 
     <!-- Active/Status -->
     <color name="status_active">#4ADE80</color>

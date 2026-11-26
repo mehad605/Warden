@@ -70,7 +70,7 @@ Example: adding a `feature/cooldown` feature that computes a cooldown window.
 1. **Create a layout XML** in `app/src/main/res/layout/fragment_<name>.xml` using Material 3 theme attributes (`?attr/colorSurfaceContainer`, etc.), string resources in `res/values/strings.xml`, and `contentDescription` on all `ImageView`s.
 2. **Create a Fragment** in `app/src/main/java/com/warden/app/feature/<feature>/ui/<Name>Fragment.kt` using ViewBinding (`_binding` nulled in `onDestroyView()`), obtaining `AppContainer` via `(requireContext().applicationContext as AppContainerProvider).container`.
 3. **Navigate from `FragmentActivity` or `KeywordBlockerFragment`** using `parentFragmentManager.beginTransaction().replace(R.id.fragment_holder, MyFeatureFragment()).addToBackStack(null).commit()`.
-4. **Do NOT add a new launcher Activity** or rename `FragmentActivity` (preserving launcher shortcuts). If a secondary `Activity` is strictly required, declare it with `android:exported="false"` in `AndroidManifest.xml` and update the manifest surface audit in `docs/PARITY.md`.
+4. **Do NOT add a new launcher Activity** or rename `FragmentActivity` (preserving launcher shortcuts). If a secondary `Activity` is strictly required, declare it with `android:exported="false"` in `AndroidManifest.xml`.
 5. **Add Robolectric UI tests** verifying creation and key interactions on `@Config(sdk = [30])`.
 
 ---

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Night guardian shield with luminous Indigo rim -->
+    <path
+        android:pathData="M54,21 L79,29.5 C80.5,30 81.5,31.5 81.5,33.2 L81.5,54 C81.5,70 69.5,80.5 55.8,86.1 C54.7,86.6 53.3,86.6 52.2,86.1 C38.5,80.5 26.5,70 26.5,54 L26.5,33.2 C26.5,31.5 27.5,30 29,29.5 Z"
+        android:strokeColor="#8FA8FF"
+        android:strokeWidth="2.2">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="54"
+                android:endY="86.5"
+                android:startX="54"
+                android:startY="21"
+                android:type="linear">
+                <item
+                    android:color="#283C8A"
+                    android:offset="0" />
+                <item
+                    android:color="#162254"
+                    android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Right-half highlight facet -->
+    <path
+        android:fillAlpha="0.12"
+        android:fillColor="#8FA8FF"
+        android:pathData="M54,22 L78.5,30.2 C79.8,30.7 80.5,32 80.5,33.4 L80.5,54 C80.5,69.2 69,79.5 55.6,85 C55,85.2 54.5,85.3 54,85.3 Z" />
+    <!-- Teal focus sentinel prism -->
+    <path
+        android:fillColor="#4DD8C8"
+        android:pathData="M54,29 L59.2,34.8 L54,40.6 L48.8,34.8 Z" />
+    <!-- Geometric Warden W -->
+    <path
+        android:fillColor="#EEF2FF"
+        android:pathData="M35.5,43.5 L41.8,43.5 L46.2,60.2 L51.1,47.8 L56.9,47.8 L61.8,60.2 L66.2,43.5 L72.5,43.5 L65.1,68.5 L58.9,68.5 L54,55.8 L49.1,68.5 L42.9,68.5 Z" />
+</vector>

@@ -1,108 +1,92 @@
 <div align="center">
 
-<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp" alt="Warden Icon" width="120" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/warden-logo-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/warden-logo-light.svg" />
+  <img alt="Warden Logo" src="docs/assets/warden-logo-light.svg" width="128" />
+</picture>
 
 # Warden
 
-**A lightweight, self-enforcing digital focus guardian for Android.**
+**Take your attention back. A strict, private focus guardian for Android.**
 
-Warden monitors on-screen text in real time through an Android `AccessibilityService`, intercepts content containing keywords you have flagged as distracting (after masking whitelisted exception phrases), and returns you to the home screen before doomscrolling begins. When you genuinely need a temporary exception, you must argue your case to an adversarial **Gemini AI Gatekeeper** whose default answer is **NO**.
-
-> **CRITICAL WARNING:**
-> Once enabled, Warden's self-protection and optional Device Administrator anti-uninstall lock are intentionally difficult to bypass. Install and use Warden at your own risk.
->
-> *Privacy Note:* Warden has zero analytics, telemetry, or third-party trackers. All keyword scanning runs 100% offline on-device. The only network request is to `generativelanguage.googleapis.com` when you explicitly configure a Gemini API key and submit an AI Gatekeeper request or refresh models.
+Warden watches for distracting keywords across your phone and sends you straight back to the home screen before a quick check turns into an hour of doomscrolling. Need a temporary pass? You'll have to convince an adversarial **Gemini AI Gatekeeper** whose default answer is **NO**.
 
 [![Release](https://github.com/mehad605/Warden/actions/workflows/release.yml/badge.svg)](https://github.com/mehad605/Warden/actions/workflows/release.yml)
-[![API](https://img.shields.io/badge/API-26%2B-brightgreen.svg)](https://developer.android.com/tools/releases/platforms)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/mehad605/Warden/actions/workflows/ci.yml/badge.svg)](https://github.com/mehad605/Warden/actions/workflows/ci.yml)
+[![Android](https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-4355B5.svg)](https://github.com/mehad605/Warden/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-4DD8C8.svg)](LICENSE)
 
-[Installation](#installation) · [Build & Test](#build-run-and-test) · [Architecture](docs/ARCHITECTURE.md) · [How-To Recipes](docs/HOW_TO.md) · [Releasing](docs/RELEASING.md) · [Contributing](CONTRIBUTING.md)
+[**Download Latest APK**](https://github.com/mehad605/Warden/releases/latest) · [How It Works](#how-warden-protects-your-focus) · [Quick Setup](#installation--setup) · [Privacy](#privacy-first) · [Emergency Uninstall](#emergency-uninstall) · [**For Developers →**](DEVELOPERS.md)
 
 </div>
 
 ---
 
-## Features
+## Why Warden?
 
-| Feature | Description |
-|---|---|
-| **Real-Time Keyword Blocking** | Whole-word regex scan (`(?<!\w)(?:...)+(?!\w)`) over visible `text` and `contentDescription` nodes with ±7-word context feedback |
-| **Whitelist Masking** | Whitelisted phrases (e.g., `"basketball shorts"`) are masked before keyword scanning to prevent false positives |
-| **Configurable Grace Period** | 0–5s delay (default 2s) with re-check before `GLOBAL_ACTION_HOME` fires |
-| **Adversarial AI Gatekeeper** | Direct HTTPS Gemini REST client (no heavy SDK) adjudicating app exemptions, extensions, ignore removals, and full blocker pauses with optional screenshot proof |
-| **Anti-Uninstall & Self-Protection** | Device Administrator registration paired with Accessibility interception of Force Stop, Clear Data, Accessibility revocation, and Device Admin deactivation |
-| **Password Lock** | Strong password protection (SHA-256) gating keyword/whitelist removal, password updates, and Anti-Uninstall deactivation |
-| **Active Ignored Apps & Countdown** | Live countdown for temporary exemptions, decrease-only slider, automatic expiry pruning, and zero polling when idle |
-| **Merge-Only Backup & Restore** | JSON export (optionally excluding secrets, always clearing anti-uninstall flags) and merge-only import so restoring cannot weaken active rules |
-| **Bounded On-Device Crash Logs** | Rotated `crash_log.txt` (128 KiB cap + single backup) with zero main-thread I/O at startup |
+Most blockers are too easy to switch off the second an impulse hits. Warden is built to actually hold the line:
 
----
-
-## Installation
-
-1. Download the signed release APK (`Warden-vX.Y.Z.apk`) and `SHA256SUMS.txt` from [**GitHub Releases**](https://github.com/mehad605/Warden/releases).
-2. Verify the checksum: `sha256sum -c SHA256SUMS.txt`.
-3. Install on Android **8.0 (API 26)** or higher (tested against API 30 / Realme Narzo 20 target constraints).
-4. Grant **Accessibility Service** access (and optionally **Device Administrator** for Anti-Uninstall).
+- **Instant Keyword Shield** — Flag words or topics that pull you off track (like `shorts`, `reels`, or `trending`). Whenever they appear on screen in any app, Warden steps in and returns you home.
+- **Smart Whitelist Exceptions** — Add safe phrases (like `"basketball shorts"`) so you never get interrupted while doing real work.
+- **Grace Period Re-Check** — Set a 0–5 second grace window (2 seconds by default) so brief, accidental mentions don't kick you out—only lingering distractions do.
+- **Adversarial AI Gatekeeper** — Want a temporary app exemption or a short pause? Write a genuine justification (and optionally attach a screenshot as proof) to Gemini. Low-effort excuses get rejected, and repeated rejections make future approvals even harder.
+- **Anti-Uninstall & Self-Protection** — Optional Device Administrator lock paired with system-settings guards stops impulsive Force Stops, Clear Data taps, Accessibility revocations, and quick uninstalls.
+- **Password-Locked Rules** — Lock keyword removal, grace-period edits, and Anti-Uninstall behind a strong local password.
+- **Safe Backup & Restore** — Export your setup to JSON (with an opt-in choice for sensitive credentials) and merge backups back in without weakening your active rules.
+- **Ultra-Light Footprint** — ~1.5 MB APK, zero background polling, zero native bloat, built to stay fast and quiet even on 4 GB RAM phones.
 
 ---
 
-## Build, Run, and Test
+## Installation & Setup
 
-**Requirements:** JDK 17 (or 21), Android SDK Platform 34, Gradle Wrapper (`./gradlew`).
+1. Download **`Warden-vX.Y.Z.apk`** from [**GitHub Releases**](https://github.com/mehad605/Warden/releases/latest).
+   - *(Optional)* Download `SHA256SUMS.txt` and verify integrity: `sha256sum -c SHA256SUMS.txt`.
+2. Install the APK on any Android **8.0 (API 26)** or newer device.
+3. Open **Warden**, accept the terms, and enable **Warden** in **Settings → Accessibility**.
+4. Add your blocked keywords, optional whitelist phrases, and set a configuration password.
+5. *(Optional)* Add a free [Google AI Studio](https://aistudio.google.com/app/apikey) Gemini API key to enable the AI Gatekeeper, and turn on **Anti-Uninstall Protection** once you're happy with your rules.
 
-```bash
-# Clone
-git clone https://github.com/mehad605/Warden.git
-cd Warden
-
-# Run all static checks & unit/architecture tests
-./gradlew ktlintCheck detekt lint testDebugUnitTest
-
-# Build debug APK and install on a connected device
-./gradlew installDebug
-
-# Build R8-minified, resource-shrunk release APK
-./gradlew assembleRelease
-# Output: app/build/outputs/apk/release/Warden-release.apk
-```
+> **Heads Up:** Once Anti-Uninstall Protection is turned on, Warden intentionally makes it hard to disable or uninstall itself in the heat of the moment. Read [Emergency Uninstall](#emergency-uninstall) before enabling it.
 
 ---
 
-## Release Process
+## Privacy First
 
-Releases are produced deterministically from SemVer Git tags (`vMAJOR.MINOR.PATCH`) via [`.github/workflows/release.yml`](.github/workflows/release.yml) with Gradle wrapper validation, `apksigner verify`, size budget enforcement, SBOM generation, SHA-256 checksums, and build provenance attestation. See [docs/RELEASING.md](docs/RELEASING.md) for key rotation and dry-run instructions.
+- **100% offline keyword scanning:** Everything on your screen stays on your phone—never recorded, never uploaded.
+- **Zero analytics, ads, or trackers:** Warden has no backend server and collects zero telemetry.
+- **Direct-to-Gemini AI only when you ask:** The app only touches the internet when you explicitly configure your own Gemini API key and submit a Gatekeeper request (or refresh the model list), communicating directly with `generativelanguage.googleapis.com` over HTTPS.
 
 ---
 
-## Documentation
+## Guides
 
-| Document | Purpose |
-|---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layered architecture, Mermaid diagrams, package map, runtime footprint floor |
-| [docs/HOW_TO.md](docs/HOW_TO.md) | Step-by-step recipes: add a feature, screen, setting, dependency, or replace the network layer |
-| [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) | Justification and size cost of every runtime dependency |
-| [docs/RELEASING.md](docs/RELEASING.md) | Release pipeline architecture, dry runs, and signing key rotation |
-| [docs/adr/](docs/adr/) | Architecture Decision Records explaining every major design choice |
-| [docs/how-it-works.md](docs/how-it-works.md) | Deep dive into the keyword matching and self-protection engine |
-| [docs/ai-gatekeeper.md](docs/ai-gatekeeper.md) | Adversarial prompt rules, local validation, and multimodal proof |
-| [docs/anti-uninstall.md](docs/anti-uninstall.md) | Device Administrator & Accessibility self-protection details |
-| [docs/configuration.md](docs/configuration.md) | Settings reference and JSON schema |
+- [How the Blocker Works](docs/how-it-works.md) — Keyword matching, whitelist masking, grace period, and self-protection
+- [AI Gatekeeper Guide](docs/ai-gatekeeper.md) — Validation rules, proof requirements, and credibility score (`noCount`)
+- [Anti-Uninstall Protection](docs/anti-uninstall.md) — Device Admin lock and 3-minute activation grace window
+- [Configuration Reference](docs/configuration.md) — Every setting, default, and merge-safe backup format
 
 ---
 
 ## Emergency Uninstall
 
-If you enabled Anti-Uninstall protection and are locked out of Settings:
+If you enabled Anti-Uninstall Protection and forgot your password or are locked out of Settings:
 
 1. **Via Safe Mode:** Reboot into Android Safe Mode (which temporarily disables third-party Accessibility Services), open **Settings → Security → Device admin apps** to deactivate Warden, and uninstall normally.
 2. **Via ADB (from a computer):**
    ```bash
    adb shell settings delete secure enabled_accessibility_services
-   # Deactivate Warden in Device Admin settings on the phone, then:
+   # Deactivate Warden in Device Admin settings on your phone, then:
    adb shell pm uninstall com.warden.app
    ```
+
+---
+
+## For Developers
+
+Interested in the architecture, building from source, running the test/lint suite, or contributing?
+
+See **[DEVELOPERS.md](DEVELOPERS.md)** for the full technical overview, local build commands, architecture boundaries, and release workflow, and **[CONTRIBUTING.md](CONTRIBUTING.md)** for contribution guidelines.
 
 ---
 
