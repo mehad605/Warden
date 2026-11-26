@@ -15,6 +15,7 @@ This document is the technical entry point for engineers building, testing, exte
   - `feature/gatekeeper/{domain,data,ui}` — `GatekeeperClient` boundary, `JustificationValidator`, `GatekeeperPromptBuilder`, `HttpGeminiGatekeeperClient`, and `BitmapImageEncoder`.
   - `feature/security/{domain,ui}` — `PasswordPolicy` (SHA-256) and `AntiUninstallUiController`.
   - `feature/backup/ui` — Off-main-thread SAF JSON export/import (`BackupDialogController`).
+  - `feature/onboarding/ui` — Interactive 4-step walkthrough (`OnboardingGuideDialog`).
 - **Release optimization:** R8 full mode, `shrinkResources`, English-only resources, pure-vector light/dark/monochrome adaptive launcher icons, log stripping, and embedded static baseline profile (`app/src/main/baseline-prof.txt`).
 
 ---

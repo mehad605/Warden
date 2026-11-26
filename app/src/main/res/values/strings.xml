@@ -16,6 +16,7 @@
     <string name="grace_period_seconds_fmt">%1$ds</string>
     <string name="grace_period_default">2s</string>
     <string name="permanent_label">Permanent</string>
+    <string name="zero_count">0</string>
 
     <plurals name="word_count">
         <item quantity="one">%1$d word</item>
@@ -27,47 +28,99 @@
         <item quantity="other">New Duration: %1$d minutes</item>
     </plurals>
 
-    <!-- Dashboard Layout -->
-    <string name="settings_title">Settings</string>
-    <string name="settings_subtitle">Warden · Content Shield</string>
+    <plurals name="rejection_count">
+        <item quantity="one">%1$d Rejection</item>
+        <item quantity="other">%1$d Rejections</item>
+    </plurals>
+
+    <!-- Sentinel Header & Navigation -->
+    <string name="header_status_online">Accessibility Guard Online</string>
+    <string name="header_status_offline">Accessibility Permission Needed</string>
+    <string name="status_armed_pill">● Armed</string>
+    <string name="status_paused_pill">● Paused</string>
+    <string name="cd_open_guide">Open interactive guide</string>
+    <string name="cd_toggle_shield">Toggle Focus Shield</string>
+    <string name="tab_shield">Shield</string>
+    <string name="tab_rules">Rules</string>
+    <string name="tab_vault">Vault</string>
+
+    <!-- Shield Tab -->
     <string name="accessibility_required_title">Accessibility Required</string>
-    <string name="accessibility_required_message">Warden needs Accessibility permission to detect keywords in other running apps and minimize them securely.</string>
+    <string name="accessibility_required_message">Warden needs Accessibility permission to detect blocked keywords across apps and return you Home. Scanning stays completely offline.</string>
     <string name="enable_in_settings">Enable in Settings</string>
-    <string name="section_core_protection">CORE PROTECTION</string>
+    <string name="hero_shield_armed">Focus Shield Armed</string>
+    <string name="hero_shield_paused">Focus Shield Paused</string>
+    <string name="hero_shield_armed_sub">Monitoring active rules · %1$s grace window</string>
+    <string name="hero_shield_paused_sub">Tap the shield or switch below to start guarding</string>
+    <string name="stat_count_fmt">%1$d</string>
     <string name="keyword_blocker_title">Keyword Blocker</string>
-    <string name="keyword_blocker_subtitle">Active content filtering</string>
-    <string name="blocked_words_label">Blocked words</string>
-    <string name="add_blocked_word_hint">Add a blocked word…</string>
-    <string name="whitelisted_words_label">Whitelisted words</string>
-    <string name="add_whitelisted_word_hint">Add a whitelisted word…</string>
-    <string name="grace_period_title">Grace Period</string>
-    <string name="grace_period_subtitle">Delay before app minimizes</string>
-    <string name="section_ai_gatekeeper">AI GATEKEEPER</string>
-    <string name="gemini_engine_title">Gemini Engine</string>
-    <string name="gemini_engine_subtitle">AI-powered rule evaluation</string>
-    <string name="api_status_default">No API Key configured</string>
-    <string name="gemini_api_key_label">GEMINI API KEY</string>
-    <string name="paste_api_key_hint">Paste your API key here</string>
-    <string name="model_label">MODEL</string>
+    <string name="stat_blocked">Blocked</string>
+    <string name="stat_safe_phrases">Safe Phrases</string>
+    <string name="stat_grace">Grace</string>
+    <string name="ai_gatekeeper_card_title">AI Gatekeeper</string>
+    <string name="ai_gatekeeper_card_subtitle">Need temporary access to an app? Make your case—Gemini’s default answer is NO.</string>
+    <string name="ai_gatekeeper_setup_hint">Configure your Gemini API key in the Vault tab to enable AI exemptions.</string>
+    <string name="request_temp_pass">Request Temporary Pass</string>
+    <string name="active_ignored_apps">ACTIVE PASSES &amp; EXEMPTIONS</string>
+
+    <!-- Rules Tab -->
+    <string name="rules_screen_title">Filter Rules</string>
+    <string name="rules_screen_subtitle">Choose words that send you Home, safe phrases to ignore, and how long Warden waits before acting.</string>
+    <string name="blocked_words_label">Blocked</string>
+    <string name="safe_phrases_label">Safe Phrases</string>
+    <string name="blocked_words_explainer">Any whole-word match on screen triggers Home.</string>
+    <string name="safe_phrases_explainer">Masked out before scanning so work or study text isn’t blocked.</string>
+    <string name="add_blocked_word_hint">Add blocked word (e.g. shorts)…</string>
+    <string name="add_whitelisted_word_hint">Add safe phrase (e.g. cargo shorts)…</string>
+    <string name="grace_period_title">Grace Window</string>
+    <string name="grace_period_subtitle">Waits and re-checks the screen before minimizing, avoiding accidental triggers.</string>
+    <string name="grace_label_instant">0s Instant</string>
+    <string name="grace_label_balanced">2s Balanced</string>
+    <string name="grace_label_lenient">5s Lenient</string>
+
+    <!-- Vault Tab -->
+    <string name="vault_screen_title">Vault &amp; Setup</string>
+    <string name="vault_screen_subtitle">Locks, AI Gatekeeper engine, and merge-safe backups.</string>
+    <string name="gemini_engine_title">Gemini AI Engine</string>
+    <string name="gemini_engine_subtitle">Direct HTTPS connection · No third-party servers</string>
+    <string name="api_status_default">No API key configured</string>
+    <string name="paste_api_key_hint">Paste your Google AI Studio API key</string>
     <string name="refresh_models_desc">Refresh Models</string>
     <string name="save_api_key">Save API Key</string>
-    <string name="app_exemptions_label">APP EXEMPTIONS</string>
-    <string name="app_exemptions_subtitle">Ask AI to bypass rules for a specific app</string>
-    <string name="convince_ai_ignore_app">Convince AI to Ignore App</string>
-    <string name="state_your_reason">State your reason — AI decides</string>
-    <string name="active_ignored_apps">Active Ignored Apps</string>
-    <string name="section_security_data">SECURITY &amp; DATA</string>
-    <string name="password_protection_title">Password Protection</string>
+    <string name="password_protection_title">Settings Password</string>
     <string name="remove_action">Remove</string>
-    <string name="anti_uninstall_title">Anti-Uninstall</string>
-    <string name="anti_uninstall_subtitle">Prevent removal or force stop</string>
+    <string name="anti_uninstall_title">Anti-Uninstall Shield</string>
+    <string name="anti_uninstall_subtitle">Device Admin lock &amp; Settings guard</string>
     <string name="backup_restore_title">Backup &amp; Restore</string>
-    <string name="backup_restore_subtitle">Export or import your config</string>
-    <string name="version_footer">Warden v2.0 · Android Content Shield</string>
+    <string name="backup_restore_subtitle">Export JSON (secrets opt-in) or merge-import rules safely</string>
+    <string name="replay_guide_title">Interactive Guide</string>
+    <string name="replay_guide_subtitle">Walk through how every part of Warden works</string>
+    <string name="replay_action">Start</string>
+    <string name="version_footer">Warden v2.1 · Android Content Shield</string>
     <string name="cd_app_icon">App Icon</string>
     <string name="cd_extend_time">Extend Time</string>
     <string name="cd_screenshot_preview">Attached screenshot preview</string>
     <string name="cd_remove_screenshot">Remove attached screenshot</string>
+
+    <!-- Interactive Onboarding Guide -->
+    <string name="guide_step_fmt">Step %1$d of %2$d</string>
+    <string name="guide_skip">Skip</string>
+    <string name="guide_back">Back</string>
+    <string name="guide_next">Next</string>
+    <string name="guide_done">Start Guarding</string>
+    <string name="guide_step1_title">Your Offline Focus Shield</string>
+    <string name="guide_step1_body">Warden watches visible text on your phone via Android’s Accessibility Service and sends you Home whenever a blocked distraction appears.</string>
+    <string name="guide_step1_tip">100% private: scanning happens strictly on your phone. Zero analytics, zero servers.</string>
+    <string name="guide_step1_cta">Enable Accessibility Permission</string>
+    <string name="guide_step2_title">Blocked Words, Safe Phrases &amp; Grace</string>
+    <string name="guide_step2_body">Use the Rules tab to add distracting keywords, add Safe Phrases to prevent false blocks, and tune the Grace Window.</string>
+    <string name="guide_step2_tip">Example: Block “shorts”, mark “basketball shorts” as Safe, and keep Grace at 2s so fleeting mentions never interrupt you.</string>
+    <string name="guide_step3_title">The Adversarial AI Gatekeeper</string>
+    <string name="guide_step3_body">Need temporary access to a blocked app or a brief pause? You must convince Gemini with a genuine 7-sentence reason (plus optional screenshot proof).</string>
+    <string name="guide_step3_tip">Gemini’s default verdict is NO, and every rejection increases your Rejection Count—making excuses harder over time.</string>
+    <string name="guide_step4_title">Lock It Down in Vault</string>
+    <string name="guide_step4_body">Once your rules feel right, open the Vault tab to set a strong Settings Password, activate Anti-Uninstall Protection, and export merge-safe backups.</string>
+    <string name="guide_step4_tip">You can replay this guide anytime by tapping the ? icon in the top-right corner.</string>
 
     <!-- AI Chat Dialog Layout -->
     <string name="ai_dialog_default_title">Convince AI Gatekeeper</string>
@@ -110,7 +163,7 @@
     <string name="remove_password_message">Enter your password to disable protection</string>
 
     <!-- Anti-Uninstall -->
-    <string name="anti_uninstall_admin_explanation">Enable this to prevent Block Words from being uninstalled without permission.</string>
+    <string name="anti_uninstall_admin_explanation">Enable this to prevent Warden from being uninstalled without permission.</string>
     <string name="disable_anti_uninstall_title">Disable Anti-Uninstall</string>
     <string name="disable_anti_uninstall_password_msg">Enter your password to deactivate anti-uninstall protection.</string>
     <string name="disable_anti_uninstall_confirm_msg">Are you sure you want to disable anti-uninstall protection? Your app can now be uninstalled normally.</string>
@@ -125,7 +178,7 @@
     <string name="api_key_removed">API Key removed.</string>
     <string name="api_key_saved">API Key saved.</string>
     <string name="configure_api_key_first">Please configure an API key first.</string>
-    <string name="configure_gemini_key_first">Please configure a Gemini API key first.</string>
+    <string name="configure_gemini_key_first">Please configure a Gemini API key in Vault first.</string>
     <string name="refreshing_models">Refreshing model list…</string>
     <string name="models_refreshed">Model list refreshed!</string>
     <string name="ai_ignore_title">Convince AI: Ignore App</string>

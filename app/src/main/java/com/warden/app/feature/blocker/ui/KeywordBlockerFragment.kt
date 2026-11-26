@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -20,13 +21,14 @@ import com.warden.app.data.models.Settings
 import com.warden.app.databinding.FragmentKeywordBlockerBinding
 import com.warden.app.feature.gatekeeper.domain.GatekeeperVerdict
 import com.warden.app.feature.gatekeeper.ui.GatekeeperDialogMode
+import com.warden.app.feature.onboarding.ui.OnboardingGuideDialog
 import com.warden.app.services.WardenService
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
- * Main settings dashboard fragment wiring [FragmentKeywordBlockerBinding] to [BlockerViewModel]
- * and [DashboardControllers].
+ * Main Sentinel dashboard fragment wiring [FragmentKeywordBlockerBinding] (Shield / Rules / Vault),
+ * [BlockerViewModel], [DashboardControllers], and [OnboardingGuideDialog].
  */
 class KeywordBlockerFragment : Fragment() {
     private var _binding: FragmentKeywordBlockerBinding? = null
@@ -41,6 +43,7 @@ class KeywordBlockerFragment : Fragment() {
     private var pendingExportJson: String? = null
     private var onImagePickedCallback: ((Uri) -> Unit)? = null
     private var controllers: DashboardControllers? = null
+    private var navigationBinder: SentinelNavigationBinder? = null
 
     private val selectImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -87,14 +90,24 @@ class KeywordBlockerFragment : Fragment() {
                 viewModel = viewModel,
                 host = createHostCallbacks(),
             )
+        navigationBinder =
+            SentinelNavigationBinder(
+                context = requireContext(),
+                binding = binding,
+                onToggleShieldOrb = ::toggleShieldFromOrb,
+                onOpenGuide = ::showOnboardingGuide,
+            )
         bindCoreListeners()
         observeSettings()
+        if (savedInstanceState == null && arguments?.getBoolean(ARG_SHOW_ONBOARDING, false) == true) {
+            showOnboardingGuide()
+        }
     }
 
     override fun onResume() {
         super.onResume()
         val enabled = container.accessibilityChecker.isServiceEnabled(WardenService::class.java)
-        binding.cardAccessibilityWarning.visibility = if (enabled) View.GONE else View.VISIBLE
+        navigationBinder?.renderAccessibilityStatus(enabled)
         controllers?.antiUninstallController?.syncWithSystemState(viewModel.settings.value.antiUninstallEnabled)
         controllers?.ignoredAppsBinder?.onResume()
     }
@@ -107,6 +120,7 @@ class KeywordBlockerFragment : Fragment() {
     override fun onDestroyView() {
         controllers?.stopTimers()
         controllers = null
+        navigationBinder = null
         _binding = null
         super.onDestroyView()
     }
@@ -116,7 +130,7 @@ class KeywordBlockerFragment : Fragment() {
             isUpdatingUi = { isUpdatingUi },
             isViewAlive = { _binding != null },
             syncAntiUninstallSwitch = { checked ->
-                runWithoutListenerFeedback { binding.switchAntiUninstall.isChecked = checked }
+                runWithoutListenerFeedback { binding.tabVault.switchAntiUninstall.isChecked = checked }
             },
             startActivity = { startActivity(it) },
             requestPickImage = { callback ->
@@ -131,22 +145,43 @@ class KeywordBlockerFragment : Fragment() {
 
     private fun bindCoreListeners() {
         controllers?.bindAllListeners()
-        binding.btnEnableAccessibility.setOnClickListener {
+        navigationBinder?.bindListeners()
+        binding.tabShield.btnEnableAccessibility.setOnClickListener {
             container.accessibilityChecker.openAccessibilitySettings(requireContext(), WardenService::class.java)
         }
-        binding.switchEnableBlocker.setOnCheckedChangeListener { _, isChecked ->
+        binding.tabShield.switchEnableBlocker.setOnCheckedChangeListener { _, isChecked ->
             if (isUpdatingUi) return@setOnCheckedChangeListener
-            if (!isChecked) {
-                runWithoutListenerFeedback { binding.switchEnableBlocker.isChecked = true }
-                openGatekeeperDialog(GatekeeperDialogMode.PAUSE_BLOCKER, null)
-            } else {
-                viewModel.dispatch(BlockerAction.SetBlockerActive(true))
-                binding.tvBlockerBadge.visibility = View.VISIBLE
-            }
+            handleBlockerToggle(isChecked)
         }
-        binding.sliderGracePeriod.addOnChangeListener { _, value, fromUser ->
+        binding.tabRules.sliderGracePeriod.addOnChangeListener { _, value, fromUser ->
             if (fromUser) viewModel.dispatch(BlockerAction.SetGracePeriodSeconds(value.toInt()))
         }
+    }
+
+    private fun toggleShieldFromOrb() {
+        val currentlyActive = viewModel.settings.value.keywordBlockerConfig.isActive
+        handleBlockerToggle(!currentlyActive)
+    }
+
+    private fun handleBlockerToggle(desiredActive: Boolean) {
+        if (!desiredActive) {
+            runWithoutListenerFeedback { binding.tabShield.switchEnableBlocker.isChecked = true }
+            openGatekeeperDialog(GatekeeperDialogMode.PAUSE_BLOCKER, null)
+        } else {
+            viewModel.dispatch(BlockerAction.SetBlockerActive(true))
+            binding.tabShield.tvBlockerBadge.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showOnboardingGuide() {
+        OnboardingGuideDialog(
+            context = requireContext(),
+            layoutInflater = layoutInflater,
+            isAccessibilityEnabled = { container.accessibilityChecker.isServiceEnabled(WardenService::class.java) },
+            onOpenAccessibilitySettings = {
+                container.accessibilityChecker.openAccessibilitySettings(requireContext(), WardenService::class.java)
+            },
+        ).show()
     }
 
     private fun observeSettings() {
@@ -160,19 +195,20 @@ class KeywordBlockerFragment : Fragment() {
     private fun renderSettings(settings: Settings) {
         val config = settings.keywordBlockerConfig
         runWithoutListenerFeedback {
-            if (binding.switchEnableBlocker.isChecked != config.isActive) {
-                binding.switchEnableBlocker.isChecked = config.isActive
+            if (binding.tabShield.switchEnableBlocker.isChecked != config.isActive) {
+                binding.tabShield.switchEnableBlocker.isChecked = config.isActive
             }
-            binding.tvBlockerBadge.visibility = if (config.isActive) View.VISIBLE else View.GONE
-            binding.sliderGracePeriod.value = settings.ignoreGracePeriodSeconds.toFloat()
-            binding.tvGraceValue.text =
+            binding.tabShield.tvBlockerBadge.visibility = if (config.isActive) View.VISIBLE else View.GONE
+            binding.tabRules.sliderGracePeriod.value = settings.ignoreGracePeriodSeconds.toFloat()
+            binding.tabRules.tvGraceValue.text =
                 if (settings.ignoreGracePeriodSeconds == 0) {
                     getString(R.string.grace_period_off)
                 } else {
                     getString(R.string.grace_period_seconds_fmt, settings.ignoreGracePeriodSeconds)
                 }
-            binding.switchAntiUninstall.isChecked = settings.antiUninstallEnabled
+            binding.tabVault.switchAntiUninstall.isChecked = settings.antiUninstallEnabled
         }
+        navigationBinder?.renderSummary(settings)
         controllers?.keywordsBinder?.render(config.blockedKeywords, config.whitelistedKeywords)
         controllers?.securityBinder?.render(settings)
         controllers?.geminiBinder?.render(settings)
@@ -186,6 +222,7 @@ class KeywordBlockerFragment : Fragment() {
         val snapshot = viewModel.settings.value
         if (snapshot.geminiApiKey.isNullOrEmpty()) {
             Toast.makeText(requireContext(), R.string.configure_gemini_key_first, Toast.LENGTH_SHORT).show()
+            navigationBinder?.selectTab(SentinelNavigationBinder.Tab.VAULT)
             return
         }
         controllers?.gatekeeperDialogs?.show(
@@ -243,7 +280,14 @@ class KeywordBlockerFragment : Fragment() {
 
     companion object {
         const val FRAGMENT_ID = "keyword_blocker"
+        private const val ARG_SHOW_ONBOARDING = "show_onboarding"
         private const val DEFAULT_EXPORT_FILE = "Warden.json"
         private val IMPORT_MIME_TYPES = arrayOf("application/json", "application/octet-stream", "*/*")
+
+        /** Creates a [KeywordBlockerFragment], optionally launching the onboarding guide once. */
+        fun newInstance(showOnboarding: Boolean = false): KeywordBlockerFragment =
+            KeywordBlockerFragment().apply {
+                arguments = bundleOf(ARG_SHOW_ONBOARDING to showOnboarding)
+            }
     }
 }

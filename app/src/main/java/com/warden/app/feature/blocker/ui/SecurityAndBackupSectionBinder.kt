@@ -26,7 +26,8 @@ internal class SecurityAndBackupSectionBinder(
 ) {
     /** Wires anti-uninstall switch, password buttons, and backup export/import buttons. */
     fun bindListeners() {
-        binding.switchAntiUninstall.setOnCheckedChangeListener { _, isChecked ->
+        val vault = binding.tabVault
+        vault.switchAntiUninstall.setOnCheckedChangeListener { _, isChecked ->
             if (isUpdatingUi()) return@setOnCheckedChangeListener
             antiUninstallController.onToggleRequested(
                 desiredChecked = isChecked,
@@ -34,28 +35,29 @@ internal class SecurityAndBackupSectionBinder(
                 onRecordActivationRequest = onRecordAdminActivation,
             )
         }
-        binding.btnSetPassword.setOnClickListener {
+        vault.btnSetPassword.setOnClickListener {
             passwordDialogs.showSetOrChangeDialog(hasPassword())
         }
-        binding.btnRemovePassword.setOnClickListener { passwordDialogs.showRemoveDialog() }
-        binding.btnExportSettings.setOnClickListener { onExportClicked() }
-        binding.btnImportSettings.setOnClickListener { onImportClicked() }
+        vault.btnRemovePassword.setOnClickListener { passwordDialogs.showRemoveDialog() }
+        vault.btnExportSettings.setOnClickListener { onExportClicked() }
+        vault.btnImportSettings.setOnClickListener { onImportClicked() }
     }
 
     /** Renders password protection status badge and buttons from [settings]. */
     fun render(settings: Settings) {
+        val vault = binding.tabVault
         if (settings.passwordHash != null) {
-            binding.tvPasswordStatus.setText(R.string.password_required_status)
-            binding.tvPasswordBadge.setText(R.string.status_on)
-            binding.tvPasswordBadge.setTextColor(ContextCompat.getColor(context, R.color.status_active))
-            binding.tvPasswordBadge.visibility = View.VISIBLE
-            binding.btnSetPassword.setText(R.string.change_password)
-            binding.btnRemovePassword.visibility = View.VISIBLE
+            vault.tvPasswordStatus.setText(R.string.password_required_status)
+            vault.tvPasswordBadge.setText(R.string.status_on)
+            vault.tvPasswordBadge.setTextColor(ContextCompat.getColor(context, R.color.status_active))
+            vault.tvPasswordBadge.visibility = View.VISIBLE
+            vault.btnSetPassword.setText(R.string.change_password)
+            vault.btnRemovePassword.visibility = View.VISIBLE
         } else {
-            binding.tvPasswordStatus.setText(R.string.no_password_set)
-            binding.tvPasswordBadge.visibility = View.GONE
-            binding.btnSetPassword.setText(R.string.set_password)
-            binding.btnRemovePassword.visibility = View.GONE
+            vault.tvPasswordStatus.setText(R.string.no_password_set)
+            vault.tvPasswordBadge.visibility = View.GONE
+            vault.btnSetPassword.setText(R.string.set_password)
+            vault.btnRemovePassword.visibility = View.GONE
         }
     }
 }

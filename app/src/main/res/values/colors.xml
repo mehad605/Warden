@@ -1,56 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Light theme - Indigo Primary + Teal Secondary + Amber Tertiary -->
+    <!-- Light theme — Unified Warden Logo Palette (Royal Indigo + Sentinel Teal + Frosted Indigo) -->
     <color name="md_theme_primary">#4355B5</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
-    <color name="md_theme_primaryContainer">#DDE0FF</color>
-    <color name="md_theme_onPrimaryContainer">#000D41</color>
-    <color name="md_theme_secondary">#4DD8C8</color>
-    <color name="md_theme_onSecondary">#003730</color>
-    <color name="md_theme_secondaryContainer">#CCFBF1</color>
-    <color name="md_theme_onSecondaryContainer">#00201B</color>
-    <color name="md_theme_tertiary">#FFB86B</color>
-    <color name="md_theme_onTertiary">#4A2800</color>
-    <color name="md_theme_tertiaryContainer">#FFDDB5</color>
-    <color name="md_theme_onTertiaryContainer">#2A1500</color>
-    <color name="md_theme_error">#FF6B6B</color>
+    <color name="md_theme_primaryContainer">#E3E7FF</color>
+    <color name="md_theme_onPrimaryContainer">#16205E</color>
+    <color name="md_theme_secondary">#0F8A7E</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer">#D6F7F2</color>
+    <color name="md_theme_onSecondaryContainer">#04332E</color>
+    <color name="md_theme_tertiary">#31419A</color>
+    <color name="md_theme_onTertiary">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer">#DCE1FF</color>
+    <color name="md_theme_onTertiaryContainer">#0E1852</color>
+    <color name="md_theme_error">#D9465A</color>
     <color name="md_theme_onError">#FFFFFF</color>
-    <color name="md_theme_errorContainer">#FFDAD6</color>
-    <color name="md_theme_onErrorContainer">#410002</color>
-    <color name="md_theme_background">#F8F9FF</color>
-    <color name="md_theme_onBackground">#1A1B21</color>
-    <color name="md_theme_surface">#F8F9FF</color>
-    <color name="md_theme_onSurface">#1A1B21</color>
-    <color name="md_theme_surfaceVariant">#E2E2EC</color>
-    <color name="md_theme_onSurfaceVariant">#45464F</color>
-    <color name="md_theme_outline">#767680</color>
-    <color name="md_theme_outlineVariant">#C6C6D0</color>
-    <color name="md_theme_inverseSurface">#2F3036</color>
-    <color name="md_theme_inverseOnSurface">#F1F0F7</color>
-    <color name="md_theme_inversePrimary">#B6C5FF</color>
-    <color name="md_theme_primaryFixed">#DDE0FF</color>
-    <color name="md_theme_onPrimaryFixed">#000D41</color>
+    <color name="md_theme_errorContainer">#FFE2E6</color>
+    <color name="md_theme_onErrorContainer">#5A0A16</color>
+    <color name="md_theme_background">#F4F5FF</color>
+    <color name="md_theme_onBackground">#12162E</color>
+    <color name="md_theme_surface">#F4F5FF</color>
+    <color name="md_theme_onSurface">#12162E</color>
+    <color name="md_theme_surfaceVariant">#E4E7F7</color>
+    <color name="md_theme_onSurfaceVariant">#5B6385</color>
+    <color name="md_theme_outline">#8A93B8</color>
+    <color name="md_theme_outlineVariant">#D5DCFA</color>
+    <color name="md_theme_inverseSurface">#191C2B</color>
+    <color name="md_theme_inverseOnSurface">#EEF2FF</color>
+    <color name="md_theme_inversePrimary">#8FA8FF</color>
+    <color name="md_theme_primaryFixed">#E3E7FF</color>
+    <color name="md_theme_onPrimaryFixed">#16205E</color>
     <color name="md_theme_primaryFixedDim">#B6C5FF</color>
     <color name="md_theme_onPrimaryFixedVariant">#283D9C</color>
-    <color name="md_theme_secondaryFixed">#CCFBF1</color>
-    <color name="md_theme_onSecondaryFixed">#00201B</color>
-    <color name="md_theme_secondaryFixedDim">#99F6E4</color>
+    <color name="md_theme_secondaryFixed">#D6F7F2</color>
+    <color name="md_theme_onSecondaryFixed">#04332E</color>
+    <color name="md_theme_secondaryFixedDim">#99F0E4</color>
     <color name="md_theme_onSecondaryFixedVariant">#0F766E</color>
-    <color name="md_theme_tertiaryFixed">#FFDDB5</color>
-    <color name="md_theme_onTertiaryFixed">#2A1500</color>
-    <color name="md_theme_tertiaryFixedDim">#FFC082</color>
-    <color name="md_theme_onTertiaryFixedVariant">#A05C00</color>
-    <color name="md_theme_surfaceDim">#D8D9E2</color>
+    <color name="md_theme_tertiaryFixed">#DCE1FF</color>
+    <color name="md_theme_onTertiaryFixed">#0E1852</color>
+    <color name="md_theme_tertiaryFixedDim">#B6C5FF</color>
+    <color name="md_theme_onTertiaryFixedVariant">#22307C</color>
+    <color name="md_theme_surfaceDim">#E1E5F7</color>
     <color name="md_theme_surfaceBright">#F8F9FF</color>
     <color name="md_theme_surfaceContainerLowest">#FFFFFF</color>
-    <color name="md_theme_surfaceContainerLow">#F2F2FB</color>
-    <color name="md_theme_surfaceContainer">#ECEDF5</color>
-    <color name="md_theme_surfaceContainerHigh">#E6E7EF</color>
-    <color name="md_theme_surfaceContainerHighest">#E1E1EA</color>
+    <color name="md_theme_surfaceContainerLow">#F0F2FF</color>
+    <color name="md_theme_surfaceContainer">#FFFFFF</color>
+    <color name="md_theme_surfaceContainerHigh">#E8ECFF</color>
+    <color name="md_theme_surfaceContainerHighest">#DCE1FA</color>
 
-    <color name="splash_background">#F8F9FF</color>
+    <color name="splash_background">#F4F5FF</color>
 
-    <!-- Active/Status -->
-    <color name="status_active">#4ADE80</color>
-    <color name="status_active_bg">#1A4A30</color>
+    <!-- Active/Status — Sentinel Teal harmony -->
+    <color name="status_active">#0F8A7E</color>
+    <color name="status_active_bg">#D6F7F2</color>
+    <color name="sentinel_orb_ring">#4DD8C8</color>
+    <color name="sentinel_orb_halo">#DCE1FF</color>
 </resources>
