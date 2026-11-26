@@ -32,10 +32,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ui.activity.SelectAppsActivity"
-            android:exported="false" />
-
         <service
             android:name=".services.WardenService"
             android:exported="true"

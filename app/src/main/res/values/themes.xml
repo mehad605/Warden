@@ -81,14 +81,4 @@
     <style name="Theme.BlockWords.Splash" parent="Theme.BlockWords">
         <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
-
-    <style name="Theme.BlockWords.TransparentDialog" parent="Theme.Material3.DayNight">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Material3.SmallComponent</item>
-        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Material3.MediumComponent</item>
-        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Material3.LargeComponent</item>
-    </style>
 </resources>

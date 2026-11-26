@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 import com.warden.app.services.BaseBlockingService
 import java.util.Locale
 
-class KeywordBlocker : BaseBlocker() {
+class KeywordBlocker {
     companion object {
         const val INTENT_ACTION_REFRESH_CONFIG =
             "com.warden.app.refresh.keywordblocker.config"
