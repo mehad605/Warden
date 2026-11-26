@@ -47,7 +47,7 @@ class FragmentActivity : AppCompatActivity() {
     private fun applySystemBarInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.fragment_holder)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
     }
@@ -63,16 +63,16 @@ class FragmentActivity : AppCompatActivity() {
                         .putBoolean(KEY_AGREED_TO_TERMS, true)
                         .apply()
                 }
-                if (shouldMountFresh) mountMainFragment()
+                if (shouldMountFresh) mountMainFragment(showOnboarding = true)
             }
             .setNegativeButton(R.string.disclaimer_exit) { _, _ -> finish() }
             .setCancelable(false)
             .show()
     }
 
-    private fun mountMainFragment() {
+    private fun mountMainFragment(showOnboarding: Boolean = false) {
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_holder, KeywordBlockerFragment())
+            .replace(R.id.fragment_holder, KeywordBlockerFragment.newInstance(showOnboarding))
             .commit()
     }
 

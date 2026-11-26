@@ -189,8 +189,8 @@ internal class DashboardControllers(
                 context = context,
                 layoutInflater = layoutInflater,
                 scope = scope,
-                cardContainer = binding.cardIgnoredAppsList,
-                listContainer = binding.layoutIgnoredApps,
+                cardContainer = binding.tabShield.cardIgnoredAppsList,
+                listContainer = binding.tabShield.layoutIgnoredApps,
                 appsProvider = container.installedAppsProvider,
                 clock = container.clock,
                 callbacks =

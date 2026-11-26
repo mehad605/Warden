@@ -26,12 +26,13 @@ class KeywordsSectionBinder(
 ) {
     /** Wires add-icon click listeners and Enter key submission for both keyword inputs. */
     fun bindListeners() {
-        binding.tilAddWord.setEndIconOnClickListener { submitBlockedKeyword() }
-        binding.etKeyword.setOnKeyListener { _, keyCode, event ->
+        val rules = binding.tabRules
+        rules.tilAddWord.setEndIconOnClickListener { submitBlockedKeyword() }
+        rules.etKeyword.setOnKeyListener { _, keyCode, event ->
             handleEnterKey(keyCode, event, ::submitBlockedKeyword)
         }
-        binding.tilAddWhitelistWord.setEndIconOnClickListener { submitWhitelistKeyword() }
-        binding.etWhitelistKeyword.setOnKeyListener { _, keyCode, event ->
+        rules.tilAddWhitelistWord.setEndIconOnClickListener { submitWhitelistKeyword() }
+        rules.etWhitelistKeyword.setOnKeyListener { _, keyCode, event ->
             handleEnterKey(keyCode, event, ::submitWhitelistKeyword)
         }
     }
@@ -41,8 +42,9 @@ class KeywordsSectionBinder(
         blockedKeywords: List<String>,
         whitelistedKeywords: List<String>,
     ) {
-        renderChips(binding.cgKeywords, binding.tvKeywordCount, blockedKeywords, isWhitelist = false)
-        renderChips(binding.cgWhitelistKeywords, binding.tvWhitelistKeywordCount, whitelistedKeywords, isWhitelist = true)
+        val rules = binding.tabRules
+        renderChips(rules.cgKeywords, rules.tvKeywordCount, blockedKeywords, isWhitelist = false)
+        renderChips(rules.cgWhitelistKeywords, rules.tvWhitelistKeywordCount, whitelistedKeywords, isWhitelist = true)
     }
 
     private fun renderChips(
@@ -65,7 +67,7 @@ class KeywordsSectionBinder(
     }
 
     private fun submitBlockedKeyword() {
-        val normalized = KeywordNormalizer.normalize(binding.etKeyword.text?.toString().orEmpty()) ?: return
+        val normalized = KeywordNormalizer.normalize(binding.tabRules.etKeyword.text?.toString().orEmpty()) ?: return
         if (normalized.isRisky) {
             MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.risky_keyword_title)
@@ -79,7 +81,7 @@ class KeywordsSectionBinder(
     }
 
     private fun submitWhitelistKeyword() {
-        val normalized = KeywordNormalizer.normalize(binding.etWhitelistKeyword.text?.toString().orEmpty()) ?: return
+        val normalized = KeywordNormalizer.normalize(binding.tabRules.etWhitelistKeyword.text?.toString().orEmpty()) ?: return
         commitKeyword(normalized, isWhitelist = true)
     }
 
@@ -92,10 +94,10 @@ class KeywordsSectionBinder(
         }
         if (isWhitelist) {
             dispatch(BlockerAction.AddWhitelistedKeyword(normalized.normalized))
-            binding.etWhitelistKeyword.setText("")
+            binding.tabRules.etWhitelistKeyword.setText("")
         } else {
             dispatch(BlockerAction.AddBlockedKeyword(normalized.normalized))
-            binding.etKeyword.setText("")
+            binding.tabRules.etKeyword.setText("")
         }
     }
 

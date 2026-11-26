@@ -29,11 +29,13 @@ class GeminiSectionBinder(
 
     /** Wires API key save, model refresh, spinner selection, and exemption entry listeners. */
     fun bindListeners() {
-        binding.btnSaveApiKey.setOnClickListener { saveApiKeyInput() }
-        binding.cardExemption.setOnClickListener { onRequestTempIgnore() }
-        binding.btnAskAiIgnore.setOnClickListener { onRequestTempIgnore() }
-        binding.btnRefreshModels.setOnClickListener { refreshModels() }
-        binding.spinnerGeminiModels.onItemSelectedListener =
+        val vault = binding.tabVault
+        val shield = binding.tabShield
+        vault.btnSaveApiKey.setOnClickListener { saveApiKeyInput() }
+        shield.cardExemption.setOnClickListener { onRequestTempIgnore() }
+        shield.btnAskAiIgnore.setOnClickListener { onRequestTempIgnore() }
+        vault.btnRefreshModels.setOnClickListener { refreshModels() }
+        vault.spinnerGeminiModels.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
                     parent: AdapterView<*>?,
@@ -54,6 +56,7 @@ class GeminiSectionBinder(
 
     /** Renders the Gemini API status banner, masked key input, and model dropdown from [settings]. */
     fun render(settings: Settings) {
+        val vault = binding.tabVault
         val models = settings.availableGeminiModels
         val cleanNames = models.map { it.removePrefix("models/") }
         isUpdatingSpinner = true
@@ -62,11 +65,11 @@ class GeminiSectionBinder(
                 lastRenderedModels = models
                 val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, cleanNames)
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                binding.spinnerGeminiModels.adapter = adapter
+                vault.spinnerGeminiModels.adapter = adapter
             }
             val selectedIndex = cleanNames.indexOf(settings.selectedGeminiModel.removePrefix("models/"))
-            if (selectedIndex >= 0 && binding.spinnerGeminiModels.selectedItemPosition != selectedIndex) {
-                binding.spinnerGeminiModels.setSelection(selectedIndex)
+            if (selectedIndex >= 0 && vault.spinnerGeminiModels.selectedItemPosition != selectedIndex) {
+                vault.spinnerGeminiModels.setSelection(selectedIndex)
             }
             renderStatusBanner(hasKey = !settings.geminiApiKey.isNullOrEmpty(), hasModels = models.isNotEmpty())
         } finally {
@@ -78,25 +81,26 @@ class GeminiSectionBinder(
         hasKey: Boolean,
         hasModels: Boolean,
     ) {
+        val vault = binding.tabVault
         if (hasKey) {
-            binding.ivApiStatusIcon.visibility = View.VISIBLE
-            binding.btnRefreshModels.isEnabled = true
-            binding.etApiKey.setText(MASKED_API_KEY)
-            binding.tvApiStatus.setText(
+            vault.ivApiStatusIcon.visibility = View.VISIBLE
+            vault.btnRefreshModels.isEnabled = true
+            vault.etApiKey.setText(MASKED_API_KEY)
+            vault.tvApiStatus.setText(
                 if (hasModels) R.string.api_status_active else R.string.api_status_sync_models,
             )
-            binding.btnAskAiIgnore.isEnabled = hasModels
+            binding.tabShield.btnAskAiIgnore.isEnabled = hasModels
         } else {
-            binding.ivApiStatusIcon.visibility = View.GONE
-            binding.tvApiStatus.setText(R.string.api_status_none)
-            binding.etApiKey.setText("")
-            binding.btnAskAiIgnore.isEnabled = false
-            binding.btnRefreshModels.isEnabled = false
+            vault.ivApiStatusIcon.visibility = View.GONE
+            vault.tvApiStatus.setText(R.string.api_status_none)
+            vault.etApiKey.setText("")
+            binding.tabShield.btnAskAiIgnore.isEnabled = false
+            vault.btnRefreshModels.isEnabled = false
         }
     }
 
     private fun saveApiKeyInput() {
-        val input = binding.etApiKey.text?.toString()?.trim().orEmpty()
+        val input = binding.tabVault.etApiKey.text?.toString()?.trim().orEmpty()
         val toastRes =
             when {
                 input == MASKED_API_KEY -> R.string.api_key_unchanged
@@ -117,12 +121,12 @@ class GeminiSectionBinder(
             Toast.makeText(context, R.string.configure_api_key_first, Toast.LENGTH_SHORT).show()
             return
         }
-        binding.btnRefreshModels.isEnabled = false
+        binding.tabVault.btnRefreshModels.isEnabled = false
         Toast.makeText(context, R.string.refreshing_models, Toast.LENGTH_SHORT).show()
         scope.launch {
             onRefreshModels()
             if (isViewAlive()) {
-                binding.btnRefreshModels.isEnabled = true
+                binding.tabVault.btnRefreshModels.isEnabled = true
                 Toast.makeText(context, R.string.models_refreshed, Toast.LENGTH_SHORT).show()
             }
         }
