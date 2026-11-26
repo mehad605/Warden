@@ -70,15 +70,15 @@ Most blockers are too easy to switch off the second an impulse hits. Warden is b
 
 ## Emergency Uninstall
 
-If you enabled Anti-Uninstall Protection and forgot your password or are locked out of Settings:
+Warden intentionally does **not** include copy-paste bypass commands here—making removal require deliberate effort is part of the point.
 
-1. **Via Safe Mode:** Reboot into Android Safe Mode (which temporarily disables third-party Accessibility Services), open **Settings → Security → Device admin apps** to deactivate Warden, and uninstall normally.
-2. **Via ADB (from a computer):**
-   ```bash
-   adb shell settings delete secure enabled_accessibility_services
-   # Deactivate Warden in Device Admin settings on your phone, then:
-   adb shell pm uninstall com.warden.app
-   ```
+If you are genuinely locked out (forgot your password and need to uninstall Warden), you still have full ownership of your device:
+
+1. **Via Safe Mode:** Reboot into Android Safe Mode (which temporarily suspends third-party Accessibility Services), deactivate Warden under **Settings → Security → Device admin apps**, and uninstall normally.
+2. **Via a Computer (ADB):** Connect your phone over USB Debugging and ask an AI assistant or look up the general recovery flow:
+   > *"How do I use ADB on Android to temporarily clear enabled Accessibility Services, deactivate a Device Administrator app in Settings, and uninstall a package by its application ID?"*
+
+Once you follow that flow, you can cleanly deactivate Device Admin and remove Warden.
 
 ---
 
