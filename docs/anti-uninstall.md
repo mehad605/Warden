@@ -34,7 +34,7 @@ For the next **180,000 ms (3 minutes)**, `SelfProtectionEvaluator` allows Device
 
 Warden is designed to prevent impulsive bypasses — not to resist deliberate administrative removal:
 - **Safe Mode:** Disables third-party accessibility services, allowing Device Admin deactivation and uninstall.
-- **ADB:** `adb shell settings delete secure enabled_accessibility_services` disables the accessibility guard, after which Device Admin can be deactivated and the package uninstalled.
+- **ADB:** A user with USB Debugging enabled on a computer can use Android's ADB tool to clear active Accessibility Services, deactivate Device Admin, and uninstall the app (exact commands are intentionally omitted from this repo to preserve friction).
 - **Factory Reset / Root:** Standard Android OS boundaries still apply.
 
 See the [Emergency Uninstall section of README.md](../README.md#emergency-uninstall) for exact recovery steps.
