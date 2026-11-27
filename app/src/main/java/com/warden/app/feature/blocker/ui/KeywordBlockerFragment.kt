@@ -21,14 +21,14 @@ import com.warden.app.data.models.Settings
 import com.warden.app.databinding.FragmentKeywordBlockerBinding
 import com.warden.app.feature.gatekeeper.domain.GatekeeperVerdict
 import com.warden.app.feature.gatekeeper.ui.GatekeeperDialogMode
-import com.warden.app.feature.onboarding.ui.OnboardingGuideDialog
+import com.warden.app.feature.onboarding.ui.OnboardingSpotlightController
 import com.warden.app.services.WardenService
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
  * Main Sentinel dashboard fragment wiring [FragmentKeywordBlockerBinding] (Shield / Rules / Vault),
- * [BlockerViewModel], [DashboardControllers], and [OnboardingGuideDialog].
+ * [BlockerViewModel], [DashboardControllers], and [OnboardingSpotlightController].
  */
 class KeywordBlockerFragment : Fragment() {
     private var _binding: FragmentKeywordBlockerBinding? = null
@@ -44,6 +44,7 @@ class KeywordBlockerFragment : Fragment() {
     private var onImagePickedCallback: ((Uri) -> Unit)? = null
     private var controllers: DashboardControllers? = null
     private var navigationBinder: SentinelNavigationBinder? = null
+    private var spotlightController: OnboardingSpotlightController? = null
 
     private val selectImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -99,6 +100,7 @@ class KeywordBlockerFragment : Fragment() {
             )
         bindCoreListeners()
         observeSettings()
+        viewLifecycleOwner.lifecycleScope.launch { container.installedAppsProvider.loadLaunchableApps() }
         if (savedInstanceState == null && arguments?.getBoolean(ARG_SHOW_ONBOARDING, false) == true) {
             showOnboardingGuide()
         }
@@ -118,6 +120,8 @@ class KeywordBlockerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        spotlightController?.dismiss()
+        spotlightController = null
         controllers?.stopTimers()
         controllers = null
         navigationBinder = null
@@ -158,10 +162,7 @@ class KeywordBlockerFragment : Fragment() {
         }
     }
 
-    private fun toggleShieldFromOrb() {
-        val currentlyActive = viewModel.settings.value.keywordBlockerConfig.isActive
-        handleBlockerToggle(!currentlyActive)
-    }
+    private fun toggleShieldFromOrb() = handleBlockerToggle(!viewModel.settings.value.keywordBlockerConfig.isActive)
 
     private fun handleBlockerToggle(desiredActive: Boolean) {
         if (!desiredActive) {
@@ -174,21 +175,26 @@ class KeywordBlockerFragment : Fragment() {
     }
 
     private fun showOnboardingGuide() {
-        OnboardingGuideDialog(
-            context = requireContext(),
-            layoutInflater = layoutInflater,
-            isAccessibilityEnabled = { container.accessibilityChecker.isServiceEnabled(WardenService::class.java) },
-            onOpenAccessibilitySettings = {
-                container.accessibilityChecker.openAccessibilitySettings(requireContext(), WardenService::class.java)
-            },
-        ).show()
+        val tabs = SentinelNavigationBinder.Tab.entries
+        spotlightController?.dismiss()
+        spotlightController =
+            OnboardingSpotlightController(
+                context = requireContext(),
+                layoutInflater = layoutInflater,
+                rootContainer = binding.spotlightOverlayHost,
+                scrollContainer = binding.scrollContent,
+                steps = SentinelSpotlightSteps.build(binding),
+                onSelectTab = { index -> navigationBinder?.selectTab(tabs[index]) },
+                isAccessibilityEnabled = { container.accessibilityChecker.isServiceEnabled(WardenService::class.java) },
+                onOpenAccessibilitySettings = {
+                    container.accessibilityChecker.openAccessibilitySettings(requireContext(), WardenService::class.java)
+                },
+            ).also { it.show() }
     }
 
     private fun observeSettings() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.settings.collectLatest(::renderSettings)
-            }
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.settings.collectLatest(::renderSettings) }
         }
     }
 
@@ -225,12 +231,7 @@ class KeywordBlockerFragment : Fragment() {
             navigationBinder?.selectTab(SentinelNavigationBinder.Tab.VAULT)
             return
         }
-        controllers?.gatekeeperDialogs?.show(
-            mode = mode,
-            permanentIgnoredApps = snapshot.keywordBlockerConfig.ignoredApps,
-            rejectionCount = snapshot.noCount,
-            targetPackage = targetPackage,
-        )
+        controllers?.gatekeeperDialogs?.show(mode, snapshot.keywordBlockerConfig.ignoredApps, snapshot.noCount, targetPackage)
     }
 
     private fun applyGatekeeperApproval(
@@ -243,7 +244,12 @@ class KeywordBlockerFragment : Fragment() {
             when (mode) {
                 GatekeeperDialogMode.PAUSE_BLOCKER -> BlockerAction.SetBlockerActive(false)
                 GatekeeperDialogMode.EXTEND_IGNORE ->
-                    app?.let { BlockerAction.ExtendTempExemption(it.packageName, verdict.durationMinutes) }
+                    app?.let {
+                        BlockerAction.ExtendTempExemption(
+                            it.packageName,
+                            verdict.durationMinutes,
+                        )
+                    }
                 GatekeeperDialogMode.TEMPORARY_IGNORE ->
                     app?.let {
                         if (isRemoval) {

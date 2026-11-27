@@ -33,6 +33,26 @@
         <item quantity="other">%1$d Rejections</item>
     </plurals>
 
+    <plurals name="api_status_validated">
+        <item quantity="one">API key validated · %1$d model ready</item>
+        <item quantity="other">API key validated · %1$d models ready</item>
+    </plurals>
+
+    <plurals name="api_key_validated_toast">
+        <item quantity="one">API key validated (%1$d model available)</item>
+        <item quantity="other">API key validated (%1$d models available)</item>
+    </plurals>
+
+    <plurals name="sentence_counter_fmt">
+        <item quantity="one">%1$d / %2$d sentence · Min 5 words each</item>
+        <item quantity="other">%1$d / %2$d sentences · Min 5 words each</item>
+    </plurals>
+
+    <plurals name="sentence_counter_ready_fmt">
+        <item quantity="one">%1$d / %2$d sentence · Ready to send</item>
+        <item quantity="other">%1$d / %2$d sentences · Ready to send</item>
+    </plurals>
+
     <!-- Sentinel Header & Navigation -->
     <string name="header_status_online">Accessibility Guard Online</string>
     <string name="header_status_offline">Accessibility Permission Needed</string>
@@ -86,7 +106,12 @@
     <string name="api_status_default">No API key configured</string>
     <string name="paste_api_key_hint">Paste your Google AI Studio API key</string>
     <string name="refresh_models_desc">Refresh Models</string>
-    <string name="save_api_key">Save API Key</string>
+    <string name="validate_api_key">Validate API Key</string>
+    <string name="validating_api_key">Validating…</string>
+    <string name="api_key_validated_label">Validated</string>
+    <string name="active_model_label">Active Gemini Model</string>
+    <string name="no_models_loaded">Tap Validate API Key to load models</string>
+    <string name="choose_gemini_model_title">Choose Gemini Model</string>
     <string name="password_protection_title">Settings Password</string>
     <string name="remove_action">Remove</string>
     <string name="anti_uninstall_title">Anti-Uninstall Shield</string>
@@ -96,40 +121,48 @@
     <string name="replay_guide_title">Interactive Guide</string>
     <string name="replay_guide_subtitle">Walk through how every part of Warden works</string>
     <string name="replay_action">Start</string>
-    <string name="version_footer">Warden v2.1 · Android Content Shield</string>
+    <string name="version_footer">Warden v2.2 · Android Content Shield</string>
     <string name="cd_app_icon">App Icon</string>
     <string name="cd_extend_time">Extend Time</string>
     <string name="cd_screenshot_preview">Attached screenshot preview</string>
     <string name="cd_remove_screenshot">Remove attached screenshot</string>
 
-    <!-- Interactive Onboarding Guide -->
+    <!-- Interactive Spotlight Onboarding Tour -->
     <string name="guide_step_fmt">Step %1$d of %2$d</string>
     <string name="guide_skip">Skip</string>
     <string name="guide_back">Back</string>
     <string name="guide_next">Next</string>
     <string name="guide_done">Start Guarding</string>
     <string name="guide_step1_title">Your Offline Focus Shield</string>
-    <string name="guide_step1_body">Warden watches visible text on your phone via Android’s Accessibility Service and sends you Home whenever a blocked distraction appears.</string>
-    <string name="guide_step1_tip">100% private: scanning happens strictly on your phone. Zero analytics, zero servers.</string>
+    <string name="guide_step1_body">Tap this Focus Shield orb (or the switch below) to arm protection. Warden scans visible text completely offline and sends you Home whenever a blocked keyword appears.</string>
     <string name="guide_step1_cta">Enable Accessibility Permission</string>
-    <string name="guide_step2_title">Blocked Words, Safe Phrases &amp; Grace</string>
-    <string name="guide_step2_body">Use the Rules tab to add distracting keywords, add Safe Phrases to prevent false blocks, and tune the Grace Window.</string>
-    <string name="guide_step2_tip">Example: Block “shorts”, mark “basketball shorts” as Safe, and keep Grace at 2s so fleeting mentions never interrupt you.</string>
+    <string name="guide_step2_title">At-a-Glance Filter Stats</string>
+    <string name="guide_step2_body">See your blocked words, safe phrases, and grace window at a glance. Tap any tile to jump straight into editing that rule.</string>
     <string name="guide_step3_title">The Adversarial AI Gatekeeper</string>
-    <string name="guide_step3_body">Need temporary access to a blocked app or a brief pause? You must convince Gemini with a genuine 7-sentence reason (plus optional screenshot proof).</string>
-    <string name="guide_step3_tip">Gemini’s default verdict is NO, and every rejection increases your Rejection Count—making excuses harder over time.</string>
-    <string name="guide_step4_title">Lock It Down in Vault</string>
-    <string name="guide_step4_body">Once your rules feel right, open the Vault tab to set a strong Settings Password, activate Anti-Uninstall Protection, and export merge-safe backups.</string>
-    <string name="guide_step4_tip">You can replay this guide anytime by tapping the ? icon in the top-right corner.</string>
+    <string name="guide_step3_body">Need temporary access to an app? Tap Request Temporary Pass to chat with Gemini and justify your need with 7 complete sentences. Gemini’s default verdict is NO.</string>
+    <string name="guide_step4_title">Blocked Words &amp; Safe Phrases</string>
+    <string name="guide_step4_body">Switch between Blocked words and Safe Phrases here. Example: block “shorts”, then add “basketball shorts” as a Safe Phrase so legitimate text never triggers a block.</string>
+    <string name="guide_step5_title">Grace Window</string>
+    <string name="guide_step5_body">Controls how many seconds Warden waits and re-checks the screen before sending you Home—preventing accidental triggers when scrolling past a word.</string>
+    <string name="guide_step6_title">Gemini AI &amp; Vault Locks</string>
+    <string name="guide_step6_body">Paste and validate your Google AI Studio API key here, pick your Gemini model, set a Settings Password, and activate Anti-Uninstall protection. Replay this tour anytime via the ? button.</string>
 
     <!-- AI Chat Dialog Layout -->
-    <string name="ai_dialog_default_title">Convince AI Gatekeeper</string>
-    <string name="ai_dialog_default_subtitle">Please provide a valid study/work emergency justification. You must write at least 7 complete sentences.</string>
-    <string name="select_target_app">Select Target App:</string>
-    <string name="your_justification_hint">Your justification</string>
+    <string name="ai_dialog_default_title">AI Gatekeeper</string>
+    <string name="ai_dialog_default_subtitle">Provide a genuine study or work emergency justification using at least 7 complete sentences.</string>
+    <string name="ai_chat_strict_meta">Strict mode · Default verdict: NO</string>
+    <string name="ai_chat_meta_fmt">%1$s · Default verdict: NO</string>
+    <string name="ai_gatekeeper_sender">Warden AI Gatekeeper</string>
+    <string name="target_app_prefix">App:</string>
+    <string name="select_target_app">Select Target App</string>
+    <string name="search_apps_hint">Search installed apps…</string>
+    <string name="ai_composer_hint">Write your 7-sentence case…</string>
+    <string name="sentence_counter_default">0 / 7 sentences · Min 5 words each</string>
+    <string name="ai_removal_counter_hint">Re-enabling protection is encouraged · Ready to send</string>
+    <string name="screenshot_attached_label">Screenshot proof attached</string>
     <string name="attach_screenshot">Attach Screenshot</string>
     <string name="consulting_gemini">Consulting Gemini AI Gatekeeper…</string>
-    <string name="submit_request">Submit Request</string>
+    <string name="submit_request">Send Justification</string>
 
     <!-- Disclaimer -->
     <string name="disclaimer_title">Disclaimer &amp; Warning</string>
@@ -171,32 +204,34 @@
     <string name="anti_uninstall_disable_error">Error disabling: %1$s</string>
 
     <!-- Gemini AI Gatekeeper -->
-    <string name="api_status_active">API key configured · Gatekeeper active</string>
-    <string name="api_status_sync_models">API Key configured · Sync models to enable</string>
-    <string name="api_status_none">No API Key configured · AI features disabled</string>
-    <string name="api_key_unchanged">API Key kept unchanged.</string>
-    <string name="api_key_removed">API Key removed.</string>
-    <string name="api_key_saved">API Key saved.</string>
-    <string name="configure_api_key_first">Please configure an API key first.</string>
-    <string name="configure_gemini_key_first">Please configure a Gemini API key in Vault first.</string>
+    <string name="api_status_validating">Validating API key with Gemini…</string>
+    <string name="api_status_invalid">API key rejected or network unreachable</string>
+    <string name="api_status_sync_models">API key saved · Tap Validate API Key to verify</string>
+    <string name="api_status_none">No API key configured · AI features disabled</string>
+    <string name="api_key_unchanged">API key kept unchanged.</string>
+    <string name="api_key_removed">API key removed.</string>
+    <string name="api_key_saved">API key saved. Tap Validate API Key to verify &amp; load models.</string>
+    <string name="api_key_invalid_toast">Could not validate API key. Check your key and internet connection.</string>
+    <string name="configure_api_key_first">Please enter a Gemini API key first.</string>
+    <string name="configure_gemini_key_first">Please configure and validate your Gemini API key in Vault first.</string>
     <string name="refreshing_models">Refreshing model list…</string>
     <string name="models_refreshed">Model list refreshed!</string>
-    <string name="ai_ignore_title">Convince AI: Ignore App</string>
-    <string name="ai_ignore_subtitle">Tell the AI why you must temporarily ignore keyword blocking in this app. (Min 7 sentences)</string>
-    <string name="ai_ignore_app_subtitle">Explain why you must temporarily ignore keyword blocking in %1$s. (Min 7 sentences)</string>
-    <string name="ai_remove_ignore_title">Convince AI: Remove from Ignore List</string>
-    <string name="ai_remove_ignore_subtitle">Ask the AI to restore blocking on %1$s. The AI will approve this request eagerly.</string>
-    <string name="ai_pause_title">Convince AI: Pause Blocker</string>
-    <string name="ai_pause_subtitle">Explain the emergency reason to temporarily disable ALL keyword blocking. (Min 7 sentences)</string>
-    <string name="ai_extend_title">Convince AI: Extend Ignore</string>
-    <string name="ai_extend_subtitle">Explain why you must extend the ignore duration for %1$s. (Min 7 sentences)</string>
+    <string name="ai_ignore_title">Temporary Pass</string>
+    <string name="ai_ignore_subtitle">Select an app and explain why you must temporarily bypass keyword blocking. Write at least 7 complete sentences.</string>
+    <string name="ai_ignore_app_subtitle">Explain why you need a temporary pass for %1$s. Write at least 7 complete sentences (5+ words each) and optionally attach proof.</string>
+    <string name="ai_remove_ignore_title">Restore Blocking</string>
+    <string name="ai_remove_ignore_subtitle">Ask the AI to restore blocking on %1$s. Warden eagerly approves re-enabling protection.</string>
+    <string name="ai_pause_title">Pause Focus Shield</string>
+    <string name="ai_pause_subtitle">Explain the genuine emergency requiring a temporary pause of all keyword blocking. Write at least 7 complete sentences and attach screenshot proof.</string>
+    <string name="ai_extend_title">Extend Temporary Pass</string>
+    <string name="ai_extend_subtitle">Explain why you must extend the temporary pass for %1$s. Write at least 7 complete sentences.</string>
     <string name="ai_default_app_label">app</string>
-    <string name="ai_justification_hint">Your justification (Min 7 sentences, 5 words/sentence)</string>
-    <string name="ai_removal_justification_hint">Your justification (No restrictions, min 1 word)</string>
+    <string name="ai_removal_justification_hint">Explain briefly (min 1 word)…</string>
     <string name="loading_installed_apps">Loading installed apps…</string>
-    <string name="select_app_prompt">Please select an app.</string>
-    <string name="verdict_approved">Verdict: APPROVED</string>
-    <string name="verdict_rejected">Verdict: REJECTED</string>
+    <string name="select_app_prompt">Select an app…</string>
+    <string name="verdict_approved">APPROVED</string>
+    <string name="verdict_approved_minutes_fmt">APPROVED · %1$d min</string>
+    <string name="verdict_rejected">REJECTED</string>
     <string name="ai_request_error">Error: %1$s</string>
 
     <!-- Ignored Apps Decrease Dialog -->

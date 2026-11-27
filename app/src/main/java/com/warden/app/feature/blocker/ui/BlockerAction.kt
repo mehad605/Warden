@@ -86,12 +86,19 @@ sealed class BlockerAction {
         ): Settings = current.copy(ignoreGracePeriodSeconds = seconds)
     }
 
-    /** Sets or clears the Gemini API key. */
+    /** Sets or clears the Gemini API key, resetting cached model list when changed. */
     data class SetGeminiApiKey(val apiKey: String?) : BlockerAction() {
         override fun applyTo(
             current: Settings,
             nowMs: Long,
-        ): Settings = current.copy(geminiApiKey = apiKey)
+        ): Settings {
+            if (current.geminiApiKey == apiKey) return current
+            return current.copy(
+                geminiApiKey = apiKey,
+                availableGeminiModels = emptyList(),
+                selectedGeminiModel = if (apiKey == null) "" else current.selectedGeminiModel,
+            )
+        }
     }
 
     /** Selects the active Gemini model identifier. */

@@ -180,6 +180,7 @@
 
     <!-- Gemini AI Engine Setup Card -->
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_gemini_engine"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="14dp"
@@ -196,6 +197,7 @@
             android:padding="18dp">
 
             <LinearLayout
+                android:id="@+id/header_gemini_engine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
@@ -285,32 +287,95 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="monospace"
                     android:hint="@string/paste_api_key_hint"
-                    android:inputType="textPassword" />
+                    android:inputType="textPassword"
+                    android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_save_api_key"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/save"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_validate_api_key"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="@string/validate_api_key"
+                    android:textColor="?attr/colorOnSecondary"
+                    app:backgroundTint="?attr/colorSecondary"
+                    app:cornerRadius="12dp"
+                    app:iconGravity="textStart"
+                    app:iconTint="?attr/colorOnSecondary" />
+            </LinearLayout>
+
+            <!-- Clickable Material 3 Model Picker -->
+            <LinearLayout
+                android:id="@+id/layout_model_picker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:background="@drawable/bg_rounded_12"
                 android:backgroundTint="?attr/colorSurfaceContainerHigh"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 android:gravity="center_vertical"
+                android:minHeight="52dp"
                 android:orientation="horizontal"
                 android:paddingStart="12dp"
                 android:paddingEnd="6dp">
 
                 <View
+                    android:id="@+id/view_model_status_dot"
                     android:layout_width="8dp"
                     android:layout_height="8dp"
                     android:background="@drawable/bg_rounded_time_selector"
                     android:backgroundTint="@color/status_active" />
 
-                <Spinner
-                    android:id="@+id/spinner_gemini_models"
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="46dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
-                    android:layout_weight="1" />
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingVertical="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/active_model_label"
+                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/tv_selected_model"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="@string/no_models_loaded"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_down_24"
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
                 <ImageButton
                     android:id="@+id/btn_refresh_models"
@@ -321,16 +386,6 @@
                     android:src="@drawable/baseline_refresh_24"
                     app:tint="?attr/colorPrimary" />
             </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_save_api_key"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:text="@string/save_api_key"
-                android:textColor="?attr/colorOnSecondary"
-                app:backgroundTint="?attr/colorSecondary"
-                app:cornerRadius="12dp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

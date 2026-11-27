@@ -218,6 +218,7 @@
 
     <!-- Grace Window Card -->
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_grace_window"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardBackgroundColor="?attr/colorSurfaceContainer"

@@ -14,6 +14,21 @@ import com.warden.app.feature.security.domain.PasswordPolicy
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+/** Result of validating and saving a Gemini API key against the Gemini models endpoint. */
+sealed class GeminiValidationResult {
+    /** The user cleared the key. */
+    data object Cleared : GeminiValidationResult()
+
+    /** Key verified successfully with [models] and an active [selectedModel]. */
+    data class Valid(
+        val models: List<String>,
+        val selectedModel: String,
+    ) : GeminiValidationResult()
+
+    /** Key was rejected by Gemini or the network request failed. */
+    data object InvalidOrUnreachable : GeminiValidationResult()
+}
+
 /**
  * Settings dashboard ViewModel exposing reactive [Settings] state and explicit domain actions.
  */
@@ -36,13 +51,59 @@ class BlockerViewModel(
     /** Verifies [candidate] against the stored SHA-256 password hash. */
     fun verifyPassword(candidate: String): Boolean = PasswordPolicy.verify(candidate, settings.value.passwordHash)
 
+    /**
+     * Saves [rawKey], validates it by fetching available Gemini models, and auto-selects
+     * a sensible default model when valid.
+     */
+    suspend fun validateAndSaveGeminiKey(rawKey: String): GeminiValidationResult {
+        val trimmed = rawKey.trim()
+        if (trimmed.isEmpty()) {
+            settingsRepository.update {
+                it.copy(geminiApiKey = null, availableGeminiModels = emptyList(), selectedGeminiModel = "")
+            }
+            return GeminiValidationResult.Cleared
+        }
+        val models = gatekeeperClient.fetchModels(trimmed)
+        if (models.isEmpty()) {
+            settingsRepository.update { current ->
+                current.copy(geminiApiKey = trimmed, availableGeminiModels = emptyList())
+            }
+            return GeminiValidationResult.InvalidOrUnreachable
+        }
+        val selected = pickPreferredModel(models, settings.value.selectedGeminiModel)
+        settingsRepository.update { current ->
+            current.copy(
+                geminiApiKey = trimmed,
+                availableGeminiModels = models,
+                selectedGeminiModel = selected,
+            )
+        }
+        return GeminiValidationResult.Valid(models = models, selectedModel = selected)
+    }
+
     /** Fetches available `generateContent` Gemini models and persists the refreshed list. */
     suspend fun refreshGeminiModels(): List<String> {
         val apiKey = settings.value.geminiApiKey.orEmpty()
         if (apiKey.isBlank()) return emptyList()
         val models = gatekeeperClient.fetchModels(apiKey)
-        settingsRepository.update { it.copy(availableGeminiModels = models) }
+        settingsRepository.update { current ->
+            val selected =
+                if (models.isNotEmpty()) {
+                    pickPreferredModel(models, current.selectedGeminiModel)
+                } else {
+                    current.selectedGeminiModel
+                }
+            current.copy(availableGeminiModels = models, selectedGeminiModel = selected)
+        }
         return models
+    }
+
+    private fun pickPreferredModel(
+        models: List<String>,
+        currentSelection: String,
+    ): String {
+        if (currentSelection.isNotBlank() && currentSelection in models) return currentSelection
+        return models.firstOrNull { it.contains("flash", ignoreCase = true) } ?: models.first()
     }
 
     /** Evaluates an AI Gatekeeper [request] using the stored API key and selected model. */

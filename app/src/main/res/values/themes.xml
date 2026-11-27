@@ -81,4 +81,10 @@
     <style name="Theme.BlockWords.Splash" parent="Theme.BlockWords">
         <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
+
+    <style name="Theme.BlockWords.ChatDialog" parent="Theme.BlockWords">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowSoftInputMode">adjustResize|stateHidden</item>
+        <item name="android:windowBackground">?android:attr/colorBackground</item>
+    </style>
 </resources>

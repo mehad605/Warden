@@ -1,10 +1,13 @@
 package com.warden.app.feature.blocker.ui
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.widget.doAfterTextChanged
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.warden.app.R
 import com.warden.app.data.models.Settings
 import com.warden.app.databinding.FragmentKeywordBlockerBinding
@@ -12,7 +15,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * Binds the Gemini API key field, model selector spinner, refresh button, and AI status banner.
+ * Binds the Gemini API key field (real value masked by native password toggle),
+ * Save & Validate API Key controls, Material 3 model picker dialog, AI status banner,
+ * and Shield's Request Temporary Pass button.
  */
 class GeminiSectionBinder(
     private val context: Context,
@@ -20,90 +25,161 @@ class GeminiSectionBinder(
     private val scope: CoroutineScope,
     private val currentSettings: () -> Settings,
     private val dispatch: (BlockerAction) -> Unit,
+    private val onValidateApiKey: suspend (String) -> GeminiValidationResult,
     private val onRefreshModels: suspend () -> List<String>,
     private val onRequestTempIgnore: () -> Unit,
     private val isViewAlive: () -> Boolean,
 ) {
-    private var lastRenderedModels: List<String> = emptyList()
-    private var isUpdatingSpinner = false
+    private var lastSyncedApiKey: String? = null
+    private var hasSyncedKeyOnce = false
+    private var isValidating = false
+    private var lastValidationFailed = false
 
-    /** Wires API key save, model refresh, spinner selection, and exemption entry listeners. */
+    /** Wires API key save/validate, model picker dialog, refresh, and temporary-pass button. */
     fun bindListeners() {
         val vault = binding.tabVault
-        val shield = binding.tabShield
+        binding.tabShield.btnAskAiIgnore.setOnClickListener { onRequestTempIgnore() }
         vault.btnSaveApiKey.setOnClickListener { saveApiKeyInput() }
-        shield.cardExemption.setOnClickListener { onRequestTempIgnore() }
-        shield.btnAskAiIgnore.setOnClickListener { onRequestTempIgnore() }
+        vault.btnValidateApiKey.setOnClickListener { validateApiKeyInput() }
+        vault.layoutModelPicker.setOnClickListener { openModelPicker() }
         vault.btnRefreshModels.setOnClickListener { refreshModels() }
-        vault.spinnerGeminiModels.onItemSelectedListener =
-            object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long,
-                ) {
-                    if (isUpdatingSpinner) return
-                    val models = currentSettings().availableGeminiModels
-                    if (position in models.indices) {
-                        dispatch(BlockerAction.SelectGeminiModel(models[position]))
-                    }
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-            }
-    }
-
-    /** Renders the Gemini API status banner, masked key input, and model dropdown from [settings]. */
-    fun render(settings: Settings) {
-        val vault = binding.tabVault
-        val models = settings.availableGeminiModels
-        val cleanNames = models.map { it.removePrefix("models/") }
-        isUpdatingSpinner = true
-        try {
-            if (models != lastRenderedModels) {
-                lastRenderedModels = models
-                val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, cleanNames)
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                vault.spinnerGeminiModels.adapter = adapter
-            }
-            val selectedIndex = cleanNames.indexOf(settings.selectedGeminiModel.removePrefix("models/"))
-            if (selectedIndex >= 0 && vault.spinnerGeminiModels.selectedItemPosition != selectedIndex) {
-                vault.spinnerGeminiModels.setSelection(selectedIndex)
-            }
-            renderStatusBanner(hasKey = !settings.geminiApiKey.isNullOrEmpty(), hasModels = models.isNotEmpty())
-        } finally {
-            isUpdatingSpinner = false
+        vault.etApiKey.doAfterTextChanged {
+            lastValidationFailed = false
+            renderValidateButton(currentSettings())
         }
     }
 
-    private fun renderStatusBanner(
-        hasKey: Boolean,
-        hasModels: Boolean,
+    /** Renders the Gemini API status banner, real masked key input, validation state, and model picker. */
+    fun render(settings: Settings) {
+        val vault = binding.tabVault
+        val storedKey = settings.geminiApiKey.orEmpty()
+        if (!hasSyncedKeyOnce || lastSyncedApiKey != storedKey) {
+            hasSyncedKeyOnce = true
+            lastSyncedApiKey = storedKey
+            val currentText = vault.etApiKey.text?.toString().orEmpty()
+            if (currentText != storedKey) {
+                vault.etApiKey.setText(storedKey)
+                vault.etApiKey.setSelection(storedKey.length)
+            }
+        }
+        renderStatusBanner(settings)
+        renderModelPicker(settings)
+        renderValidateButton(settings)
+        binding.tabShield.btnAskAiIgnore.isEnabled = true
+    }
+
+    private fun renderStatusBanner(settings: Settings) {
+        val vault = binding.tabVault
+        val hasKey = !settings.geminiApiKey.isNullOrBlank()
+        val modelCount = settings.availableGeminiModels.size
+        val isValidated = hasKey && modelCount > 0
+
+        vault.btnRefreshModels.isEnabled = hasKey && !isValidating
+        when {
+            isValidating -> {
+                setStatusBanner(R.string.api_status_validating, showCheck = false, isError = false, isValid = false)
+            }
+            lastValidationFailed -> {
+                setStatusBanner(R.string.api_status_invalid, showCheck = false, isError = true, isValid = false)
+            }
+            isValidated -> {
+                vault.ivApiStatusIcon.visibility = View.VISIBLE
+                vault.tvApiStatus.text =
+                    context.resources.getQuantityString(R.plurals.api_status_validated, modelCount, modelCount)
+                applyStatusColors(isValid = true, isError = false)
+            }
+            hasKey -> {
+                setStatusBanner(R.string.api_status_sync_models, showCheck = false, isError = false, isValid = false)
+            }
+            else -> {
+                setStatusBanner(R.string.api_status_none, showCheck = false, isError = false, isValid = false)
+            }
+        }
+    }
+
+    private fun setStatusBanner(
+        textRes: Int,
+        showCheck: Boolean,
+        isError: Boolean,
+        isValid: Boolean,
     ) {
         val vault = binding.tabVault
-        if (hasKey) {
-            vault.ivApiStatusIcon.visibility = View.VISIBLE
-            vault.btnRefreshModels.isEnabled = true
-            vault.etApiKey.setText(MASKED_API_KEY)
-            vault.tvApiStatus.setText(
-                if (hasModels) R.string.api_status_active else R.string.api_status_sync_models,
-            )
-            binding.tabShield.btnAskAiIgnore.isEnabled = hasModels
-        } else {
-            vault.ivApiStatusIcon.visibility = View.GONE
-            vault.tvApiStatus.setText(R.string.api_status_none)
-            vault.etApiKey.setText("")
-            binding.tabShield.btnAskAiIgnore.isEnabled = false
-            vault.btnRefreshModels.isEnabled = false
+        vault.ivApiStatusIcon.visibility = if (showCheck) View.VISIBLE else View.GONE
+        vault.tvApiStatus.setText(textRes)
+        applyStatusColors(isValid = isValid, isError = isError)
+    }
+
+    private fun applyStatusColors(
+        isValid: Boolean,
+        isError: Boolean,
+    ) {
+        val vault = binding.tabVault
+        val bgColor =
+            when {
+                isError -> MaterialColors.getColor(vault.root, com.google.android.material.R.attr.colorErrorContainer)
+                isValid -> ContextCompat.getColor(context, R.color.status_active_bg)
+                else -> MaterialColors.getColor(vault.root, com.google.android.material.R.attr.colorSurfaceContainerHigh)
+            }
+        val textColor =
+            when {
+                isError -> MaterialColors.getColor(vault.root, com.google.android.material.R.attr.colorOnErrorContainer)
+                else -> MaterialColors.getColor(vault.root, com.google.android.material.R.attr.colorOnSurface)
+            }
+        vault.layoutApiStatus.backgroundTintList = ColorStateList.valueOf(bgColor)
+        vault.tvApiStatus.setTextColor(textColor)
+    }
+
+    private fun renderModelPicker(settings: Settings) {
+        val vault = binding.tabVault
+        val models = settings.availableGeminiModels
+        val selected = settings.selectedGeminiModel
+        val displayModel =
+            when {
+                models.isEmpty() -> context.getString(R.string.no_models_loaded)
+                selected.isNotBlank() -> selected.removePrefix(MODELS_PREFIX)
+                else -> models.first().removePrefix(MODELS_PREFIX)
+            }
+        vault.tvSelectedModel.text = displayModel
+        val dotColor =
+            if (models.isNotEmpty()) {
+                ContextCompat.getColor(context, R.color.status_active)
+            } else {
+                MaterialColors.getColor(vault.root, com.google.android.material.R.attr.colorOutline)
+            }
+        vault.viewModelStatusDot.backgroundTintList = ColorStateList.valueOf(dotColor)
+    }
+
+    private fun renderValidateButton(settings: Settings) {
+        val btn = binding.tabVault.btnValidateApiKey
+        val typedKey = binding.tabVault.etApiKey.text?.toString()?.trim().orEmpty()
+        val storedKey = settings.geminiApiKey.orEmpty()
+        val isCurrentlyValidated =
+            typedKey.isNotEmpty() && typedKey == storedKey && settings.availableGeminiModels.isNotEmpty()
+
+        btn.isEnabled = !isValidating
+        when {
+            isValidating -> {
+                btn.setText(R.string.validating_api_key)
+                btn.icon = null
+            }
+            isCurrentlyValidated -> {
+                btn.setText(R.string.api_key_validated_label)
+                btn.icon = ContextCompat.getDrawable(context, R.drawable.baseline_done_24)
+            }
+            else -> {
+                btn.setText(R.string.validate_api_key)
+                btn.icon = null
+            }
         }
     }
 
     private fun saveApiKeyInput() {
         val input = binding.tabVault.etApiKey.text?.toString()?.trim().orEmpty()
+        lastValidationFailed = false
+        val current = currentSettings().geminiApiKey.orEmpty()
         val toastRes =
             when {
-                input == MASKED_API_KEY -> R.string.api_key_unchanged
+                input == current -> R.string.api_key_unchanged
                 input.isEmpty() -> {
                     dispatch(BlockerAction.SetGeminiApiKey(null))
                     R.string.api_key_removed
@@ -116,23 +192,99 @@ class GeminiSectionBinder(
         Toast.makeText(context, toastRes, Toast.LENGTH_SHORT).show()
     }
 
-    private fun refreshModels() {
-        if (currentSettings().geminiApiKey.isNullOrEmpty()) {
+    private fun validateApiKeyInput() {
+        val input = binding.tabVault.etApiKey.text?.toString()?.trim().orEmpty()
+        if (input.isEmpty()) {
             Toast.makeText(context, R.string.configure_api_key_first, Toast.LENGTH_SHORT).show()
             return
         }
-        binding.tabVault.btnRefreshModels.isEnabled = false
-        Toast.makeText(context, R.string.refreshing_models, Toast.LENGTH_SHORT).show()
+        isValidating = true
+        lastValidationFailed = false
+        renderStatusBanner(currentSettings())
+        renderValidateButton(currentSettings())
         scope.launch {
-            onRefreshModels()
-            if (isViewAlive()) {
-                binding.tabVault.btnRefreshModels.isEnabled = true
-                Toast.makeText(context, R.string.models_refreshed, Toast.LENGTH_SHORT).show()
+            val result = onValidateApiKey(input)
+            if (!isViewAlive()) return@launch
+            isValidating = false
+            handleValidationResult(result)
+            render(currentSettings())
+        }
+    }
+
+    private fun handleValidationResult(result: GeminiValidationResult) {
+        when (result) {
+            is GeminiValidationResult.Valid -> {
+                lastValidationFailed = false
+                Toast.makeText(
+                    context,
+                    context.resources.getQuantityString(
+                        R.plurals.api_key_validated_toast,
+                        result.models.size,
+                        result.models.size,
+                    ),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+            GeminiValidationResult.InvalidOrUnreachable -> {
+                lastValidationFailed = true
+                Toast.makeText(context, R.string.api_key_invalid_toast, Toast.LENGTH_LONG).show()
+            }
+            GeminiValidationResult.Cleared -> {
+                lastValidationFailed = false
+                Toast.makeText(context, R.string.api_key_removed, Toast.LENGTH_SHORT).show()
             }
         }
     }
 
+    private fun openModelPicker() {
+        val settings = currentSettings()
+        val models = settings.availableGeminiModels
+        if (models.isEmpty()) {
+            val typedKey = binding.tabVault.etApiKey.text?.toString()?.trim().orEmpty()
+            if (typedKey.isNotEmpty()) {
+                validateApiKeyInput()
+            } else {
+                Toast.makeText(context, R.string.configure_api_key_first, Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+        val displayNames = models.map { it.removePrefix(MODELS_PREFIX) }.toTypedArray()
+        val checkedIndex = models.indexOf(settings.selectedGeminiModel).coerceAtLeast(0)
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.choose_gemini_model_title)
+            .setSingleChoiceItems(displayNames, checkedIndex) { dialog, which ->
+                if (which in models.indices) {
+                    dispatch(BlockerAction.SelectGeminiModel(models[which]))
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun refreshModels() {
+        val input = binding.tabVault.etApiKey.text?.toString()?.trim().orEmpty()
+        if (input.isEmpty() && currentSettings().geminiApiKey.isNullOrEmpty()) {
+            Toast.makeText(context, R.string.configure_api_key_first, Toast.LENGTH_SHORT).show()
+            return
+        }
+        isValidating = true
+        lastValidationFailed = false
+        renderStatusBanner(currentSettings())
+        renderValidateButton(currentSettings())
+        Toast.makeText(context, R.string.refreshing_models, Toast.LENGTH_SHORT).show()
+        scope.launch {
+            val models = onRefreshModels()
+            if (!isViewAlive()) return@launch
+            isValidating = false
+            lastValidationFailed = models.isEmpty()
+            render(currentSettings())
+            val toastRes = if (models.isNotEmpty()) R.string.models_refreshed else R.string.api_key_invalid_toast
+            Toast.makeText(context, toastRes, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     companion object {
-        private const val MASKED_API_KEY = "***********"
+        private const val MODELS_PREFIX = "models/"
     }
 }

@@ -1,8 +1,10 @@
 package com.warden.app.core.platform
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.os.SystemClock
 import android.util.LruCache
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineDispatcher
@@ -11,7 +13,7 @@ import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
- * Lightweight descriptor for an installed launchable app shown in dropdowns.
+ * Lightweight descriptor for an installed launchable app shown in pickers.
  */
 data class LaunchableApp(
     val label: String,
@@ -29,8 +31,9 @@ data class ResolvedAppInfo(
 )
 
 /**
- * Off-main-thread [PackageManager] wrapper with a bounded [LruCache] (max 64 entries)
- * so app icon caching never grows unbounded on low-RAM devices.
+ * Off-main-thread [PackageManager] wrapper using a single-IPC launcher intent query with
+ * a short-lived in-memory cache for launchable apps and a bounded [LruCache] (max 64 entries)
+ * for app icons.
  */
 class InstalledAppsProvider(
     private val appContext: Context,
@@ -38,18 +41,36 @@ class InstalledAppsProvider(
 ) {
     private val iconCache = LruCache<String, ResolvedAppInfo>(MAX_CACHE_ENTRIES)
 
-    /** Returns all launchable installed apps excluding Warden, sorted alphabetically. */
-    suspend fun loadLaunchableApps(): List<LaunchableApp> =
-        withContext(ioDispatcher) {
-            val pm = appContext.packageManager
-            val selfPackage = appContext.packageName
-            pm.getInstalledApplications(PackageManager.GET_META_DATA)
-                .asSequence()
-                .filter { it.packageName != selfPackage && pm.getLaunchIntentForPackage(it.packageName) != null }
-                .map { LaunchableApp(label = it.loadLabel(pm).toString(), packageName = it.packageName) }
-                .sortedBy { it.label.lowercase(Locale.ROOT) }
-                .toList()
+    @Volatile
+    private var cachedApps: List<LaunchableApp>? = null
+
+    @Volatile
+    private var cachedAppsAtMs: Long = 0L
+
+    /** Returns the warm in-memory launchable apps snapshot if fresh, or `null` otherwise. */
+    fun cachedLaunchableAppsOrNull(): List<LaunchableApp>? {
+        val snapshot = cachedApps ?: return null
+        val ageMs = SystemClock.elapsedRealtime() - cachedAppsAtMs
+        return if (ageMs in 0..LAUNCHABLE_CACHE_TTL_MS) snapshot else null
+    }
+
+    /**
+     * Returns all launchable installed apps excluding Warden, sorted alphabetically.
+     *
+     * Uses a single [PackageManager.queryIntentActivities] IPC call instead of iterating every
+     * installed package, and serves from an in-memory cache when fresh.
+     */
+    suspend fun loadLaunchableApps(forceRefresh: Boolean = false): List<LaunchableApp> {
+        if (!forceRefresh) {
+            cachedLaunchableAppsOrNull()?.let { return it }
         }
+        return withContext(ioDispatcher) {
+            val loaded = queryLaunchableApps()
+            cachedApps = loaded
+            cachedAppsAtMs = SystemClock.elapsedRealtime()
+            loaded
+        }
+    }
 
     /** Resolves label and icon for [packageName] on [ioDispatcher], caching up to 64 entries. */
     suspend fun resolveAppInfo(packageName: String): ResolvedAppInfo {
@@ -63,6 +84,23 @@ class InstalledAppsProvider(
 
     /** Returns the cached label for [packageName], or `null` if not yet resolved. */
     fun cachedLabel(packageName: String): String? = iconCache.get(packageName)?.label
+
+    private fun queryLaunchableApps(): List<LaunchableApp> {
+        val pm = appContext.packageManager
+        val selfPackage = appContext.packageName
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val seenPackages = HashSet<String>()
+        return pm.queryIntentActivities(launcherIntent, 0)
+            .asSequence()
+            .mapNotNull { resolveInfo ->
+                val pkg = resolveInfo.activityInfo?.packageName ?: return@mapNotNull null
+                if (pkg == selfPackage || !seenPackages.add(pkg)) return@mapNotNull null
+                val label = resolveInfo.loadLabel(pm).toString().ifBlank { pkg }
+                LaunchableApp(label = label, packageName = pkg)
+            }
+            .sortedBy { it.label.lowercase(Locale.ROOT) }
+            .toList()
+    }
 
     private fun queryPackageInfo(packageName: String): ResolvedAppInfo =
         try {
@@ -78,5 +116,6 @@ class InstalledAppsProvider(
 
     companion object {
         private const val MAX_CACHE_ENTRIES = 64
+        private const val LAUNCHABLE_CACHE_TTL_MS = 300_000L
     }
 }

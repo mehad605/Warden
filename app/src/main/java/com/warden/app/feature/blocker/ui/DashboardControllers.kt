@@ -132,6 +132,7 @@ internal class DashboardControllers(
                 scope = scope,
                 currentSettings = { viewModel.settings.value },
                 dispatch = viewModel::dispatch,
+                onValidateApiKey = viewModel::validateAndSaveGeminiKey,
                 onRefreshModels = viewModel::refreshGeminiModels,
                 onRequestTempIgnore = { host.openGatekeeper(GatekeeperDialogMode.TEMPORARY_IGNORE, null) },
                 isViewAlive = host.isViewAlive,
