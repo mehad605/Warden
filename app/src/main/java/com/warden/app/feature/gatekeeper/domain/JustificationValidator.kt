@@ -15,6 +15,15 @@ object JustificationValidator {
     private val SENTENCE_SPLIT_REGEX = Regex("[.!?]+")
     private val WHITESPACE_REGEX = Regex("\\s+")
 
+    /** Counts non-empty sentences in [text] using the same sentence rules as [validate]. */
+    fun countSentences(text: String): Int =
+        text.split(SENTENCE_SPLIT_REGEX)
+            .map { it.trim() }
+            .count { it.isNotEmpty() }
+
+    /** Minimum required sentence count for non-removal gatekeeper justifications. */
+    const val REQUIRED_SENTENCES: Int = MIN_SENTENCES
+
     /**
      * Validates [text] against the gatekeeper justification rules.
      *

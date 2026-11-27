@@ -7,6 +7,7 @@ import com.warden.app.data.models.KeywordBlocker
 import com.warden.app.data.models.Settings
 import com.warden.app.feature.blocker.ui.BlockerAction
 import com.warden.app.feature.blocker.ui.BlockerViewModel
+import com.warden.app.feature.blocker.ui.GeminiValidationResult
 import com.warden.app.feature.gatekeeper.domain.EncodedImage
 import com.warden.app.feature.gatekeeper.domain.GatekeeperClient
 import com.warden.app.feature.gatekeeper.domain.GatekeeperRequest
@@ -201,6 +202,23 @@ class BlockerViewModelAndReplaceabilityTest {
             viewModel.dispatch(BlockerAction.PruneExpiredTempApps)
             advanceUntilIdle()
             assertFalse(viewModel.settings.value.temporaryIgnoredApps.containsKey("com.browser.app"))
+        }
+
+    @Test
+    fun validateAndSaveGeminiKeyPersistsModelsAndAutoSelectsDefaultModel() =
+        runTest(testDispatcher) {
+            val validResult = viewModel.validateAndSaveGeminiKey("  valid-key-123  ")
+            assertTrue(validResult is GeminiValidationResult.Valid)
+            val valid = validResult as GeminiValidationResult.Valid
+            assertEquals(listOf("models/local-strict-v1"), valid.models)
+            assertEquals("models/local-strict-v1", viewModel.settings.value.selectedGeminiModel)
+            assertEquals("valid-key-123", viewModel.settings.value.geminiApiKey)
+
+            val cleared = viewModel.validateAndSaveGeminiKey("   ")
+            assertEquals(GeminiValidationResult.Cleared, cleared)
+            assertNull(viewModel.settings.value.geminiApiKey)
+            assertTrue(viewModel.settings.value.availableGeminiModels.isEmpty())
+            assertEquals("", viewModel.settings.value.selectedGeminiModel)
         }
 
     @Test

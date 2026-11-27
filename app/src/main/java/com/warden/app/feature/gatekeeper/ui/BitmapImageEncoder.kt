@@ -1,14 +1,20 @@
 package com.warden.app.feature.gatekeeper.ui
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.util.Base64
 import com.warden.app.feature.gatekeeper.domain.EncodedImage
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Downscales and JPEG-compresses user-attached screenshots before sending them to Gemini.
+ * Decodes, downscales, and JPEG-compresses user-attached screenshots before sending them to Gemini.
  *
  * Bounding resolution to 1024px caps memory spikes on 4 GB RAM devices and reduces upload size.
  */
@@ -16,6 +22,26 @@ object BitmapImageEncoder {
     private const val MAX_DIMENSION_PX = 1024
     private const val JPEG_QUALITY = 80
     private const val MIME_JPEG = "image/jpeg"
+
+    /** Decodes a mutable [Bitmap] from [uri], returning `null` if unreadable or inaccessible. */
+    fun decodeFromUri(
+        context: Context,
+        uri: Uri,
+    ): Bitmap? =
+        try {
+            val resolver = context.contentResolver
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val source = ImageDecoder.createSource(resolver, uri)
+                ImageDecoder.decodeBitmap(source) { decoder, _, _ -> decoder.isMutableRequired = true }
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(resolver, uri)
+            }
+        } catch (_: IOException) {
+            null
+        } catch (_: SecurityException) {
+            null
+        }
 
     /** Encodes [bitmap] to a bounded JPEG [EncodedImage]. */
     fun encode(bitmap: Bitmap): EncodedImage {

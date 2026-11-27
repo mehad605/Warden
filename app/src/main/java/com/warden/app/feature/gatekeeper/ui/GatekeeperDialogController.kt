@@ -1,16 +1,17 @@
 package com.warden.app.feature.gatekeeper.ui
 
+import android.app.Dialog
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.doAfterTextChanged
 import com.warden.app.R
 import com.warden.app.core.platform.InstalledAppsProvider
 import com.warden.app.core.platform.LaunchableApp
@@ -34,8 +35,9 @@ enum class GatekeeperDialogMode {
 }
 
 /**
- * Coordinates the AI Gatekeeper dialog lifecycle: loading apps off the main thread,
- * decoding screenshot attachments, validating justifications locally, and invoking evaluation.
+ * Coordinates the full-screen, keyboard-aware AI Gatekeeper chat dialog lifecycle:
+ * serving cached launchable apps instantaneously, decoding screenshot attachments,
+ * validating justifications live, and streaming verdict bubbles into the chat thread.
  */
 class GatekeeperDialogController(
     private val context: Context,
@@ -48,55 +50,129 @@ class GatekeeperDialogController(
     private val onRejected: () -> Unit,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
-    /** Displays the gatekeeper dialog for [mode], optionally locked to [targetPackage]. */
+    private class ChatSessionState(
+        var apps: List<LaunchableApp> = emptyList(),
+        var selectedApp: LaunchableApp? = null,
+        var attachedBitmap: Bitmap? = null,
+    )
+
+    /** Displays the full-screen gatekeeper chat for [mode], optionally locked to [targetPackage]. */
     fun show(
         mode: GatekeeperDialogMode,
         permanentIgnoredApps: List<String>,
         rejectionCount: Int,
         targetPackage: String? = null,
-    ) {
+    ): Dialog {
         val binding = DialogAiChatBinding.inflate(layoutInflater)
-        val viewBinder = GatekeeperDialogViewBinder(context, binding)
-        val dialog = MaterialAlertDialogBuilder(context).setView(binding.root).create()
-        var attachedBitmap: Bitmap? = null
+        val viewBinder = GatekeeperDialogViewBinder(context, layoutInflater, binding)
+        val dialog = createChatDialog(binding)
+        val state = ChatSessionState()
 
         val targetLabel = targetPackage?.let { appsProvider.cachedLabel(it) ?: it }
-        viewBinder.bindModeHeader(mode, permanentIgnoredApps, targetLabel)
+        viewBinder.bindModeHeader(mode, rejectionCount, targetLabel)
         if (mode != GatekeeperDialogMode.PAUSE_BLOCKER) {
-            loadAppsAsync(viewBinder, dialog, targetPackage)
+            bindAppSelector(binding, viewBinder, dialog, state, mode, permanentIgnoredApps, targetPackage)
         }
-        bindAttachmentButtons(binding) { attachedBitmap = it }
+        bindComposer(binding, viewBinder, dialog, state, mode, permanentIgnoredApps, rejectionCount)
         binding.btnCancel.setOnClickListener { dialog.dismiss() }
-        binding.btnSubmit.setOnClickListener {
-            handleSubmit(binding, viewBinder, dialog, mode, permanentIgnoredApps, rejectionCount, attachedBitmap)
-        }
         dialog.show()
+        return dialog
     }
 
-    private fun loadAppsAsync(
+    private fun createChatDialog(binding: DialogAiChatBinding): Dialog {
+        val dialog = Dialog(context, R.style.Theme_BlockWords_ChatDialog)
+        dialog.setContentView(binding.root)
+        dialog.window?.apply {
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            @Suppress("DEPRECATION")
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(binding.chatRoot) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        return dialog
+    }
+
+    private fun bindAppSelector(
+        binding: DialogAiChatBinding,
         viewBinder: GatekeeperDialogViewBinder,
-        dialog: AlertDialog,
+        dialog: Dialog,
+        state: ChatSessionState,
+        mode: GatekeeperDialogMode,
+        permanentIgnoredApps: List<String>,
         targetPackage: String?,
     ) {
-        viewBinder.showAppsLoading()
-        scope.launch {
-            val apps = appsProvider.loadLaunchableApps()
-            if (dialog.isShowing) {
-                viewBinder.bindLoadedApps(apps, targetPackage)
+        val warm = appsProvider.cachedLaunchableAppsOrNull()
+        if (warm != null) {
+            applyLoadedApps(warm, viewBinder, state, mode, permanentIgnoredApps, targetPackage)
+        } else {
+            viewBinder.showAppsLoading()
+            scope.launch {
+                val loaded = appsProvider.loadLaunchableApps()
+                if (dialog.isShowing) {
+                    applyLoadedApps(loaded, viewBinder, state, mode, permanentIgnoredApps, targetPackage)
+                }
+            }
+        }
+        binding.layoutTargetApp.setOnClickListener {
+            if (targetPackage != null || state.apps.isEmpty()) return@setOnClickListener
+            AppPickerDialog.show(context, layoutInflater, state.apps) { picked ->
+                state.selectedApp = picked
+                viewBinder.renderSelectedApp(
+                    selectedApp = picked,
+                    locked = false,
+                    mode = mode,
+                    isRemoval = isRemovalRequest(mode, picked, permanentIgnoredApps),
+                )
             }
         }
     }
 
-    private fun bindAttachmentButtons(
-        binding: DialogAiChatBinding,
-        onBitmapChanged: (Bitmap?) -> Unit,
+    private fun applyLoadedApps(
+        loaded: List<LaunchableApp>,
+        viewBinder: GatekeeperDialogViewBinder,
+        state: ChatSessionState,
+        mode: GatekeeperDialogMode,
+        permanentIgnoredApps: List<String>,
+        targetPackage: String?,
     ) {
+        state.apps = loaded
+        state.selectedApp =
+            if (targetPackage != null) {
+                loaded.firstOrNull { it.packageName == targetPackage }
+                    ?: LaunchableApp(appsProvider.cachedLabel(targetPackage) ?: targetPackage, targetPackage)
+            } else {
+                loaded.firstOrNull()
+            }
+        viewBinder.renderSelectedApp(
+            selectedApp = state.selectedApp,
+            locked = targetPackage != null,
+            mode = mode,
+            isRemoval = isRemovalRequest(mode, state.selectedApp, permanentIgnoredApps),
+        )
+    }
+
+    private fun bindComposer(
+        binding: DialogAiChatBinding,
+        viewBinder: GatekeeperDialogViewBinder,
+        dialog: Dialog,
+        state: ChatSessionState,
+        mode: GatekeeperDialogMode,
+        permanentIgnoredApps: List<String>,
+        rejectionCount: Int,
+    ) {
+        binding.etJustification.doAfterTextChanged { text ->
+            val isRemoval = isRemovalRequest(mode, state.selectedApp, permanentIgnoredApps)
+            viewBinder.updateSentenceCounter(text?.toString().orEmpty(), isRemoval)
+        }
         binding.btnAttachImage.setOnClickListener {
             requestPickImage { uri ->
                 scope.launch {
-                    val bitmap = withContext(ioDispatcher) { decodeBitmapFromUri(uri) }
-                    if (bitmap != null) {
-                        onBitmapChanged(bitmap)
+                    val bitmap = withContext(ioDispatcher) { BitmapImageEncoder.decodeFromUri(context, uri) }
+                    if (bitmap != null && dialog.isShowing) {
+                        state.attachedBitmap = bitmap
                         binding.cardImagePreview.visibility = View.VISIBLE
                         binding.ivPreview.setImageBitmap(bitmap)
                     }
@@ -104,40 +180,54 @@ class GatekeeperDialogController(
             }
         }
         binding.btnRemoveImage.setOnClickListener {
-            onBitmapChanged(null)
+            state.attachedBitmap = null
             binding.cardImagePreview.visibility = View.GONE
+        }
+        binding.btnSubmit.setOnClickListener {
+            handleSubmit(binding, viewBinder, dialog, state, mode, permanentIgnoredApps, rejectionCount)
         }
     }
 
     private fun handleSubmit(
         binding: DialogAiChatBinding,
         viewBinder: GatekeeperDialogViewBinder,
-        dialog: AlertDialog,
+        dialog: Dialog,
+        state: ChatSessionState,
         mode: GatekeeperDialogMode,
         permanentIgnoredApps: List<String>,
         rejectionCount: Int,
-        attachedBitmap: Bitmap?,
     ) {
-        val justification = binding.etJustification.text?.toString().orEmpty()
-        val selectedApp = binding.spinnerApps.selectedItem as? LaunchableApp
+        val justification = binding.etJustification.text?.toString()?.trim().orEmpty()
+        val selectedApp = state.selectedApp
         if (mode != GatekeeperDialogMode.PAUSE_BLOCKER && selectedApp == null) {
             Toast.makeText(context, R.string.select_app_prompt, Toast.LENGTH_SHORT).show()
             return
         }
-        val isRemoval =
-            mode == GatekeeperDialogMode.TEMPORARY_IGNORE &&
-                selectedApp != null &&
-                permanentIgnoredApps.contains(selectedApp.packageName)
-
+        val isRemoval = isRemovalRequest(mode, selectedApp, permanentIgnoredApps)
         val validationError = JustificationValidator.validate(justification, isRemoval = isRemoval)
         if (validationError != null) {
             Toast.makeText(context, validationError, Toast.LENGTH_LONG).show()
             return
         }
 
+        val attachmentToSend = state.attachedBitmap
+        viewBinder.appendUserBubble(justification, attachmentToSend)
+        binding.etJustification.setText("")
+        state.attachedBitmap = null
+        binding.cardImagePreview.visibility = View.GONE
+
         val request = buildRequest(mode, selectedApp, isRemoval, justification, rejectionCount)
-        evaluateAsync(viewBinder, dialog, mode, selectedApp, isRemoval, request, attachedBitmap)
+        evaluateAsync(viewBinder, dialog, mode, selectedApp, isRemoval, request, attachmentToSend)
     }
+
+    private fun isRemovalRequest(
+        mode: GatekeeperDialogMode,
+        selectedApp: LaunchableApp?,
+        permanentIgnoredApps: List<String>,
+    ): Boolean =
+        mode == GatekeeperDialogMode.TEMPORARY_IGNORE &&
+            selectedApp != null &&
+            permanentIgnoredApps.contains(selectedApp.packageName)
 
     private fun buildRequest(
         mode: GatekeeperDialogMode,
@@ -145,37 +235,24 @@ class GatekeeperDialogController(
         isRemoval: Boolean,
         justification: String,
         rejectionCount: Int,
-    ): GatekeeperRequest =
-        when (mode) {
+    ): GatekeeperRequest {
+        val label = selectedApp?.label.orEmpty()
+        val pkg = selectedApp?.packageName.orEmpty()
+        return when (mode) {
             GatekeeperDialogMode.PAUSE_BLOCKER -> GatekeeperRequest.PauseBlocker(justification, rejectionCount)
-            GatekeeperDialogMode.EXTEND_IGNORE ->
-                GatekeeperRequest.ExtendExemption(
-                    appName = selectedApp?.label.orEmpty(),
-                    packageName = selectedApp?.packageName.orEmpty(),
-                    userPrompt = justification,
-                    rejectionCount = rejectionCount,
-                )
+            GatekeeperDialogMode.EXTEND_IGNORE -> GatekeeperRequest.ExtendExemption(label, pkg, justification, rejectionCount)
             GatekeeperDialogMode.TEMPORARY_IGNORE ->
                 if (isRemoval) {
-                    GatekeeperRequest.RemoveFromIgnore(
-                        appName = selectedApp?.label.orEmpty(),
-                        packageName = selectedApp?.packageName.orEmpty(),
-                        userPrompt = justification,
-                        rejectionCount = rejectionCount,
-                    )
+                    GatekeeperRequest.RemoveFromIgnore(label, pkg, justification, rejectionCount)
                 } else {
-                    GatekeeperRequest.AppExemption(
-                        appName = selectedApp?.label.orEmpty(),
-                        packageName = selectedApp?.packageName.orEmpty(),
-                        userPrompt = justification,
-                        rejectionCount = rejectionCount,
-                    )
+                    GatekeeperRequest.AppExemption(label, pkg, justification, rejectionCount)
                 }
         }
+    }
 
     private fun evaluateAsync(
         viewBinder: GatekeeperDialogViewBinder,
-        dialog: AlertDialog,
+        dialog: Dialog,
         mode: GatekeeperDialogMode,
         selectedApp: LaunchableApp?,
         isRemoval: Boolean,
@@ -190,17 +267,19 @@ class GatekeeperDialogController(
                         withContext(Dispatchers.Default) { BitmapImageEncoder.encode(bmp) }
                     }
                 val verdict = evaluateRequest(request, encodedImage)
-                viewBinder.showVerdict(
-                    dialog = dialog,
-                    verdict = verdict,
-                    onApprovedRendered = { onApproved(mode, selectedApp, isRemoval, verdict) },
-                    onRejectedRendered = onRejected,
-                )
+                if (dialog.isShowing) {
+                    viewBinder.showVerdict(
+                        dialog = dialog,
+                        verdict = verdict,
+                        onApprovedRendered = { onApproved(mode, selectedApp, isRemoval, verdict) },
+                        onRejectedRendered = onRejected,
+                    )
+                }
             } catch (e: IOException) {
-                viewBinder.setLoading(false)
+                if (dialog.isShowing) viewBinder.setLoading(false)
                 showErrorToast(e.message)
             } catch (e: IllegalStateException) {
-                viewBinder.setLoading(false)
+                if (dialog.isShowing) viewBinder.setLoading(false)
                 showErrorToast(e.message)
             }
         }
@@ -213,20 +292,4 @@ class GatekeeperDialogController(
             Toast.LENGTH_SHORT,
         ).show()
     }
-
-    private fun decodeBitmapFromUri(uri: Uri): Bitmap? =
-        try {
-            val resolver = context.contentResolver
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                val source = ImageDecoder.createSource(resolver, uri)
-                ImageDecoder.decodeBitmap(source) { decoder, _, _ -> decoder.isMutableRequired = true }
-            } else {
-                @Suppress("DEPRECATION")
-                MediaStore.Images.Media.getBitmap(resolver, uri)
-            }
-        } catch (_: IOException) {
-            null
-        } catch (_: SecurityException) {
-            null
-        }
 }

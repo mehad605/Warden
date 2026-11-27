@@ -1,193 +1,333 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/chat_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:fillViewport="true">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
+    <!-- Chat Top Header -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_height="60dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
 
-        <TextView
-            android:id="@+id/tv_dialog_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/ai_dialog_default_title"
-            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/tv_dialog_subtitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/ai_dialog_default_subtitle"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginBottom="20dp" />
-
-        <TextView
-            android:id="@+id/tv_select_app_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/select_target_app"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface"
-            android:layout_marginBottom="8dp" />
-
-        <Spinner
-            android:id="@+id/spinner_apps"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="20dp" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/til_justification"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/your_justification_hint"
-            android:layout_marginBottom="20dp"
-            app:counterEnabled="true"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_justification"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minLines="5"
-                android:gravity="top|start"
-                android:inputType="textMultiLine" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_rounded_999"
+            android:backgroundTint="?attr/colorSecondaryContainer"
+            android:contentDescription="@null"
+            android:padding="8dp"
+            android:src="@drawable/ic_spark_24"
+            app:tint="?attr/colorOnSecondaryContainer" />
 
         <LinearLayout
-            android:id="@+id/layout_attachment"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="20dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_attach_image"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/attach_screenshot"
-                app:icon="@android:drawable/ic_menu_camera" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_image_preview"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="12dp"
-                android:visibility="gone"
-                app:cardElevation="2dp"
-                app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Small">
-
-                <FrameLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <ImageView
-                        android:id="@+id/iv_preview"
-                        android:layout_width="160dp"
-                        android:layout_height="120dp"
-                        android:contentDescription="@string/cd_screenshot_preview"
-                        android:scaleType="centerCrop" />
-
-                    <ImageButton
-                        android:id="@+id/btn_remove_image"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_gravity="top|end"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/cd_remove_screenshot"
-                        android:src="@drawable/baseline_close_24"
-                        app:tint="?attr/colorError" />
-                </FrameLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_loading"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:visibility="gone"
-            android:layout_marginBottom="20dp">
-
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:indeterminate="true" />
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
+                android:id="@+id/tv_dialog_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/consulting_gemini"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:layout_marginTop="12dp" />
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/ai_dialog_default_title"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_chat_meta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/ai_chat_strict_meta"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_ai_verdict"
+        <ImageButton
+            android:id="@+id/btn_cancel"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cancel"
+            android:src="@drawable/baseline_close_24"
+            app:tint="?attr/colorOnSurfaceVariant" />
+    </LinearLayout>
+
+    <!-- Target App Context Pill Bar -->
+    <LinearLayout
+        android:id="@+id/layout_target_app"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_rounded_12"
+        android:backgroundTint="?attr/colorSurfaceContainerHigh"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:minHeight="46dp"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/target_app_prefix"
+            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <TextView
+            android:id="@+id/tv_selected_app"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/loading_installed_apps"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/iv_app_chevron"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_chevron_down_24"
+            app:tint="?attr/colorPrimary" />
+    </LinearLayout>
+
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- Scrollable Chat Message Thread -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_chat_messages"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
+
+        <LinearLayout
+            android:id="@+id/layout_chat_messages"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_marginBottom="20dp"
-            app:cardElevation="2dp"
-            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Small">
+            android:orientation="vertical">
 
-            <LinearLayout
+            <!-- Initial AI Gatekeeper Rules Bubble -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginEnd="32dp"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
 
-                <TextView
-                    android:id="@+id/tv_verdict_title"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    tools:text="@string/verdict_rejected"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:layout_marginBottom="4dp" />
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                <TextView
-                    android:id="@+id/tv_verdict_message"
-                    android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/ai_gatekeeper_sender"
+                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                        android:textColor="?attr/colorSecondary"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_dialog_subtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/ai_dialog_default_subtitle"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Dynamic Conversation Bubbles Container -->
+            <LinearLayout
+                android:id="@+id/layout_conversation_entries"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <!-- AI Typing / Consulting Indicator Bubble -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/layout_loading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    tools:text="AI response text goes here"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="10dp">
 
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:indeterminate="true"
+                        app:indicatorSize="18dp"
+                        app:trackThickness="2dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="@string/consulting_gemini"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- Pinned Bottom Composer (glides smoothly above soft keyboard) -->
+    <LinearLayout
+        android:id="@+id/layout_composer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainer"
+        android:orientation="vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp">
+
+        <!-- Attached Screenshot Preview Strip -->
+        <LinearLayout
+            android:id="@+id/card_image_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_rounded_12"
+            android:backgroundTint="?attr/colorSurfaceContainerHigh"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/iv_preview"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="@string/cd_screenshot_preview"
+                android:scaleType="centerCrop" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:text="@string/screenshot_attached_label"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurface" />
+
+            <ImageButton
+                android:id="@+id/btn_remove_image"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_remove_screenshot"
+                android:src="@drawable/baseline_close_24"
+                app:tint="?attr/colorError" />
+        </LinearLayout>
+
+        <!-- Live Sentence Counter Helper -->
+        <TextView
+            android:id="@+id/tv_sentence_counter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:layout_marginBottom="6dp"
+            android:text="@string/sentence_counter_default"
+            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <!-- Composer Input + Attach + Send -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end">
+            android:gravity="bottom"
+            android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_cancel"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
+            <ImageButton
+                android:id="@+id/btn_attach_image"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_rounded_999"
+                android:backgroundTint="?attr/colorSurfaceContainerHigh"
+                android:contentDescription="@string/attach_screenshot"
+                android:src="@drawable/ic_attach_image_24"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <EditText
+                android:id="@+id/et_justification"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/cancel"
-                android:layout_marginEnd="8dp" />
+                android:layout_weight="1"
+                android:autofillHints=""
+                android:background="@drawable/bg_rounded_12"
+                android:backgroundTint="?attr/colorSurfaceContainerHigh"
+                android:gravity="top|start"
+                android:hint="@string/ai_composer_hint"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:minHeight="42dp"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:scrollbars="vertical"
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant" />
 
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btn_submit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/submit_request" />
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_rounded_999"
+                android:backgroundTint="?attr/colorSecondary"
+                android:contentDescription="@string/submit_request"
+                android:src="@drawable/ic_send_24"
+                app:tint="?attr/colorOnSecondary" />
         </LinearLayout>
-
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</LinearLayout>
