@@ -47,11 +47,17 @@ class GracePeriodController(
         return true
     }
 
-    /** Cancels any pending grace timer if it belongs to [packageName]. */
-    fun cancelForPackage(packageName: String) {
+    /**
+     * Cancels any pending grace timer if it belongs to [packageName].
+     *
+     * @return `true` if a pending timer for [packageName] was cancelled.
+     */
+    fun cancelForPackage(packageName: String): Boolean {
         if (pendingPackage == packageName) {
             cancel()
+            return true
         }
+        return false
     }
 
     /** Immediately cancels any pending grace timer. */

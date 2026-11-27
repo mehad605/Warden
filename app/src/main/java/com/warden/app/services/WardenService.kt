@@ -1,13 +1,11 @@
 package com.warden.app.services
 
 import android.accessibilityservice.AccessibilityService
-import android.os.Handler
-import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
-import android.widget.Toast
 import com.warden.app.core.di.AppContainerProvider
 import com.warden.app.core.platform.CrashLogger
 import com.warden.app.feature.blocker.service.AccessibilityNodeScanner
+import com.warden.app.feature.blocker.service.BlockAlertPresenter
 import com.warden.app.feature.blocker.service.BlockerCoordinator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -25,23 +23,26 @@ import kotlinx.coroutines.launch
  * upgrading from `baseline-v1` retains the user's Accessibility Service permission grant.
  */
 class WardenService : AccessibilityService() {
-    private val mainHandler = Handler(Looper.getMainLooper())
     private val serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val eventChannel =
         Channel<AccessibilityEvent>(Channel.CONFLATED) { dropped ->
             AccessibilityNodeScanner.recycleEventCompat(dropped)
         }
 
+    private var alertPresenter: BlockAlertPresenter? = null
     private var coordinator: BlockerCoordinator? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         val container = (application as AppContainerProvider).container
+        val presenter = BlockAlertPresenter(this)
+        alertPresenter = presenter
         val activeCoordinator =
             BlockerCoordinator(
                 rootNodeProvider = { rootInActiveWindow },
                 pressHome = { performGlobalAction(GLOBAL_ACTION_HOME) },
-                showToast = ::showMainThreadToast,
+                showToast = presenter::show,
+                dismissToast = presenter::dismiss,
             )
         coordinator = activeCoordinator
 
@@ -67,6 +68,8 @@ class WardenService : AccessibilityService() {
     override fun onDestroy() {
         coordinator?.shutdown()
         coordinator = null
+        alertPresenter?.shutdown()
+        alertPresenter = null
         eventChannel.close()
         serviceScope.cancel()
         super.onDestroy()
@@ -90,12 +93,6 @@ class WardenService : AccessibilityService() {
                     AccessibilityNodeScanner.recycleEventCompat(event)
                 }
             }
-        }
-    }
-
-    private fun showMainThreadToast(message: String) {
-        mainHandler.post {
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         }
     }
 }

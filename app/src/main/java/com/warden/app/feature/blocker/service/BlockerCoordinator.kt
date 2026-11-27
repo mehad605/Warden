@@ -16,10 +16,15 @@ class BlockerCoordinator(
     private val rootNodeProvider: () -> AccessibilityNodeInfo?,
     private val pressHome: () -> Unit,
     private val showToast: (String) -> Unit,
+    private val dismissToast: () -> Unit = {},
     private val engine: BlockingDecisionEngine = BlockingDecisionEngine(),
     private val graceController: GracePeriodController = GracePeriodController(),
     private val clock: Clock = SystemClockProvider(),
 ) {
+    private var lastInstantBlockedPackage: String? = null
+    private var lastInstantBlockedKeyword: String? = null
+    private var lastInstantBlockedAtMs: Long = 0L
+
     /** Updates compiled rules when [Settings] changes. */
     fun onSettingsUpdated(settings: Settings) {
         engine.updateSettings(settings)
@@ -35,15 +40,18 @@ class BlockerCoordinator(
         val eventPackage = event.packageName?.toString().orEmpty()
         if (!engine.shouldScanPackage(eventPackage, nowMs)) {
             graceController.cancel()
+            clearInstantBlockCooldown()
             return
         }
 
-        scanActiveWindow(eventPackage, nowMs)
+        scanActiveWindow(nowMs)
     }
 
     /** Cancels pending timers when the hosting service is destroyed. */
     fun shutdown() {
         graceController.cancel()
+        clearInstantBlockCooldown()
+        dismissToast()
     }
 
     private fun handleSelfProtection(
@@ -61,6 +69,7 @@ class BlockerCoordinator(
             val warning = engine.evaluateSelfProtection(activePackage, className, screenTexts, nowMs)
             if (warning != null) {
                 graceController.cancel()
+                clearInstantBlockCooldown()
                 pressHome()
                 showToast(warning)
                 return true
@@ -71,22 +80,27 @@ class BlockerCoordinator(
         }
     }
 
-    private fun scanActiveWindow(
-        eventPackage: String,
-        nowMs: Long,
-    ) {
+    private fun scanActiveWindow(nowMs: Long) {
         val rootNode = rootNodeProvider() ?: return
         try {
             val rootPackage = rootNode.packageName?.toString().orEmpty()
+            if (rootPackage != lastInstantBlockedPackage) {
+                clearInstantBlockCooldown()
+            }
             if (!engine.shouldScanPackage(rootPackage, nowMs)) {
                 graceController.cancel()
                 return
             }
             val match = AccessibilityNodeScanner.findFirstMatch(rootNode, engine.matcher)
             if (match != null) {
-                handleKeywordMatch(eventPackage, match)
+                handleKeywordMatch(rootPackage, match, nowMs)
             } else {
-                graceController.cancelForPackage(eventPackage)
+                if (rootPackage == lastInstantBlockedPackage) {
+                    clearInstantBlockCooldown()
+                }
+                if (graceController.cancelForPackage(rootPackage)) {
+                    dismissToast()
+                }
             }
         } finally {
             AccessibilityNodeScanner.recycleNodeCompat(rootNode)
@@ -96,9 +110,19 @@ class BlockerCoordinator(
     private fun handleKeywordMatch(
         packageName: String,
         match: KeywordMatch,
+        nowMs: Long,
     ) {
         val graceSeconds = engine.gracePeriodSeconds
         if (graceSeconds <= 0) {
+            val withinTransitionCooldown =
+                lastInstantBlockedPackage == packageName &&
+                    lastInstantBlockedKeyword == match.keyword &&
+                    (nowMs - lastInstantBlockedAtMs) < INSTANT_BLOCK_COOLDOWN_MS
+            if (withinTransitionCooldown) return
+
+            lastInstantBlockedPackage = packageName
+            lastInstantBlockedKeyword = match.keyword
+            lastInstantBlockedAtMs = nowMs
             graceController.cancel()
             showToast(engine.formatBlockedMessage(match))
             pressHome()
@@ -131,7 +155,14 @@ class BlockerCoordinator(
         }
     }
 
+    private fun clearInstantBlockCooldown() {
+        lastInstantBlockedPackage = null
+        lastInstantBlockedKeyword = null
+        lastInstantBlockedAtMs = 0L
+    }
+
     companion object {
+        private const val INSTANT_BLOCK_COOLDOWN_MS = 1_200L
         private const val TARGET_EVENTS_MASK =
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
     }
