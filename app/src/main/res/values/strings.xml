@@ -121,7 +121,10 @@
     <string name="replay_guide_title">Interactive Guide</string>
     <string name="replay_guide_subtitle">Walk through how every part of Warden works</string>
     <string name="replay_action">Start</string>
-    <string name="version_footer">Warden v2.2 · Android Content Shield</string>
+    <string name="version_footer">Warden v2.2.1 · Android Content Shield</string>
+    <string name="alert_banner_default_title">Warden Shield</string>
+    <string name="alert_banner_blocked_title_fmt">Blocked · “%1$s”</string>
+    <string name="alert_banner_snippet_fmt">“%1$s”</string>
     <string name="cd_app_icon">App Icon</string>
     <string name="cd_extend_time">Extend Time</string>
     <string name="cd_screenshot_preview">Attached screenshot preview</string>
