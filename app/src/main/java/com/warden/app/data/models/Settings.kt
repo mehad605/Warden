@@ -8,6 +8,7 @@ package com.warden.app.data.models
  */
 data class Settings(
     val keywordBlockerConfig: KeywordBlocker = KeywordBlocker(),
+    val websiteBlockerConfig: WebsiteBlockerConfig = WebsiteBlockerConfig(),
     val passwordHash: String? = null,
     val geminiApiKey: String? = null,
     val noCount: Int = 0,

@@ -30,6 +30,11 @@ class BlockerCoordinator(
         engine.updateSettings(settings)
     }
 
+    /** Updates the shipped built-in adult domain list used by the website blocker. */
+    fun onBuiltinDomainsLoaded(domains: Collection<String>) {
+        engine.updateBuiltinDomains(domains)
+    }
+
     /** Processes one accessibility event; safe to invoke from a background worker coroutine. */
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || (event.eventType and TARGET_EVENTS_MASK) == 0) return
@@ -91,7 +96,7 @@ class BlockerCoordinator(
                 graceController.cancel()
                 return
             }
-            val match = AccessibilityNodeScanner.findFirstMatch(rootNode, engine.matcher)
+            val match = AccessibilityNodeScanner.findFirstMatch(rootNode, engine::findMatch)
             if (match != null) {
                 handleKeywordMatch(rootPackage, match, nowMs)
             } else {
@@ -145,7 +150,7 @@ class BlockerCoordinator(
         val rootNode = rootNodeProvider() ?: return
         try {
             if (rootNode.packageName?.toString() != expectedPackage) return
-            val match = AccessibilityNodeScanner.findFirstMatch(rootNode, engine.matcher)
+            val match = AccessibilityNodeScanner.findFirstMatch(rootNode, engine::findMatch)
             if (match != null && match.keyword == expectedKeyword) {
                 showToast(engine.formatBlockedMessage(match))
                 pressHome()

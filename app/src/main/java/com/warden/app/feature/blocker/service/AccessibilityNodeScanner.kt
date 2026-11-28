@@ -12,20 +12,20 @@ import com.warden.app.feature.blocker.domain.KeywordMatcher
  */
 object AccessibilityNodeScanner {
     /**
-     * Depth-first search over [node] inspecting `text` and `contentDescription` until [matcher]
-     * finds a blocked keyword. Recycles all intermediate child nodes before returning.
+     * Depth-first search over [node] inspecting `text` and `contentDescription` until [matchText]
+     * finds a blocked keyword or domain. Recycles all intermediate child nodes before returning.
      */
     fun findFirstMatch(
         node: AccessibilityNodeInfo?,
-        matcher: KeywordMatcher,
+        matchText: (String) -> KeywordMatch?,
     ): KeywordMatch? {
         node ?: return null
-        matchNodeText(node, matcher)?.let { return it }
+        matchNodeText(node, matchText)?.let { return it }
 
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
             try {
-                findFirstMatch(child, matcher)?.let { return it }
+                findFirstMatch(child, matchText)?.let { return it }
             } finally {
                 recycleNodeCompat(child)
             }
@@ -33,16 +33,22 @@ object AccessibilityNodeScanner {
         return null
     }
 
+    /** Convenience overload using a [KeywordMatcher] directly. */
+    fun findFirstMatch(
+        node: AccessibilityNodeInfo?,
+        matcher: KeywordMatcher,
+    ): KeywordMatch? = findFirstMatch(node, matcher::findMatch)
+
     private fun matchNodeText(
         node: AccessibilityNodeInfo,
-        matcher: KeywordMatcher,
+        matchText: (String) -> KeywordMatch?,
     ): KeywordMatch? {
         val nodeText = node.text?.toString()
         if (!nodeText.isNullOrEmpty()) {
-            matcher.findMatch(nodeText)?.let { return it }
+            matchText(nodeText)?.let { return it }
         }
         val contentDesc = node.contentDescription?.toString()
-        return if (!contentDesc.isNullOrEmpty()) matcher.findMatch(contentDesc) else null
+        return if (!contentDesc.isNullOrEmpty()) matchText(contentDesc) else null
     }
 
     /**

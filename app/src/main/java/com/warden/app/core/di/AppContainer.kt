@@ -12,6 +12,7 @@ import com.warden.app.core.platform.InstalledAppsProvider
 import com.warden.app.core.platform.SystemClockProvider
 import com.warden.app.feature.gatekeeper.data.HttpGeminiGatekeeperClient
 import com.warden.app.feature.gatekeeper.domain.GatekeeperClient
+import com.warden.app.feature.websites.data.PornDomainRepository
 import java.io.File
 
 /**
@@ -65,5 +66,10 @@ class AppContainer(private val appContext: Context) {
     /** Off-main-thread PackageManager provider with a bounded icon cache. */
     val installedAppsProvider: InstalledAppsProvider by lazy {
         InstalledAppsProvider(appContext)
+    }
+
+    /** Lazy repository loading the shipped MIT-licensed adult domain blocklist. */
+    val pornDomainRepository: PornDomainRepository by lazy {
+        PornDomainRepository(appContext)
     }
 }
