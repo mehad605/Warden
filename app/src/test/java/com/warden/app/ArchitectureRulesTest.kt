@@ -135,6 +135,27 @@ class ArchitectureRulesTest {
     }
 
     @Test
+    fun noUnsupportedAndroidRegexFlags() {
+        val forbidden = listOf("UNICODE_CHARACTER_CLASS", "CANON_EQ")
+        val violations = mutableListOf<String>()
+        allMainKotlinFiles().forEach { file ->
+            file.readLines().forEachIndexed { idx, line ->
+                val trimmed = line.trim()
+                val isComment = trimmed.startsWith("//") || trimmed.startsWith("*")
+                if (!isComment) {
+                    forbidden.filter { trimmed.contains(it) }.forEach { flag ->
+                        violations.add("${file.name}:${idx + 1} uses Android-unsupported Pattern.$flag")
+                    }
+                }
+            }
+        }
+        assertTrue(
+            "Android ART throws IllegalArgumentException for unsupported Pattern flags:\n${violations.joinToString("\n")}",
+            violations.isEmpty(),
+        )
+    }
+
+    @Test
     fun noMainFileExceeds300LinesAndNoUnsafeNotNullOrLateinit() {
         val violations = mutableListOf<String>()
         val lateinitRegex = Regex("\\blateinit\\s+var\\b")

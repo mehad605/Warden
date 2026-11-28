@@ -80,10 +80,11 @@ class WebsiteDomainMatcher(
     }
 
     companion object {
+        // Omit Pattern.UNICODE_CHARACTER_CLASS: Android ART ICU enables Unicode classes by default
+        // and throws IllegalArgumentException("Unsupported flags: 256") when flag 256 is passed.
         private val URL_TOKEN_PATTERN: Pattern =
             Pattern.compile(
                 """(?:[a-zA-Z][a-zA-Z0-9+.-]*://)?(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}\.?(?::\d{1,5})?(?:[/?#][^\s]*)?""",
-                Pattern.UNICODE_CHARACTER_CLASS,
             )
 
         /** Builds a [WebsiteDomainMatcher] by combining [builtinDomains] with user [config]. */

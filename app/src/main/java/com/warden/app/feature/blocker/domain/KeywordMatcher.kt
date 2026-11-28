@@ -162,15 +162,14 @@ class KeywordMatcher(
 
     private fun compileExactPattern(terms: Collection<String>): Pattern? {
         val alternation = buildAlternation(terms) ?: return null
-        return Pattern.compile(
-            """(?<![\p{L}\p{N}])(?:$alternation)(?![\p{L}\p{N}])""",
-            Pattern.UNICODE_CHARACTER_CLASS,
-        )
+        // Android ART ICU enables Unicode character classes by default and throws
+        // IllegalArgumentException("Unsupported flags: 256") for Pattern.UNICODE_CHARACTER_CLASS.
+        return Pattern.compile("""(?<![\p{L}\p{N}])(?:$alternation)(?![\p{L}\p{N}])""")
     }
 
     private fun compileContainsPattern(terms: Collection<String>): Pattern? {
         val alternation = buildAlternation(terms) ?: return null
-        return Pattern.compile("(?:$alternation)", Pattern.UNICODE_CHARACTER_CLASS)
+        return Pattern.compile("(?:$alternation)")
     }
 
     private fun buildAlternation(terms: Collection<String>): String? {
