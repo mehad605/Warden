@@ -184,7 +184,7 @@
     <string name="replay_guide_title">Interactive Guide</string>
     <string name="replay_guide_subtitle">Walk through how every part of Warden works</string>
     <string name="replay_action">Start</string>
-    <string name="version_footer">Warden v2.4.0 · Android Content Shield</string>
+    <string name="version_footer">Warden v2.4.1 · Android Content Shield</string>
     <string name="alert_banner_badge_blocked">BLOCKED</string>
     <string name="alert_banner_default_title">Warden Shield</string>
     <string name="alert_banner_blocked_title_fmt">“%1$s”</string>
@@ -201,18 +201,22 @@
     <string name="guide_next">Next</string>
     <string name="guide_done">Start Guarding</string>
     <string name="guide_step1_title">Your Offline Focus Shield</string>
-    <string name="guide_step1_body">Tap this Focus Shield orb (or the switch below) to arm protection. Warden scans visible text completely offline and sends you Home whenever a blocked keyword appears.</string>
+    <string name="guide_step1_body">Tap this Focus Shield orb (or the switch below) to arm protection. Warden scans visible text completely offline with minimal battery impact and sends you Home whenever a blocked word, phrase, or website appears.</string>
     <string name="guide_step1_cta">Enable Accessibility Permission</string>
     <string name="guide_step2_title">At-a-Glance Filter Stats</string>
     <string name="guide_step2_body">See your blocked words, safe phrases, and grace window at a glance. Tap any tile to jump straight into editing that rule.</string>
     <string name="guide_step3_title">The Adversarial AI Gatekeeper</string>
     <string name="guide_step3_body">Need temporary access to an app? Tap Request Temporary Pass to chat with Gemini and justify your need with 7 complete sentences. Gemini’s default verdict is NO.</string>
-    <string name="guide_step4_title">Blocked Words &amp; Safe Phrases</string>
-    <string name="guide_step4_body">Switch between Blocked words and Safe Phrases here. Example: block “shorts”, then add “basketball shorts” as a Safe Phrase so legitimate text never triggers a block.</string>
-    <string name="guide_step5_title">Grace Window</string>
-    <string name="guide_step5_body">Controls how many seconds Warden waits and re-checks the screen before sending you Home—preventing accidental triggers when scrolling past a word.</string>
-    <string name="guide_step6_title">Gemini AI &amp; Vault Locks</string>
-    <string name="guide_step6_body">Paste and validate your Google AI Studio API key here, pick your Gemini model, set a Settings Password, and activate Anti-Uninstall protection. Replay this tour anytime via the ? button.</string>
+    <string name="guide_step4_title">Blocked, Safe &amp; Websites</string>
+    <string name="guide_step4_body">Switch between Blocked words, Safe phrases (exceptions like “basketball shorts” that override blocks), and Website Lists here.</string>
+    <string name="guide_step5_title">Match Modes &amp; Multi-Word Phrases</string>
+    <string name="guide_step5_body">Pick Exact word (blocks “magi” but not “magic”) or Anywhere in text (blocks “porn” inside “xporn”), and even add multi-word phrases. Tap any entry’s badge to switch modes inline, or search and jump by letter.</string>
+    <string name="guide_step6_title">Website Lists &amp; Profiles</string>
+    <string name="guide_step6_body">Toggle the built-in Adult Sites list (46,000+ domains) or tap + New List to create your own lists like Social Media or Gaming. Turning lists ON and adding URLs are free—turning OFF or removing sites requires your Settings Password.</string>
+    <string name="guide_step7_title">Grace Window &amp; Bottom Alerts</string>
+    <string name="guide_step7_body">Choose how many seconds Warden waits and re-checks before sending you Home so scrolling past a word never false-triggers. Compact alerts appear at the bottom so they never cover browser URL bars.</string>
+    <string name="guide_step8_title">Gemini AI &amp; Vault Locks</string>
+    <string name="guide_step8_body">Configure your Gemini API key, set a Settings Password (protecting website lists, blocked words, and match modes), and activate Anti-Uninstall protection. Replay this tour anytime via the ? button.</string>
 
     <!-- AI Chat Dialog Layout -->
     <string name="ai_dialog_default_title">AI Gatekeeper</string>

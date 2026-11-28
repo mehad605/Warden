@@ -146,6 +146,8 @@ class RulesUiAndWebsiteBlockerTest {
             items.add(RuleItemSpec(id = "bulk-$i", label = "${letter}term$i"))
         }
 
+        // Warm up Collator classloading before timing steady-state 1,200+ entry sort/group.
+        RuleListFormatter.buildGroupedList(items.take(4))
         val startNs = System.nanoTime()
         val grouped = RuleListFormatter.buildGroupedList(items)
         val elapsedMs = (System.nanoTime() - startNs) / 1_000_000.0
