@@ -4,7 +4,6 @@ import com.warden.app.data.models.BlockedEntry
 import com.warden.app.data.models.KeywordBlocker
 import com.warden.app.data.models.MatchMode
 import com.warden.app.data.models.Settings
-import com.warden.app.data.models.WebsiteBlockerConfig
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -27,10 +26,6 @@ object SettingsJsonCodec {
     private const val KEY_TERM = "term"
     private const val KEY_MODE = "mode"
     private const val KEY_ADDED_AT = "addedAt"
-    private const val KEY_WEBSITE_ENABLED = "isEnabled"
-    private const val KEY_USER_BLOCKED_DOMAINS = "userBlockedDomains"
-    private const val KEY_DISABLED_BUILTIN_DOMAINS = "disabledBuiltinDomains"
-    private const val KEY_WHITELISTED_DOMAINS = "whitelistedDomains"
     private const val KEY_PASSWORD_HASH = "passwordHash"
     private const val KEY_GEMINI_API_KEY = "geminiApiKey"
     private const val KEY_NO_COUNT = "noCount"
@@ -50,7 +45,7 @@ object SettingsJsonCodec {
             }
         return JSONObject().apply {
             put(KEY_BLOCKER_CONFIG, encodeBlockerConfig(settings.keywordBlockerConfig))
-            put(KEY_WEBSITE_CONFIG, encodeWebsiteConfig(settings.websiteBlockerConfig))
+            put(KEY_WEBSITE_CONFIG, WebsiteConfigJsonCodec.encode(settings.websiteBlockerConfig))
             if (settings.passwordHash != null) put(KEY_PASSWORD_HASH, settings.passwordHash)
             if (settings.geminiApiKey != null) put(KEY_GEMINI_API_KEY, settings.geminiApiKey)
             put(KEY_NO_COUNT, settings.noCount)
@@ -87,14 +82,6 @@ object SettingsJsonCodec {
         }
     }
 
-    private fun encodeWebsiteConfig(website: WebsiteBlockerConfig): JSONObject =
-        JSONObject().apply {
-            put(KEY_WEBSITE_ENABLED, website.isEnabled)
-            put(KEY_USER_BLOCKED_DOMAINS, JSONArray(website.userBlockedDomains))
-            put(KEY_DISABLED_BUILTIN_DOMAINS, JSONArray(website.disabledBuiltinDomains))
-            put(KEY_WHITELISTED_DOMAINS, JSONArray(website.whitelistedDomains))
-        }
-
     /**
      * Parses [rawJson] into [Settings], returning `null` if [rawJson] is not a valid JSON object.
      * Missing or null fields fall back to [Settings] defaults; legacy `blockedKeywords` migrate to `exact`.
@@ -109,7 +96,7 @@ object SettingsJsonCodec {
             }
         val blockerObj = root.optJSONObject(KEY_BLOCKER_CONFIG)
         val config = decodeKeywordBlocker(blockerObj)
-        val websiteConfig = decodeWebsiteConfig(root.optJSONObject(KEY_WEBSITE_CONFIG))
+        val websiteConfig = WebsiteConfigJsonCodec.decode(root.optJSONObject(KEY_WEBSITE_CONFIG))
         return Settings(
             keywordBlockerConfig = config,
             websiteBlockerConfig = websiteConfig,
@@ -158,15 +145,7 @@ object SettingsJsonCodec {
                 whitelistedKeywords = (curCfg.whitelistedKeywords + impCfg.whitelistedKeywords).distinct(),
                 ignoredApps = (curCfg.ignoredApps + impCfg.ignoredApps).distinct(),
             )
-        val curWeb = current.websiteBlockerConfig
-        val impWeb = imported.websiteBlockerConfig
-        val mergedWebsite =
-            WebsiteBlockerConfig(
-                isEnabled = curWeb.isEnabled || impWeb.isEnabled,
-                userBlockedDomains = (curWeb.userBlockedDomains + impWeb.userBlockedDomains).distinct(),
-                disabledBuiltinDomains = curWeb.disabledBuiltinDomains.intersect(impWeb.disabledBuiltinDomains.toSet()).toList(),
-                whitelistedDomains = (curWeb.whitelistedDomains + impWeb.whitelistedDomains).distinct(),
-            )
+        val mergedWebsite = WebsiteConfigJsonCodec.mergeImported(current.websiteBlockerConfig, imported.websiteBlockerConfig)
         return imported.copy(keywordBlockerConfig = mergedConfig, websiteBlockerConfig = mergedWebsite)
     }
 
@@ -185,16 +164,6 @@ object SettingsJsonCodec {
             whitelistedKeywords = blockerObj?.optJSONArray(KEY_WHITELISTED_KEYWORDS).toStringList(),
             ignoredApps = blockerObj?.optJSONArray(KEY_IGNORED_APPS).toStringList(),
             blockedEntries = entries,
-        )
-    }
-
-    private fun decodeWebsiteConfig(obj: JSONObject?): WebsiteBlockerConfig {
-        if (obj == null) return WebsiteBlockerConfig()
-        return WebsiteBlockerConfig(
-            isEnabled = obj.optBoolean(KEY_WEBSITE_ENABLED, true),
-            userBlockedDomains = obj.optJSONArray(KEY_USER_BLOCKED_DOMAINS).toStringList(),
-            disabledBuiltinDomains = obj.optJSONArray(KEY_DISABLED_BUILTIN_DOMAINS).toStringList(),
-            whitelistedDomains = obj.optJSONArray(KEY_WHITELISTED_DOMAINS).toStringList(),
         )
     }
 

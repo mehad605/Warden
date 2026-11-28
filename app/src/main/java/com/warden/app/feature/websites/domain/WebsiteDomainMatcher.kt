@@ -17,22 +17,40 @@ data class DomainMatch(
 /**
  * Pure Kotlin website domain matcher kept separate from the word/phrase matcher.
  *
- * Supports O(labels) suffix lookup over 46,000+ domains so `example.com` blocks `example.com`
- * and `cdn.example.com` while allowing `notexample.com` and `example.com.other.org`.
- * Whitelisted domains always override blocked domains.
+ * Performs zero-copy O(labels) suffix lookup against a shared pre-normalized built-in set
+ * (avoiding re-normalizing or duplicating 46,000+ strings on every settings update) plus
+ * user-added custom domains across all enabled [com.warden.app.data.models.WebsiteBlockProfile]s.
  */
-class WebsiteDomainMatcher(
+class WebsiteDomainMatcher private constructor(
     private val isEnabled: Boolean,
-    blockedDomains: Set<String>,
-    whitelistedDomains: Set<String>,
+    private val builtinEnabled: Boolean,
+    private val builtinDomains: Set<String>,
+    private val disabledBuiltins: Set<String>,
+    private val customBlockedDomains: Set<String>,
+    private val whitelistedDomains: Set<String>,
 ) {
-    private val normalizedBlocked: Set<String> =
-        blockedDomains.mapNotNull(DomainNormalizer::normalizeHostOrNull).toHashSet()
-    private val normalizedWhitelisted: Set<String> =
-        whitelistedDomains.mapNotNull(DomainNormalizer::normalizeHostOrNull).toHashSet()
+    /** Convenience constructor for unit tests and direct custom-domain evaluation. */
+    constructor(
+        isEnabled: Boolean,
+        blockedDomains: Set<String>,
+        whitelistedDomains: Set<String>,
+    ) : this(
+        isEnabled = isEnabled,
+        builtinEnabled = false,
+        builtinDomains = emptySet(),
+        disabledBuiltins = emptySet(),
+        customBlockedDomains = blockedDomains.mapNotNull(DomainNormalizer::normalizeHostOrNull).toHashSet(),
+        whitelistedDomains = whitelistedDomains.mapNotNull(DomainNormalizer::normalizeHostOrNull).toHashSet(),
+    )
 
-    /** Returns `true` when website blocking is enabled and at least one domain is active. */
-    val hasActiveRules: Boolean get() = isEnabled && normalizedBlocked.isNotEmpty()
+    /** Returns `true` when website blocking has at least one active built-in or custom domain rule. */
+    val hasActiveRules: Boolean
+        get() =
+            isEnabled &&
+                (
+                    customBlockedDomains.isNotEmpty() ||
+                        (builtinEnabled && builtinDomains.size > disabledBuiltins.size)
+                )
 
     /**
      * Checks whether a single URL or hostname [rawHostOrUrl] is blocked.
@@ -42,8 +60,8 @@ class WebsiteDomainMatcher(
     fun matchHost(rawHostOrUrl: String): String? {
         if (!hasActiveRules) return null
         val host = DomainNormalizer.normalizeHostOrNull(rawHostOrUrl) ?: return null
-        if (findMatchingSuffix(host, normalizedWhitelisted) != null) return null
-        return findMatchingSuffix(host, normalizedBlocked)
+        if (findMatchingSuffix(host, whitelistedDomains) != null) return null
+        return findMatchingBlockedSuffix(host)
     }
 
     /**
@@ -62,6 +80,20 @@ class WebsiteDomainMatcher(
             }
         }
         return null
+    }
+
+    private fun findMatchingBlockedSuffix(host: String): String? {
+        var candidate = host
+        while (true) {
+            if (candidate in customBlockedDomains) return candidate
+            if (builtinEnabled && candidate in builtinDomains && candidate !in disabledBuiltins) {
+                return candidate
+            }
+            val dotIdx = candidate.indexOf('.')
+            if (dotIdx < 0 || dotIdx == candidate.lastIndex) return null
+            candidate = candidate.substring(dotIdx + 1)
+            if (!candidate.contains('.')) return null
+        }
     }
 
     private fun findMatchingSuffix(
@@ -87,25 +119,57 @@ class WebsiteDomainMatcher(
                 """(?:[a-zA-Z][a-zA-Z0-9+.-]*://)?(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}\.?(?::\d{1,5})?(?:[/?#][^\s]*)?""",
             )
 
-        /** Builds a [WebsiteDomainMatcher] by combining [builtinDomains] with user [config]. */
+        /**
+         * Builds a [WebsiteDomainMatcher] by combining pre-normalized [builtinDomains] with all
+         * enabled profiles in [config] using zero-copy reference sharing for the built-in set.
+         */
         fun fromConfig(
             config: WebsiteBlockerConfig,
             builtinDomains: Collection<String>,
         ): WebsiteDomainMatcher {
-            if (!config.isEnabled) {
-                return WebsiteDomainMatcher(isEnabled = false, blockedDomains = emptySet(), whitelistedDomains = emptySet())
+            val activeProfiles = config.effectiveProfiles().filter { it.isEnabled }
+            if (activeProfiles.isEmpty()) return disabledMatcher()
+            val builtinProfile = activeProfiles.firstOrNull { it.isBuiltin }
+            val builtinEnabled = builtinProfile != null
+            val sharedBuiltins = resolveSharedBuiltins(builtinEnabled, builtinDomains)
+            val disabledBuiltins =
+                builtinProfile?.disabledBuiltinDomains
+                    ?.mapNotNull(DomainNormalizer::normalizeHostOrNull)
+                    ?.toHashSet()
+                    ?: emptySet()
+            val customBlocked = HashSet<String>()
+            activeProfiles.forEach { profile ->
+                profile.domains.mapNotNullTo(customBlocked, DomainNormalizer::normalizeHostOrNull)
             }
-            val disabled = config.disabledBuiltinDomains.mapNotNull(DomainNormalizer::normalizeHostOrNull).toHashSet()
-            val combined = HashSet<String>(builtinDomains.size + config.userBlockedDomains.size)
-            builtinDomains.forEach { domain ->
-                if (domain !in disabled) combined.add(domain)
-            }
-            config.userBlockedDomains.mapNotNullTo(combined, DomainNormalizer::normalizeHostOrNull)
+            val whitelisted = config.whitelistedDomains.mapNotNull(DomainNormalizer::normalizeHostOrNull).toHashSet()
             return WebsiteDomainMatcher(
                 isEnabled = true,
-                blockedDomains = combined,
-                whitelistedDomains = config.whitelistedDomains.toSet(),
+                builtinEnabled = builtinEnabled,
+                builtinDomains = sharedBuiltins,
+                disabledBuiltins = disabledBuiltins,
+                customBlockedDomains = customBlocked,
+                whitelistedDomains = whitelisted,
             )
         }
+
+        private fun disabledMatcher(): WebsiteDomainMatcher =
+            WebsiteDomainMatcher(
+                isEnabled = false,
+                builtinEnabled = false,
+                builtinDomains = emptySet(),
+                disabledBuiltins = emptySet(),
+                customBlockedDomains = emptySet(),
+                whitelistedDomains = emptySet(),
+            )
+
+        private fun resolveSharedBuiltins(
+            builtinEnabled: Boolean,
+            builtinDomains: Collection<String>,
+        ): Set<String> =
+            when {
+                !builtinEnabled -> emptySet()
+                builtinDomains is Set<String> -> builtinDomains
+                else -> builtinDomains.toHashSet()
+            }
     }
 }

@@ -63,6 +63,16 @@
         <item quantity="other">Terms must be %1$d characters or fewer.</item>
     </plurals>
 
+    <plurals name="website_profile_summary_fmt">
+        <item quantity="one">%1$s site · %2$s</item>
+        <item quantity="other">%1$s sites · %2$s</item>
+    </plurals>
+
+    <plurals name="website_custom_stats_fmt">
+        <item quantity="one">%1$s blocked site</item>
+        <item quantity="other">%1$s blocked sites</item>
+    </plurals>
+
     <!-- Sentinel Header & Navigation -->
     <string name="header_status_online">Accessibility Guard Online</string>
     <string name="header_status_offline">Accessibility Permission Needed</string>
@@ -107,25 +117,32 @@
     <string name="badge_builtin">Built-in</string>
     <string name="badge_yours">Yours</string>
     <string name="badge_disabled">Disabled</string>
-    <string name="badge_allowed">Allowed</string>
     <string name="letter_group_count_fmt">(%1$d)</string>
     <string name="search_blocked_hint">Search blocked words…</string>
     <string name="search_whitelist_hint">Search safe phrases…</string>
-    <string name="search_domains_hint">Search 46,000+ domains…</string>
+    <string name="search_domains_hint">Search domains in this list…</string>
     <string name="empty_blocked_words">No blocked words yet. Add a word or phrase above to start guarding.</string>
     <string name="empty_safe_phrases">No safe phrases yet. Add phrases like “basketball shorts” to prevent false triggers.</string>
-    <string name="empty_domains">No matching domains found.</string>
+    <string name="empty_domains">No domains in this list yet. Paste a URL or domain above.</string>
     <string name="empty_search_results">No matching entries found.</string>
     <string name="error_term_empty">Enter a word or phrase first.</string>
     <string name="undo_action">Undo</string>
     <string name="removed_entry_fmt">Removed “%1$s”</string>
     <string name="disabled_builtin_fmt">Disabled built-in “%1$s”</string>
-    <string name="website_blocker_title">Adult Website Blocker</string>
-    <string name="website_blocker_subtitle">Prepopulated MIT domain list · Blocks domains &amp; subdomains</string>
+    <string name="website_lists_title">Website Lists</string>
+    <string name="website_lists_subtitle">Turn lists ON freely · Turning OFF or removing sites needs your password</string>
+    <string name="new_website_list_action">+ New List</string>
+    <string name="back_to_lists_action">← Lists</string>
+    <string name="rename_profile_action">Rename</string>
+    <string name="cd_delete_profile">Delete website list</string>
+    <string name="create_website_list_title">New Website List</string>
+    <string name="rename_website_list_title">Rename Website List</string>
+    <string name="create_action">Create</string>
+    <string name="website_list_name_hint">e.g. Social Media, News, Gaming</string>
+    <string name="profile_state_on">Active</string>
+    <string name="profile_state_off">Off</string>
     <string name="add_domain_hint">Paste URL or domain (e.g. example.com)…</string>
-    <string name="domain_action_block">Block site</string>
-    <string name="domain_action_allow">Allow (Whitelist)</string>
-    <string name="website_stats_fmt">%1$s active · %2$s Built-in · %3$s Yours · %4$s Allowed</string>
+    <string name="website_builtin_stats_fmt">%1$s sites · %2$s Built-in · %3$s Custom</string>
     <string name="reset_builtins_action">Reset built-ins</string>
     <string name="cd_add_blocked_word">Add blocked word</string>
     <string name="cd_add_safe_phrase">Add safe phrase</string>
@@ -167,9 +184,10 @@
     <string name="replay_guide_title">Interactive Guide</string>
     <string name="replay_guide_subtitle">Walk through how every part of Warden works</string>
     <string name="replay_action">Start</string>
-    <string name="version_footer">Warden v2.3.0 · Android Content Shield</string>
+    <string name="version_footer">Warden v2.4.0 · Android Content Shield</string>
+    <string name="alert_banner_badge_blocked">BLOCKED</string>
     <string name="alert_banner_default_title">Warden Shield</string>
-    <string name="alert_banner_blocked_title_fmt">Blocked · “%1$s”</string>
+    <string name="alert_banner_blocked_title_fmt">“%1$s”</string>
     <string name="alert_banner_snippet_fmt">“%1$s”</string>
     <string name="cd_app_icon">App Icon</string>
     <string name="cd_extend_time">Extend Time</string>

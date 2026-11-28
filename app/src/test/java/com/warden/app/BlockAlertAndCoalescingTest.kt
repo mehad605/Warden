@@ -158,4 +158,38 @@ class BlockAlertAndCoalescingTest {
         assertEquals("Anti-uninstall protection is active.", warning.detail)
         presenter.shutdown()
     }
+
+    @Test
+    fun coordinatorFetchesRootNodeAtMostOncePerEventAndEngineSkipsUnrelatedRecompile() {
+        var rootFetchCount = 0
+        val engine = BlockingDecisionEngine()
+        val initialSettings =
+            Settings(
+                keywordBlockerConfig = KeywordBlocker(isActive = true, blockedKeywords = listOf("anime")),
+                ignoreGracePeriodSeconds = 2,
+            )
+        engine.updateSettings(initialSettings)
+        val matcherBefore = engine.matcher
+        val webMatcherBefore = engine.websiteMatcher
+
+        // Updating only Grace window must NOT recompile KeywordMatcher or WebsiteDomainMatcher
+        engine.updateSettings(initialSettings.copy(ignoreGracePeriodSeconds = 5))
+        assertTrue("Grace change must reuse KeywordMatcher instance", matcherBefore === engine.matcher)
+        assertTrue("Grace change must reuse WebsiteDomainMatcher instance", webMatcherBefore === engine.websiteMatcher)
+
+        val singleFetchCoordinator =
+            BlockerCoordinator(
+                rootNodeProvider = {
+                    rootFetchCount++
+                    makeNode("com.android.settings", "Display Brightness")
+                },
+                pressHome = {},
+                showToast = {},
+                engine = engine,
+                graceController = GracePeriodController(Handler(Looper.getMainLooper())),
+                clock = clock,
+            )
+        singleFetchCoordinator.onAccessibilityEvent(makeEvent("com.android.settings"))
+        assertEquals("Each event must perform at most 1 rootInActiveWindow Binder IPC", 1, rootFetchCount)
+    }
 }

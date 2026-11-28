@@ -157,9 +157,16 @@ class RulesUiAndWebsiteBlockerTest {
         assertEquals("#", headers.last())
 
         val siteGrouped =
-            WebsiteListBuilder.build(
+            WebsiteListBuilder.buildForProfile(
                 context = app,
-                config = WebsiteBlockerConfig(isEnabled = true, userBlockedDomains = listOf("9custom.com")),
+                profile =
+                    com.warden.app.data.models.WebsiteBlockProfile(
+                        id = com.warden.app.data.models.WebsiteBlockProfile.BUILTIN_ADULT_ID,
+                        name = "Adult Sites",
+                        isEnabled = true,
+                        isBuiltin = true,
+                        domains = listOf("9custom.com"),
+                    ),
                 builtins = listOf("2pornhub.com", "anotherpornhub.com", "pornhub.com"),
                 lowerQuery = "",
             )
@@ -212,7 +219,13 @@ class RulesUiAndWebsiteBlockerTest {
         activity.findViewById<View>(R.id.nav_rules).performClick()
         shadowOf(Looper.getMainLooper()).idle()
         activity.findViewById<MaterialButtonToggleGroup>(R.id.toggle_rule_mode).check(R.id.btn_mode_websites)
-        shadowOf(Looper.getMainLooper()).idle()
+        awaitMainLooper()
+
+        // Tap the default built-in "Adult Sites" profile row to open its detail view
+        val profilesContainer = activity.findViewById<android.widget.LinearLayout>(R.id.layout_profiles_container)
+        assertTrue("Expected default Adult Sites profile row", profilesContainer.childCount >= 1)
+        profilesContainer.getChildAt(0).performClick()
+        awaitMainLooper()
 
         val tilDomain = activity.findViewById<TextInputLayout>(R.id.til_add_domain)
         val etDomain = activity.findViewById<EditText>(R.id.et_domain_input)
@@ -220,5 +233,31 @@ class RulesUiAndWebsiteBlockerTest {
         etDomain.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
         awaitMainLooper()
         assertNotNull("Invalid domain input must display inline validation error", tilDomain.error)
+    }
+
+    @Test
+    fun customWebsiteProfilesWorkIndependentlyAndRoundTripJson() {
+        val initial = com.warden.app.data.models.Settings()
+        val created =
+            com.warden.app.feature.blocker.ui.CreateWebsiteProfile("custom_social", "Social Media")
+                .applyTo(initial, 1_000L)
+        val withSite =
+            com.warden.app.feature.blocker.ui.AddDomainToProfile("custom_social", "https://www.TikTok.com/feed")
+                .applyTo(created, 2_000L)
+        val adultOff =
+            com.warden.app.feature.blocker.ui.SetWebsiteProfileEnabled(
+                com.warden.app.data.models.WebsiteBlockProfile.BUILTIN_ADULT_ID,
+                enabled = false,
+            ).applyTo(withSite, 3_000L)
+
+        val matcher = WebsiteDomainMatcher.fromConfig(adultOff.websiteBlockerConfig, listOf("pornhub.com"))
+        assertEquals("tiktok.com", matcher.matchHost("https://m.tiktok.com/video/1"))
+        assertNull("Disabled built-in profile must not block pornhub.com", matcher.matchHost("pornhub.com"))
+
+        val json = com.warden.app.core.data.SettingsJsonCodec.encode(adultOff)
+        val decoded = requireNotNull(com.warden.app.core.data.SettingsJsonCodec.decodeOrNull(json))
+        assertEquals(2, decoded.websiteBlockerConfig.effectiveProfiles().size)
+        assertEquals("Social Media", decoded.websiteBlockerConfig.effectiveProfiles()[1].name)
+        assertEquals(listOf("tiktok.com"), decoded.websiteBlockerConfig.effectiveProfiles()[1].domains)
     }
 }

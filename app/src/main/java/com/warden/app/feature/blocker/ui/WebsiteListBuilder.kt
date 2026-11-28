@@ -2,7 +2,7 @@ package com.warden.app.feature.blocker.ui
 
 import android.content.Context
 import com.warden.app.R
-import com.warden.app.data.models.WebsiteBlockerConfig
+import com.warden.app.data.models.WebsiteBlockProfile
 import com.warden.app.feature.blocker.domain.GroupedRuleList
 import com.warden.app.feature.blocker.domain.RuleActionKind
 import com.warden.app.feature.blocker.domain.RuleBadgeKind
@@ -11,28 +11,32 @@ import com.warden.app.feature.blocker.domain.RuleListFormatter
 import com.warden.app.feature.blocker.domain.RuleListRow
 
 /**
- * Off-main-thread projection builder that merges pre-sorted built-in adult domains with
- * user-added, whitelisted, and individually disabled domains into a letter-grouped list.
+ * Off-main-thread projection builder that formats the domains of a single [WebsiteBlockProfile]
+ * (merging pre-sorted built-in domains when `profile.isBuiltin` is true) into an `A..Z`, `#`
+ * letter-grouped list.
  */
 internal object WebsiteListBuilder {
     const val PREFIX_USER = "user:"
-    const val PREFIX_ALLOW = "allow:"
     const val PREFIX_BUILTIN = "builtin:"
     const val PREFIX_DISABLED = "disabled:"
 
-    /** Builds the sorted, letter-grouped website rows filtered by [lowerQuery]. */
-    fun build(
+    /** Builds the sorted, letter-grouped rows for [profile] filtered by [lowerQuery]. */
+    fun buildForProfile(
         context: Context,
-        config: WebsiteBlockerConfig,
+        profile: WebsiteBlockProfile,
         builtins: List<String>,
         lowerQuery: String,
     ): GroupedRuleList {
-        val userSet = config.userBlockedDomains.toHashSet()
-        val disabledSet = config.disabledBuiltinDomains.toHashSet()
-        val whiteSet = config.whitelistedDomains.toHashSet()
-        val customSpecs = buildCustomSpecs(context, config, lowerQuery)
-        val builtinSpecs = buildBuiltinSpecs(context, builtins, userSet, disabledSet, whiteSet, lowerQuery)
-        val merged = mergeSortedSpecs(customSpecs, builtinSpecs)
+        val customSpecs = buildCustomSpecs(context, profile, lowerQuery)
+        val merged =
+            if (profile.isBuiltin) {
+                val userSet = profile.domains.toHashSet()
+                val disabledSet = profile.disabledBuiltinDomains.toHashSet()
+                val builtinSpecs = buildBuiltinSpecs(context, builtins, userSet, disabledSet, lowerQuery)
+                mergeSortedSpecs(customSpecs, builtinSpecs)
+            } else {
+                customSpecs
+            }
         if (merged.isEmpty()) return GroupedRuleList(emptyList(), emptyMap())
         return groupMerged(merged)
     }
@@ -69,29 +73,27 @@ internal object WebsiteListBuilder {
 
     private fun buildCustomSpecs(
         context: Context,
-        config: WebsiteBlockerConfig,
+        profile: WebsiteBlockProfile,
         lowerQuery: String,
     ): List<RuleItemSpec> {
         val list = ArrayList<RuleItemSpec>()
         val yoursLabel = context.getString(R.string.badge_yours)
-        val allowedLabel = context.getString(R.string.badge_allowed)
         val disabledLabel = context.getString(R.string.badge_disabled)
-        config.userBlockedDomains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
+        profile.domains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
             list.add(RuleItemSpec("$PREFIX_USER$domain", domain, yoursLabel, RuleBadgeKind.USER, actionKind = RuleActionKind.DELETE))
         }
-        config.whitelistedDomains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
-            list.add(RuleItemSpec("$PREFIX_ALLOW$domain", domain, allowedLabel, RuleBadgeKind.ALLOWED, actionKind = RuleActionKind.DELETE))
-        }
-        config.disabledBuiltinDomains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
-            list.add(
-                RuleItemSpec(
-                    id = "$PREFIX_DISABLED$domain",
-                    label = domain,
-                    badgeText = disabledLabel,
-                    badgeKind = RuleBadgeKind.DISABLED,
-                    actionKind = RuleActionKind.ENABLE_BUILTIN,
-                ),
-            )
+        if (profile.isBuiltin) {
+            profile.disabledBuiltinDomains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
+                list.add(
+                    RuleItemSpec(
+                        id = "$PREFIX_DISABLED$domain",
+                        label = domain,
+                        badgeText = disabledLabel,
+                        badgeKind = RuleBadgeKind.DISABLED,
+                        actionKind = RuleActionKind.ENABLE_BUILTIN,
+                    ),
+                )
+            }
         }
         return list.sortedWith { a, b -> compareBucketAndLabel(a.label, b.label) }
     }
@@ -101,14 +103,12 @@ internal object WebsiteListBuilder {
         builtins: List<String>,
         userSet: Set<String>,
         disabledSet: Set<String>,
-        whiteSet: Set<String>,
         lowerQuery: String,
     ): List<RuleItemSpec> {
         val excluded =
-            HashSet<String>(userSet.size + disabledSet.size + whiteSet.size).apply {
+            HashSet<String>(userSet.size + disabledSet.size).apply {
                 addAll(userSet)
                 addAll(disabledSet)
-                addAll(whiteSet)
             }
         val label = context.getString(R.string.badge_builtin)
         val letters = ArrayList<RuleItemSpec>(if (lowerQuery.isEmpty()) builtins.size else 256)
