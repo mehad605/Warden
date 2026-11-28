@@ -1,9 +1,11 @@
 package com.warden.app.feature.blocker.ui
 
+import com.warden.app.data.models.BlockedEntry
+import com.warden.app.data.models.MatchMode
 import com.warden.app.data.models.Settings
 import com.warden.app.feature.blocker.domain.IgnoredAppsFormatter
+import com.warden.app.feature.blocker.domain.TextNormalizer
 import com.warden.app.feature.security.domain.PasswordPolicy
-import java.util.Locale
 
 /**
  * Unidirectional, self-reducing actions mutating persisted Warden [Settings].
@@ -26,16 +28,83 @@ sealed class BlockerAction {
         ): Settings = current.copy(keywordBlockerConfig = current.keywordBlockerConfig.copy(isActive = active))
     }
 
-    /** Adds [keyword] (normalized) to the blocked list. */
-    data class AddBlockedKeyword(val keyword: String) : BlockerAction() {
+    /**
+     * Adds [keyword] (normalized) with [mode], or updates the existing entry's [mode] in place
+     * without creating a duplicate.
+     */
+    data class AddBlockedKeyword(
+        val keyword: String,
+        val mode: MatchMode = MatchMode.EXACT,
+    ) : BlockerAction() {
         override fun applyTo(
             current: Settings,
             nowMs: Long,
         ): Settings {
-            val normalized = keyword.trim().lowercase(Locale.ROOT)
+            val normalized = TextNormalizer.normalizeTerm(keyword)
+            if (normalized.isEmpty() || normalized.length > TextNormalizer.MAX_TERM_LENGTH) return current
             val cfg = current.keywordBlockerConfig
-            if (normalized.isEmpty() || normalized in cfg.blockedKeywords) return current
-            return current.copy(keywordBlockerConfig = cfg.copy(blockedKeywords = cfg.blockedKeywords + normalized))
+            val existing = cfg.effectiveBlockedEntries()
+            val idx = existing.indexOfFirst { it.term == normalized }
+            val updated =
+                if (idx >= 0) {
+                    existing.toMutableList().apply {
+                        this[idx] = this[idx].copy(mode = mode)
+                    }
+                } else {
+                    existing + BlockedEntry(term = normalized, mode = mode, addedAt = nowMs)
+                }
+            return current.copy(
+                keywordBlockerConfig =
+                    cfg.copy(
+                        blockedKeywords = updated.map { it.term },
+                        blockedEntries = updated,
+                    ),
+            )
+        }
+    }
+
+    /** Restores a previously deleted [entry] (used for 5-second undo). */
+    data class RestoreBlockedEntry(val entry: BlockedEntry) : BlockerAction() {
+        override fun applyTo(
+            current: Settings,
+            nowMs: Long,
+        ): Settings {
+            val cfg = current.keywordBlockerConfig
+            val existing = cfg.effectiveBlockedEntries()
+            if (existing.any { it.term == entry.term }) return current
+            val updated = existing + entry
+            return current.copy(
+                keywordBlockerConfig =
+                    cfg.copy(
+                        blockedKeywords = updated.map { it.term },
+                        blockedEntries = updated,
+                    ),
+            )
+        }
+    }
+
+    /** Updates the match [mode] of an existing blocked [term] inline. */
+    data class SetBlockedKeywordMode(
+        val term: String,
+        val mode: MatchMode,
+    ) : BlockerAction() {
+        override fun applyTo(
+            current: Settings,
+            nowMs: Long,
+        ): Settings {
+            val target = TextNormalizer.normalizeTerm(term)
+            val cfg = current.keywordBlockerConfig
+            val updated =
+                cfg.effectiveBlockedEntries().map { entry ->
+                    if (entry.term == target) entry.copy(mode = mode) else entry
+                }
+            return current.copy(
+                keywordBlockerConfig =
+                    cfg.copy(
+                        blockedKeywords = updated.map { it.term },
+                        blockedEntries = updated,
+                    ),
+            )
         }
     }
 
@@ -45,9 +114,16 @@ sealed class BlockerAction {
             current: Settings,
             nowMs: Long,
         ): Settings {
-            val target = keyword.trim().lowercase(Locale.ROOT)
+            val target = TextNormalizer.normalizeTerm(keyword)
             val cfg = current.keywordBlockerConfig
-            return current.copy(keywordBlockerConfig = cfg.copy(blockedKeywords = cfg.blockedKeywords - target))
+            val updated = cfg.effectiveBlockedEntries().filterNot { it.term == target }
+            return current.copy(
+                keywordBlockerConfig =
+                    cfg.copy(
+                        blockedKeywords = updated.map { it.term },
+                        blockedEntries = updated,
+                    ),
+            )
         }
     }
 
@@ -57,9 +133,11 @@ sealed class BlockerAction {
             current: Settings,
             nowMs: Long,
         ): Settings {
-            val normalized = keyword.trim().lowercase(Locale.ROOT)
+            val normalized = TextNormalizer.normalizeTerm(keyword)
             val cfg = current.keywordBlockerConfig
-            if (normalized.isEmpty() || normalized in cfg.whitelistedKeywords) return current
+            if (normalized.isEmpty() || normalized.length > TextNormalizer.MAX_TERM_LENGTH || normalized in cfg.whitelistedKeywords) {
+                return current
+            }
             return current.copy(
                 keywordBlockerConfig = cfg.copy(whitelistedKeywords = cfg.whitelistedKeywords + normalized),
             )
@@ -72,7 +150,7 @@ sealed class BlockerAction {
             current: Settings,
             nowMs: Long,
         ): Settings {
-            val target = keyword.trim().lowercase(Locale.ROOT)
+            val target = TextNormalizer.normalizeTerm(keyword)
             val cfg = current.keywordBlockerConfig
             return current.copy(keywordBlockerConfig = cfg.copy(whitelistedKeywords = cfg.whitelistedKeywords - target))
         }

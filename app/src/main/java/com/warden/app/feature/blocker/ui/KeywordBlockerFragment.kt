@@ -215,7 +215,8 @@ class KeywordBlockerFragment : Fragment() {
             binding.tabVault.switchAntiUninstall.isChecked = settings.antiUninstallEnabled
         }
         navigationBinder?.renderSummary(settings)
-        controllers?.keywordsBinder?.render(config.blockedKeywords, config.whitelistedKeywords)
+        controllers?.keywordsBinder?.render(config.effectiveBlockedEntries(), config.whitelistedKeywords)
+        controllers?.websitesBinder?.render(settings.websiteBlockerConfig)
         controllers?.securityBinder?.render(settings)
         controllers?.geminiBinder?.render(settings)
         controllers?.ignoredAppsBinder?.render(config.ignoredApps, settings.temporaryIgnoredApps)

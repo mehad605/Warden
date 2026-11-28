@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
  */
 internal class DashboardControllers(
     val keywordsBinder: KeywordsSectionBinder,
+    val websitesBinder: WebsiteSectionBinder,
     val geminiBinder: GeminiSectionBinder,
     val securityBinder: SecurityAndBackupSectionBinder,
     val antiUninstallController: AntiUninstallUiController,
@@ -44,6 +45,7 @@ internal class DashboardControllers(
     /** Binds all section listeners in one call. */
     fun bindAllListeners() {
         keywordsBinder.bindListeners()
+        websitesBinder.bindListeners()
         geminiBinder.bindListeners()
         securityBinder.bindListeners()
     }
@@ -69,6 +71,18 @@ internal class DashboardControllers(
             val backup = BackupDialogController(context, scope, onError = container.crashLogger::logNonFatalError)
             return DashboardControllers(
                 keywordsBinder = createKeywordsBinder(context, binding, pwdDialogs, viewModel),
+                websitesBinder =
+                    WebsiteSectionBinder(
+                        context = context,
+                        binding = binding,
+                        scope = scope,
+                        repository = container.pornDomainRepository,
+                        hasPassword = { viewModel.settings.value.passwordHash != null },
+                        passwordDialogs = pwdDialogs,
+                        isUpdatingUi = host.isUpdatingUi,
+                        isViewAlive = host.isViewAlive,
+                        dispatch = viewModel::dispatch,
+                    ),
                 geminiBinder = createGeminiBinder(context, binding, scope, viewModel, host),
                 securityBinder = createSecurityBinder(context, binding, pwdDialogs, antiUninstall, viewModel, host),
                 antiUninstallController = antiUninstall,

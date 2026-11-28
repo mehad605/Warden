@@ -1,0 +1,279 @@
+{
+  "wordCases": [
+    {
+      "id": "exact_magi_matches_magi",
+      "blocked": [{"term": "magi", "mode": "exact"}],
+      "whitelist": [],
+      "text": "magi",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "exact_magi_allows_magic",
+      "blocked": [{"term": "magi", "mode": "exact"}],
+      "whitelist": [],
+      "text": "magic",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "exact_magi_matches_uppercase_punctuation",
+      "blocked": [{"term": "magi", "mode": "exact"}],
+      "whitelist": [],
+      "text": "MAGI!",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "contains_porn_matches_xporn",
+      "blocked": [{"term": "porn", "mode": "contains"}],
+      "whitelist": [],
+      "text": "xporn",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "contains_porn_matches_pornhub",
+      "blocked": [{"term": "porn", "mode": "contains"}],
+      "whitelist": [],
+      "text": "pornhub",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "contains_porn_matches_PORNO",
+      "blocked": [{"term": "porn", "mode": "contains"}],
+      "whitelist": [],
+      "text": "PORNO",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "contains_porn_matches_diacritic_porn",
+      "blocked": [{"term": "porn", "mode": "contains"}],
+      "whitelist": [],
+      "text": "pörn",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "contains_porn_whitelisted_pornography",
+      "blocked": [{"term": "porn", "mode": "contains"}],
+      "whitelist": ["pornography"],
+      "text": "pornography",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "contains_cum_whitelisted_document",
+      "blocked": [{"term": "cum", "mode": "contains"}],
+      "whitelist": ["document", "cucumber"],
+      "text": "document",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "contains_cum_blocks_cumshot",
+      "blocked": [{"term": "cum", "mode": "contains"}],
+      "whitelist": ["document", "cucumber"],
+      "text": "cumshot",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "exact_phrase_robert_denero_mixed_case",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "Robert DeNero",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "exact_phrase_robert_denero_multiple_spaces",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "robert    denero",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "exact_phrase_robert_denero_hyphen",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "robert-denero",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "exact_phrase_robert_denero_allows_prefix_xrobert",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "xrobert denero",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "exact_phrase_robert_denero_allows_reversed",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "denero robert",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "exact_phrase_robert_denero_allows_intervening_word",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "robert the denero",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "contains_phrase_robert_denero_matches_xrobert",
+      "blocked": [{"term": "robert denero", "mode": "contains"}],
+      "whitelist": [],
+      "text": "xrobert denero",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "exact_regex_metachar_cpp",
+      "blocked": [{"term": "c++", "mode": "exact"}],
+      "whitelist": [],
+      "text": "I like c++ a lot",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_empty_text",
+      "blocked": [{"term": "porn", "mode": "contains"}],
+      "whitelist": [],
+      "text": "",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "edge_phrase_newline_and_tab",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "Starring Robert\n\tDeNero live",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_phrase_underscore_and_dot",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": [],
+      "text": "robert_denero and robert.denero",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_zero_width_bypass_blocked",
+      "blocked": [{"term": "porn", "mode": "contains"}],
+      "whitelist": [],
+      "text": "p\u200Bo\u200Cr\u200Dn",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_nfkc_fullwidth_blocked",
+      "blocked": [{"term": "porn", "mode": "exact"}],
+      "whitelist": [],
+      "text": "Watch \uff50\uff4f\uff52\uff4e today",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_emoji_adjacent_exact_match",
+      "blocked": [{"term": "magi", "mode": "exact"}],
+      "whitelist": [],
+      "text": "\ud83d\udd25magi\ud83d\udd25",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_rtl_arabic_exact_match",
+      "blocked": [{"term": "\u0645\u062d\u0638\u0648\u0631", "mode": "exact"}],
+      "whitelist": [],
+      "text": "\u0647\u0630\u0627 \u0646\u0635 \u0645\u062d\u0638\u0648\u0631 \u0627\u0644\u064a\u0648\u0645",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_rtl_arabic_exact_no_substring",
+      "blocked": [{"term": "\u0643\u062a\u0627\u0628", "mode": "exact"}],
+      "whitelist": [],
+      "text": "\u0643\u062a\u0627\u0628\u0629",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "edge_whitelist_phrase_overlapping_blocked_phrase",
+      "blocked": [{"term": "robert denero", "mode": "exact"}],
+      "whitelist": ["actor robert denero biography"],
+      "text": "Reading actor robert denero biography tonight",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "edge_whitelist_partial_still_blocks_other_occurrence",
+      "blocked": [{"term": "cum", "mode": "contains"}],
+      "whitelist": ["document"],
+      "text": "Open document then cumshot",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_non_english_boundary_accented_word",
+      "blocked": [{"term": "cafe", "mode": "exact"}],
+      "whitelist": [],
+      "text": "cafeteria",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "edge_regex_dot_metachar_literal",
+      "blocked": [{"term": "a.b", "mode": "exact"}],
+      "whitelist": [],
+      "text": "axb",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "edge_regex_dot_metachar_matches_literal",
+      "blocked": [{"term": "a.b", "mode": "exact"}],
+      "whitelist": [],
+      "text": "version a.b released",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "edge_unused_whitelist_word_accepted_silently",
+      "blocked": [{"term": "magi", "mode": "exact"}],
+      "whitelist": ["unrelatedsafe"],
+      "text": "unrelatedsafe text only",
+      "expected": "ALLOW"
+    }
+  ],
+  "domainCases": [
+    {
+      "id": "domain_full_url_with_www_path_query",
+      "blockedDomains": ["example.com"],
+      "whitelistedDomains": [],
+      "text": "https://www.example.com/a?b=1",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "domain_subdomain_blocked",
+      "blockedDomains": ["example.com"],
+      "whitelistedDomains": [],
+      "text": "cdn.example.com",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "domain_lookalike_allowed",
+      "blockedDomains": ["example.com"],
+      "whitelistedDomains": [],
+      "text": "notexample.com",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "domain_prefix_on_other_host_allowed",
+      "blockedDomains": ["example.com"],
+      "whitelistedDomains": [],
+      "text": "example.com.other.org",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "domain_port_fragment_trailing_dot_blocked",
+      "blockedDomains": ["example.com"],
+      "whitelistedDomains": [],
+      "text": "http://WWW.EXAMPLE.COM.:8443/watch#top",
+      "expected": "BLOCK"
+    },
+    {
+      "id": "domain_whitelist_overrides_blocklist",
+      "blockedDomains": ["example.com"],
+      "whitelistedDomains": ["safe.example.com"],
+      "text": "https://safe.example.com/docs",
+      "expected": "ALLOW"
+    },
+    {
+      "id": "domain_punycode_normalized_matches_unicode",
+      "blockedDomains": ["bücher.example"],
+      "whitelistedDomains": [],
+      "text": "https://xn--bcher-kva.example/page",
+      "expected": "BLOCK"
+    }
+  ]
+}

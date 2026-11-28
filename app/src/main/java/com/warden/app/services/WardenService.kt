@@ -48,6 +48,10 @@ class WardenService : AccessibilityService() {
 
         // Observe settings directly from the process-shared repository (no broadcast receiver needed).
         serviceScope.launch {
+            val builtinDomains = container.pornDomainRepository.loadBuiltinDomains()
+            activeCoordinator.onBuiltinDomainsLoaded(builtinDomains)
+        }
+        serviceScope.launch {
             container.settingsRepository.settings.collectLatest { settings ->
                 activeCoordinator.onSettingsUpdated(settings)
             }

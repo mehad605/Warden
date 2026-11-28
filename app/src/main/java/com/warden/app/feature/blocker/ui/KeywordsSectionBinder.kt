@@ -2,20 +2,29 @@ package com.warden.app.feature.blocker.ui
 
 import android.content.Context
 import android.view.KeyEvent
-import android.widget.TextView
+import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
+import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.warden.app.R
+import com.warden.app.data.models.BlockedEntry
+import com.warden.app.data.models.MatchMode
 import com.warden.app.databinding.FragmentKeywordBlockerBinding
 import com.warden.app.feature.blocker.domain.KeywordNormalizer
 import com.warden.app.feature.blocker.domain.NormalizedKeyword
+import com.warden.app.feature.blocker.domain.RuleBadgeKind
+import com.warden.app.feature.blocker.domain.RuleItemSpec
+import com.warden.app.feature.blocker.domain.RuleListFormatter
+import com.warden.app.feature.blocker.domain.TermValidationResult
 import com.warden.app.feature.security.ui.PasswordDialogController
 
 /**
- * Handles blocked-keyword and whitelisted-keyword inputs, URL normalization warnings,
- * risky-word confirmation, and chip-cloud rendering/deletion.
+ * Manages the Blocked Words and Safe Phrases lists: per-entry match mode picker, length/empty
+ * validation, live search, dictionary-sorted letter-grouped virtualized lists, inline mode toggle,
+ * and password-gated delete with 5-second Undo.
  */
 class KeywordsSectionBinder(
     private val context: Context,
@@ -24,119 +33,267 @@ class KeywordsSectionBinder(
     private val passwordDialogs: PasswordDialogController,
     private val dispatch: (BlockerAction) -> Unit,
 ) {
-    /** Wires add-icon click listeners and Enter key submission for both keyword inputs. */
+    private var latestBlocked: List<BlockedEntry> = emptyList()
+    private var latestWhitelist: List<String> = emptyList()
+    private var blockedQuery: String = ""
+    private var whitelistQuery: String = ""
+
+    private val blockedAdapter =
+        RuleListAdapter(
+            onBadgeClick = ::toggleEntryModeInline,
+            onActionClick = { spec -> requestRemoveBlocked(spec.id) },
+        )
+
+    private val whitelistAdapter =
+        RuleListAdapter(
+            onActionClick = { spec -> requestRemoveWhitelist(spec.id) },
+        )
+
+    /** Wires inputs, match mode toggle, live search filters, and virtualized RecyclerViews. */
     fun bindListeners() {
         val rules = binding.tabRules
+        rules.rvBlockedWords.layoutManager = LinearLayoutManager(context)
+        rules.rvBlockedWords.adapter = blockedAdapter
+        rules.rvWhitelistWords.layoutManager = LinearLayoutManager(context)
+        rules.rvWhitelistWords.adapter = whitelistAdapter
+
         rules.tilAddWord.setEndIconOnClickListener { submitBlockedKeyword() }
-        rules.etKeyword.setOnKeyListener { _, keyCode, event ->
-            handleEnterKey(keyCode, event, ::submitBlockedKeyword)
-        }
+        bindSubmitInput(rules.etKeyword, rules.tilAddWord, ::submitBlockedKeyword)
         rules.tilAddWhitelistWord.setEndIconOnClickListener { submitWhitelistKeyword() }
-        rules.etWhitelistKeyword.setOnKeyListener { _, keyCode, event ->
-            handleEnterKey(keyCode, event, ::submitWhitelistKeyword)
+        bindSubmitInput(rules.etWhitelistKeyword, rules.tilAddWhitelistWord, ::submitWhitelistKeyword)
+
+        rules.etSearchBlocked.doAfterTextChanged { text ->
+            blockedQuery = text?.toString().orEmpty()
+            renderBlockedList()
+        }
+        rules.etSearchWhitelist.doAfterTextChanged { text ->
+            whitelistQuery = text?.toString().orEmpty()
+            renderWhitelistList()
         }
     }
 
-    /** Renders both blocked and whitelisted chip clouds and their pluralized counts. */
+    private fun bindSubmitInput(
+        editText: android.widget.EditText,
+        layout: com.google.android.material.textfield.TextInputLayout,
+        onSubmit: () -> Unit,
+    ) {
+        editText.doAfterTextChanged { layout.error = null }
+        editText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                onSubmit()
+                true
+            } else {
+                false
+            }
+        }
+        editText.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_ENTER && (event == null || event.action == KeyEvent.ACTION_UP)) {
+                onSubmit()
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    /** Renders both blocked entries (with modes) and whitelisted safe phrases. */
     fun render(
-        blockedKeywords: List<String>,
+        blockedEntries: List<BlockedEntry>,
         whitelistedKeywords: List<String>,
     ) {
-        val rules = binding.tabRules
-        renderChips(rules.cgKeywords, rules.tvKeywordCount, blockedKeywords, isWhitelist = false)
-        renderChips(rules.cgWhitelistKeywords, rules.tvWhitelistKeywordCount, whitelistedKeywords, isWhitelist = true)
+        latestBlocked = blockedEntries
+        latestWhitelist = whitelistedKeywords
+        renderBlockedList()
+        renderWhitelistList()
     }
 
-    private fun renderChips(
-        chipGroup: ChipGroup,
-        countView: TextView,
-        keywords: List<String>,
-        isWhitelist: Boolean,
+    private fun renderBlockedList() {
+        val rules = binding.tabRules
+        val exactCount = latestBlocked.count { it.mode == MatchMode.EXACT }
+        val containsCount = latestBlocked.size - exactCount
+        rules.tvKeywordCount.text =
+            context.resources.getQuantityString(
+                R.plurals.blocked_counts_summary_fmt,
+                latestBlocked.size,
+                latestBlocked.size,
+                exactCount,
+                containsCount,
+            )
+
+        val specs =
+            latestBlocked.map { entry ->
+                val isContains = entry.mode == MatchMode.CONTAINS
+                val badgeLabel =
+                    context.getString(if (isContains) R.string.badge_anywhere else R.string.badge_exact)
+                RuleItemSpec(
+                    id = entry.term,
+                    label = entry.term,
+                    badgeText = badgeLabel,
+                    badgeKind = if (isContains) RuleBadgeKind.CONTAINS else RuleBadgeKind.EXACT,
+                    badgeClickable = true,
+                )
+            }
+        val grouped = RuleListFormatter.buildGroupedList(specs, blockedQuery)
+        blockedAdapter.submitList(grouped.rows)
+        LetterJumpBarBinder.bind(context, rules.layoutJumpBlocked, rules.scrollJumpBlocked, grouped.letterPositions, rules.rvBlockedWords)
+        updateEmptyState(rules.tvEmptyBlocked, rules.rvBlockedWords, grouped.rows.isEmpty(), blockedQuery, R.string.empty_blocked_words)
+    }
+
+    private fun renderWhitelistList() {
+        val rules = binding.tabRules
+        rules.tvWhitelistKeywordCount.text =
+            context.resources.getQuantityString(R.plurals.word_count, latestWhitelist.size, latestWhitelist.size)
+
+        val specs = latestWhitelist.map { RuleItemSpec(id = it, label = it) }
+        val grouped = RuleListFormatter.buildGroupedList(specs, whitelistQuery)
+        whitelistAdapter.submitList(grouped.rows)
+        LetterJumpBarBinder.bind(
+            context,
+            rules.layoutJumpWhitelist,
+            rules.scrollJumpWhitelist,
+            grouped.letterPositions,
+            rules.rvWhitelistWords,
+        )
+        updateEmptyState(
+            rules.tvEmptyWhitelist,
+            rules.rvWhitelistWords,
+            grouped.rows.isEmpty(),
+            whitelistQuery,
+            R.string.empty_safe_phrases,
+        )
+    }
+
+    private fun updateEmptyState(
+        emptyView: android.widget.TextView,
+        listView: View,
+        isEmpty: Boolean,
+        query: String,
+        defaultEmptyRes: Int,
     ) {
-        chipGroup.removeAllViews()
-        countView.text = context.resources.getQuantityString(R.plurals.word_count, keywords.size, keywords.size)
-        keywords.forEach { keyword ->
-            val chip =
-                Chip(context).apply {
-                    text = keyword
-                    isCloseIconVisible = true
-                    setOnCloseIconClickListener { requestRemove(keyword, isWhitelist) }
-                }
-            chipGroup.addView(chip)
+        emptyView.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        listView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        if (isEmpty) {
+            emptyView.setText(if (query.isBlank()) defaultEmptyRes else R.string.empty_search_results)
         }
     }
 
+    private fun selectedAddMode(): MatchMode =
+        if (binding.tabRules.toggleAddMode.checkedButtonId == R.id.btn_add_mode_contains) {
+            MatchMode.CONTAINS
+        } else {
+            MatchMode.EXACT
+        }
+
     private fun submitBlockedKeyword() {
-        val normalized = KeywordNormalizer.normalize(binding.tabRules.etKeyword.text?.toString().orEmpty()) ?: return
+        val rules = binding.tabRules
+        val raw = rules.etKeyword.text?.toString().orEmpty()
+        when (val result = KeywordNormalizer.validateAndNormalize(raw)) {
+            TermValidationResult.Empty -> rules.tilAddWord.error = context.getString(R.string.error_term_empty)
+            is TermValidationResult.TooLong ->
+                rules.tilAddWord.error =
+                    context.resources.getQuantityString(R.plurals.error_term_too_long, result.maxLength, result.maxLength)
+            is TermValidationResult.Valid -> {
+                rules.tilAddWord.error = null
+                handleValidBlocked(result.value, selectedAddMode())
+            }
+        }
+    }
+
+    private fun handleValidBlocked(
+        normalized: NormalizedKeyword,
+        mode: MatchMode,
+    ) {
         if (normalized.isRisky) {
             MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.risky_keyword_title)
                 .setMessage(R.string.risky_keyword_message)
-                .setPositiveButton(R.string.add_anyway) { _, _ -> commitKeyword(normalized, isWhitelist = false) }
+                .setPositiveButton(R.string.add_anyway) { _, _ -> commitBlocked(normalized, mode) }
                 .setNegativeButton(R.string.cancel, null)
                 .show()
         } else {
-            commitKeyword(normalized, isWhitelist = false)
+            commitBlocked(normalized, mode)
         }
     }
 
-    private fun submitWhitelistKeyword() {
-        val normalized = KeywordNormalizer.normalize(binding.tabRules.etWhitelistKeyword.text?.toString().orEmpty()) ?: return
-        commitKeyword(normalized, isWhitelist = true)
-    }
-
-    private fun commitKeyword(
+    private fun commitBlocked(
         normalized: NormalizedKeyword,
-        isWhitelist: Boolean,
+        mode: MatchMode,
     ) {
         if (normalized.wasUrl) {
             Toast.makeText(context, R.string.warning_link_blocker_may_not_work, Toast.LENGTH_LONG).show()
         }
-        if (isWhitelist) {
-            dispatch(BlockerAction.AddWhitelistedKeyword(normalized.normalized))
-            binding.tabRules.etWhitelistKeyword.setText("")
-        } else {
-            dispatch(BlockerAction.AddBlockedKeyword(normalized.normalized))
-            binding.tabRules.etKeyword.setText("")
+        dispatch(BlockerAction.AddBlockedKeyword(normalized.normalized, mode))
+        binding.tabRules.etKeyword.setText("")
+    }
+
+    private fun submitWhitelistKeyword() {
+        val rules = binding.tabRules
+        val raw = rules.etWhitelistKeyword.text?.toString().orEmpty()
+        when (val result = KeywordNormalizer.validateAndNormalize(raw)) {
+            TermValidationResult.Empty -> rules.tilAddWhitelistWord.error = context.getString(R.string.error_term_empty)
+            is TermValidationResult.TooLong ->
+                rules.tilAddWhitelistWord.error =
+                    context.resources.getQuantityString(R.plurals.error_term_too_long, result.maxLength, result.maxLength)
+            is TermValidationResult.Valid -> {
+                rules.tilAddWhitelistWord.error = null
+                dispatch(BlockerAction.AddWhitelistedKeyword(result.value.normalized))
+                rules.etWhitelistKeyword.setText("")
+            }
         }
     }
 
-    private fun requestRemove(
-        keyword: String,
-        isWhitelist: Boolean,
-    ) {
-        val remove = {
-            dispatch(
-                if (isWhitelist) {
-                    BlockerAction.RemoveWhitelistedKeyword(keyword)
-                } else {
-                    BlockerAction.RemoveBlockedKeyword(keyword)
-                },
-            )
+    private fun toggleEntryModeInline(spec: RuleItemSpec) {
+        val current = latestBlocked.firstOrNull { it.term == spec.id } ?: return
+        val nextMode = if (current.mode == MatchMode.EXACT) MatchMode.CONTAINS else MatchMode.EXACT
+        if (current.mode == MatchMode.CONTAINS) {
+            runPasswordGated { dispatch(BlockerAction.SetBlockedKeywordMode(current.term, nextMode)) }
+        } else {
+            dispatch(BlockerAction.SetBlockedKeywordMode(current.term, nextMode))
         }
+    }
+
+    private fun requestRemoveBlocked(term: String) {
+        val removed = latestBlocked.firstOrNull { it.term == term } ?: return
+        runPasswordGated {
+            dispatch(BlockerAction.RemoveBlockedKeyword(term))
+            showUndoBar(context.getString(R.string.removed_entry_fmt, term)) {
+                dispatch(BlockerAction.RestoreBlockedEntry(removed))
+            }
+        }
+    }
+
+    private fun requestRemoveWhitelist(phrase: String) {
+        runPasswordGated {
+            dispatch(BlockerAction.RemoveWhitelistedKeyword(phrase))
+            showUndoBar(context.getString(R.string.removed_entry_fmt, phrase)) {
+                dispatch(BlockerAction.AddWhitelistedKeyword(phrase))
+            }
+        }
+    }
+
+    private fun runPasswordGated(onAuthorized: () -> Unit) {
         if (hasPassword()) {
             passwordDialogs.showVerifyDialog(
                 title = context.getString(R.string.password_prompt_title),
                 message = context.getString(R.string.password_required_to_delete),
-            ) {
-                remove()
-                val toastRes = if (isWhitelist) R.string.whitelist_keyword_removed else R.string.keyword_removed
-                Toast.makeText(context, toastRes, Toast.LENGTH_SHORT).show()
-            }
+                onVerified = onAuthorized,
+            )
         } else {
-            remove()
+            onAuthorized()
         }
     }
 
-    private fun handleEnterKey(
-        keyCode: Int,
-        event: KeyEvent?,
-        onEnter: () -> Unit,
-    ): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_ENTER && (event == null || event.action == KeyEvent.ACTION_UP)) {
-            onEnter()
-            return true
-        }
-        return false
+    private fun showUndoBar(
+        message: String,
+        onUndo: () -> Unit,
+    ) {
+        Snackbar.make(binding.root, message, UNDO_DURATION_MS)
+            .setAnchorView(binding.bottomNavContainer)
+            .setAction(R.string.undo_action) { onUndo() }
+            .show()
+    }
+
+    companion object {
+        private const val UNDO_DURATION_MS = 5_000
     }
 }
