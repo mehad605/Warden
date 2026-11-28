@@ -115,7 +115,7 @@ class SentinelUiAndOnboardingTest {
     }
 
     @Test
-    fun spotlightOnboardingWalksAcrossAllSixStepsAndCleansUp() {
+    fun spotlightOnboardingWalksAcrossAllEightStepsAndSwitchesRulePanels() {
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
         awaitMainLooper()
 
@@ -125,29 +125,38 @@ class SentinelUiAndOnboardingTest {
         val badge = requireNotNull(activity.findViewById<TextView>(R.id.tv_guide_step_badge))
         val nextBtn = requireNotNull(activity.findViewById<MaterialButton>(R.id.btn_guide_next))
 
-        assertEquals("Step 1 of 6", badge.text.toString())
+        assertEquals("Step 1 of 8", badge.text.toString())
         assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.tab_shield).visibility)
 
-        nextBtn.performClick()
-        shadowOf(Looper.getMainLooper()).idle()
-        assertEquals("Step 2 of 6", badge.text.toString())
-
-        nextBtn.performClick()
-        shadowOf(Looper.getMainLooper()).idle()
-        assertEquals("Step 3 of 6", badge.text.toString())
-
-        nextBtn.performClick()
-        shadowOf(Looper.getMainLooper()).idle()
-        assertEquals("Step 4 of 6", badge.text.toString())
+        repeat(3) {
+            nextBtn.performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+        assertEquals("Step 4 of 8", badge.text.toString())
         assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.tab_rules).visibility)
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.panel_blocked_words).visibility)
 
+        // Step 5: Match modes & phrases (still on Blocked panel)
         nextBtn.performClick()
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals("Step 5 of 6", badge.text.toString())
+        assertEquals("Step 5 of 8", badge.text.toString())
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.panel_blocked_words).visibility)
 
+        // Step 6: Website Lists & Profiles (auto-switches Rules panel to Websites!)
         nextBtn.performClick()
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals("Step 6 of 6", badge.text.toString())
+        assertEquals("Step 6 of 8", badge.text.toString())
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.panel_websites).visibility)
+
+        // Step 7: Grace Window & Bottom Alerts
+        nextBtn.performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals("Step 7 of 8", badge.text.toString())
+
+        // Step 8: Vault tab & final Done label
+        nextBtn.performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals("Step 8 of 8", badge.text.toString())
         assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.tab_vault).visibility)
         assertEquals(activity.getString(R.string.guide_done), nextBtn.text.toString())
         assertNotNull(activity.findViewById<View>(R.id.card_spotlight_tooltip))

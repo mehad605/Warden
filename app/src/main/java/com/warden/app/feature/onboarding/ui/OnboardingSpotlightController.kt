@@ -30,13 +30,14 @@ class OnboardingSpotlightController(
     private val onOpenAccessibilitySettings: () -> Unit,
     private val onFinished: () -> Unit = {},
 ) {
-    /** Single spotlight step bound to a tab index and live target view resolver. */
+    /** Single spotlight step bound to a tab index, optional sub-view preparation, and target view. */
     data class Step(
         val tabIndex: Int,
         val targetView: () -> View,
         @StringRes val titleRes: Int,
         @StringRes val bodyRes: Int,
         val showAccessibilityCta: Boolean = false,
+        val onPrepare: () -> Unit = {},
     )
 
     private var hostLayer: FrameLayout? = null
@@ -131,6 +132,7 @@ class OnboardingSpotlightController(
         tooltip.btnGuideAction.visibility = if (needsA11y) View.VISIBLE else View.GONE
 
         onSelectTab(step.tabIndex)
+        step.onPrepare()
         rootContainer.post { scrollAndHighlight(step.targetView()) }
     }
 

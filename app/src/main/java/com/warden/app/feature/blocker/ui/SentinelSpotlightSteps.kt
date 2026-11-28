@@ -5,11 +5,15 @@ import com.warden.app.databinding.FragmentKeywordBlockerBinding
 import com.warden.app.feature.onboarding.ui.OnboardingSpotlightController
 
 /**
- * Defines the 6 live spotlight coach-mark steps across Sentinel's Shield, Rules, and Vault tabs.
+ * Defines the 8 live spotlight coach-mark steps across Sentinel's Shield, Rules
+ * (Blocked words/match modes, Safe phrases, Website lists/profiles, Grace window), and Vault tabs.
  */
 internal object SentinelSpotlightSteps {
     /** Builds the ordered spotlight steps targeting real views inside [binding]. */
-    fun build(binding: FragmentKeywordBlockerBinding): List<OnboardingSpotlightController.Step> =
+    internal fun build(binding: FragmentKeywordBlockerBinding): List<OnboardingSpotlightController.Step> =
+        shieldSteps(binding) + rulesSteps(binding) + vaultSteps(binding)
+
+    private fun shieldSteps(binding: FragmentKeywordBlockerBinding): List<OnboardingSpotlightController.Step> =
         listOf(
             OnboardingSpotlightController.Step(
                 tabIndex = SentinelNavigationBinder.Tab.SHIELD.ordinal,
@@ -30,23 +34,46 @@ internal object SentinelSpotlightSteps {
                 titleRes = R.string.guide_step3_title,
                 bodyRes = R.string.guide_step3_body,
             ),
+        )
+
+    private fun rulesSteps(binding: FragmentKeywordBlockerBinding): List<OnboardingSpotlightController.Step> =
+        listOf(
             OnboardingSpotlightController.Step(
                 tabIndex = SentinelNavigationBinder.Tab.RULES.ordinal,
                 targetView = { binding.tabRules.toggleRuleMode },
                 titleRes = R.string.guide_step4_title,
                 bodyRes = R.string.guide_step4_body,
+                onPrepare = { binding.tabRules.toggleRuleMode.check(R.id.btn_mode_blocked) },
+            ),
+            OnboardingSpotlightController.Step(
+                tabIndex = SentinelNavigationBinder.Tab.RULES.ordinal,
+                targetView = { binding.tabRules.toggleAddMode },
+                titleRes = R.string.guide_step5_title,
+                bodyRes = R.string.guide_step5_body,
+                onPrepare = { binding.tabRules.toggleRuleMode.check(R.id.btn_mode_blocked) },
+            ),
+            OnboardingSpotlightController.Step(
+                tabIndex = SentinelNavigationBinder.Tab.RULES.ordinal,
+                targetView = { binding.tabRules.panelWebsites },
+                titleRes = R.string.guide_step6_title,
+                bodyRes = R.string.guide_step6_body,
+                onPrepare = { binding.tabRules.toggleRuleMode.check(R.id.btn_mode_websites) },
             ),
             OnboardingSpotlightController.Step(
                 tabIndex = SentinelNavigationBinder.Tab.RULES.ordinal,
                 targetView = { binding.tabRules.cardGraceWindow },
-                titleRes = R.string.guide_step5_title,
-                bodyRes = R.string.guide_step5_body,
+                titleRes = R.string.guide_step7_title,
+                bodyRes = R.string.guide_step7_body,
             ),
+        )
+
+    private fun vaultSteps(binding: FragmentKeywordBlockerBinding): List<OnboardingSpotlightController.Step> =
+        listOf(
             OnboardingSpotlightController.Step(
                 tabIndex = SentinelNavigationBinder.Tab.VAULT.ordinal,
                 targetView = { binding.tabVault.headerGeminiEngine },
-                titleRes = R.string.guide_step6_title,
-                bodyRes = R.string.guide_step6_body,
+                titleRes = R.string.guide_step8_title,
+                bodyRes = R.string.guide_step8_body,
             ),
         )
 }
