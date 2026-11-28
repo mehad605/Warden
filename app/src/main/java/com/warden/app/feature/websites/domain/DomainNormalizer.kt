@@ -91,13 +91,10 @@ object DomainNormalizer {
     }
 
     private fun isValidHost(host: String): Boolean {
-        if (host.length > MAX_HOST_LENGTH || host.startsWith('.') || host.endsWith('.') || host.contains("..")) {
-            return false
-        }
+        if (host.length > MAX_HOST_LENGTH || host.contains("..")) return false
+        if (host.startsWith('.') || host.endsWith('.')) return false
         val labels = host.split('.')
-        if (labels.size < 2) return false
-        val tld = labels.last()
-        if (!VALID_TLD_REGEX.matches(tld)) return false
+        if (labels.size < 2 || !VALID_TLD_REGEX.matches(labels.last())) return false
         return labels.all { VALID_LABEL_REGEX.matches(it) }
     }
 

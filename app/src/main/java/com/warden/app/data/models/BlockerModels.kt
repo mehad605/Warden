@@ -15,8 +15,7 @@ enum class MatchMode(val wireValue: String) {
 
     companion object {
         /** Parses a persisted [wireValue], defaulting unknown or missing values to [EXACT]. */
-        fun fromWire(wireValue: String?): MatchMode =
-            if (wireValue.equals(CONTAINS.wireValue, ignoreCase = true)) CONTAINS else EXACT
+        fun fromWire(wireValue: String?): MatchMode = if (wireValue.equals(CONTAINS.wireValue, ignoreCase = true)) CONTAINS else EXACT
     }
 }
 

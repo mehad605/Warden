@@ -63,8 +63,7 @@ object KeywordNormalizer {
     }
 
     /** Normalizes [rawInput], returning `null` if blank or longer than 100 characters. */
-    fun normalize(rawInput: String): NormalizedKeyword? =
-        (validateAndNormalize(rawInput) as? TermValidationResult.Valid)?.value
+    fun normalize(rawInput: String): NormalizedKeyword? = (validateAndNormalize(rawInput) as? TermValidationResult.Valid)?.value
 
     private fun stripUrlPrefix(value: String): String {
         var result = value

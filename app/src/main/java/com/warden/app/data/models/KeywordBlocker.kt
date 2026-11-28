@@ -17,7 +17,8 @@ data class KeywordBlocker(
     val blockedKeywords: List<String> = emptyList(),
     val whitelistedKeywords: List<String> = emptyList(),
     val ignoredApps: List<String> = emptyList(),
-    val blockedEntries: List<BlockedEntry> = emptyList(),
+    val blockedEntries: List<BlockedEntry> =
+        blockedKeywords.map { BlockedEntry(term = it, mode = MatchMode.EXACT, addedAt = 0L) },
 ) {
     /**
      * Returns the canonical list of blocked entries, migrating legacy [blockedKeywords]

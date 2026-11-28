@@ -47,9 +47,9 @@ internal class SentinelNavigationBinder(
 
         binding.tabRules.toggleRuleMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
-            val showBlocked = checkedId == R.id.btn_mode_blocked
-            binding.tabRules.panelBlockedWords.visibility = if (showBlocked) View.VISIBLE else View.GONE
-            binding.tabRules.panelWhitelistWords.visibility = if (showBlocked) View.GONE else View.VISIBLE
+            binding.tabRules.panelBlockedWords.visibility = if (checkedId == R.id.btn_mode_blocked) View.VISIBLE else View.GONE
+            binding.tabRules.panelWhitelistWords.visibility = if (checkedId == R.id.btn_mode_whitelist) View.VISIBLE else View.GONE
+            binding.tabRules.panelWebsites.visibility = if (checkedId == R.id.btn_mode_websites) View.VISIBLE else View.GONE
         }
         selectTab(Tab.SHIELD)
     }

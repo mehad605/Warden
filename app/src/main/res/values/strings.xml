@@ -53,6 +53,16 @@
         <item quantity="other">%1$d / %2$d sentences · Ready to send</item>
     </plurals>
 
+    <plurals name="blocked_counts_summary_fmt">
+        <item quantity="one">%1$d total · %2$d Exact · %3$d Anywhere</item>
+        <item quantity="other">%1$d total · %2$d Exact · %3$d Anywhere</item>
+    </plurals>
+
+    <plurals name="error_term_too_long">
+        <item quantity="one">Terms must be %1$d character or fewer.</item>
+        <item quantity="other">Terms must be %1$d characters or fewer.</item>
+    </plurals>
+
     <!-- Sentinel Header & Navigation -->
     <string name="header_status_online">Accessibility Guard Online</string>
     <string name="header_status_offline">Accessibility Permission Needed</string>
@@ -85,12 +95,48 @@
 
     <!-- Rules Tab -->
     <string name="rules_screen_title">Filter Rules</string>
-    <string name="rules_screen_subtitle">Choose words that send you Home, safe phrases to ignore, and how long Warden waits before acting.</string>
+    <string name="rules_screen_subtitle">Choose words, match modes, safe phrases, and websites to guard.</string>
     <string name="blocked_words_label">Blocked</string>
-    <string name="safe_phrases_label">Safe Phrases</string>
-    <string name="blocked_words_explainer">Any whole-word match on screen triggers Home.</string>
+    <string name="safe_phrases_label">Safe</string>
+    <string name="websites_label">Websites</string>
+    <string name="match_mode_exact_option">Exact word</string>
+    <string name="match_mode_contains_option">Anywhere in text</string>
+    <string name="match_mode_helper">Exact: blocks “magi” but not “magic”. Anywhere: blocks “porn” even inside “xporn”.</string>
+    <string name="badge_exact">Exact</string>
+    <string name="badge_anywhere">Anywhere</string>
+    <string name="badge_builtin">Built-in</string>
+    <string name="badge_yours">Yours</string>
+    <string name="badge_disabled">Disabled</string>
+    <string name="badge_allowed">Allowed</string>
+    <string name="letter_group_count_fmt">(%1$d)</string>
+    <string name="search_blocked_hint">Search blocked words…</string>
+    <string name="search_whitelist_hint">Search safe phrases…</string>
+    <string name="search_domains_hint">Search 46,000+ domains…</string>
+    <string name="empty_blocked_words">No blocked words yet. Add a word or phrase above to start guarding.</string>
+    <string name="empty_safe_phrases">No safe phrases yet. Add phrases like “basketball shorts” to prevent false triggers.</string>
+    <string name="empty_domains">No matching domains found.</string>
+    <string name="empty_search_results">No matching entries found.</string>
+    <string name="error_term_empty">Enter a word or phrase first.</string>
+    <string name="undo_action">Undo</string>
+    <string name="removed_entry_fmt">Removed “%1$s”</string>
+    <string name="disabled_builtin_fmt">Disabled built-in “%1$s”</string>
+    <string name="website_blocker_title">Adult Website Blocker</string>
+    <string name="website_blocker_subtitle">Prepopulated MIT domain list · Blocks domains &amp; subdomains</string>
+    <string name="add_domain_hint">Paste URL or domain (e.g. example.com)…</string>
+    <string name="domain_action_block">Block site</string>
+    <string name="domain_action_allow">Allow (Whitelist)</string>
+    <string name="website_stats_fmt">%1$s active · %2$s Built-in · %3$s Yours · %4$s Allowed</string>
+    <string name="reset_builtins_action">Reset built-ins</string>
+    <string name="cd_add_blocked_word">Add blocked word</string>
+    <string name="cd_add_safe_phrase">Add safe phrase</string>
+    <string name="cd_add_domain">Add website domain</string>
+    <string name="cd_toggle_mode_fmt">Switch match mode for %1$s, currently %2$s</string>
+    <string name="cd_delete_entry_fmt">Delete %1$s</string>
+    <string name="cd_disable_builtin_fmt">Disable built-in domain %1$s</string>
+    <string name="cd_enable_builtin_fmt">Re-enable built-in domain %1$s</string>
+    <string name="cd_jump_to_letter">Jump to letter %1$s</string>
     <string name="safe_phrases_explainer">Masked out before scanning so work or study text isn’t blocked.</string>
-    <string name="add_blocked_word_hint">Add blocked word (e.g. shorts)…</string>
+    <string name="add_blocked_word_hint">Add blocked word or phrase (e.g. shorts)…</string>
     <string name="add_whitelisted_word_hint">Add safe phrase (e.g. cargo shorts)…</string>
     <string name="grace_period_title">Grace Window</string>
     <string name="grace_period_subtitle">Waits and re-checks the screen before minimizing, avoiding accidental triggers.</string>
@@ -121,7 +167,7 @@
     <string name="replay_guide_title">Interactive Guide</string>
     <string name="replay_guide_subtitle">Walk through how every part of Warden works</string>
     <string name="replay_action">Start</string>
-    <string name="version_footer">Warden v2.2.1 · Android Content Shield</string>
+    <string name="version_footer">Warden v2.3.0 · Android Content Shield</string>
     <string name="alert_banner_default_title">Warden Shield</string>
     <string name="alert_banner_blocked_title_fmt">Blocked · “%1$s”</string>
     <string name="alert_banner_snippet_fmt">“%1$s”</string>
@@ -177,8 +223,6 @@
     <string name="warning_link_blocker_may_not_work">WARNING: Link blocker may not work everywhere.</string>
     <string name="risky_keyword_title">Warning: Risky Keyword</string>
     <string name="risky_keyword_message">Using \'sex\' as a blocked keyword is dangerous because legitimate forms often ask for your sex/gender. We strongly advise against using this exact word. Consider using alternatives like \'sexy\' instead to avoid breaking regular apps.</string>
-    <string name="keyword_removed">Keyword removed!</string>
-    <string name="whitelist_keyword_removed">Whitelist keyword removed!</string>
 
     <!-- Password -->
     <string name="set_password">Set Password</string>

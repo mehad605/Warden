@@ -44,42 +44,13 @@ object SettingsJsonCodec {
 
     /** Serializes [settings] to a UTF-8 JSON string compatible with v1 and extended schemas. */
     fun encode(settings: Settings): String {
-        val entries = settings.keywordBlockerConfig.effectiveBlockedEntries()
-        val entriesJson =
-            JSONArray().apply {
-                entries.forEach { entry ->
-                    put(
-                        JSONObject().apply {
-                            put(KEY_TERM, entry.term)
-                            put(KEY_MODE, entry.mode.wireValue)
-                            put(KEY_ADDED_AT, entry.addedAt)
-                        },
-                    )
-                }
-            }
-        val blockerJson =
-            JSONObject().apply {
-                put(KEY_IS_ACTIVE, settings.keywordBlockerConfig.isActive)
-                put(KEY_BLOCKED_KEYWORDS, JSONArray(entries.map { it.term }))
-                put(KEY_BLOCKED_ENTRIES, entriesJson)
-                put(KEY_WHITELISTED_KEYWORDS, JSONArray(settings.keywordBlockerConfig.whitelistedKeywords))
-                put(KEY_IGNORED_APPS, JSONArray(settings.keywordBlockerConfig.ignoredApps))
-            }
-        val website = settings.websiteBlockerConfig
-        val websiteJson =
-            JSONObject().apply {
-                put(KEY_WEBSITE_ENABLED, website.isEnabled)
-                put(KEY_USER_BLOCKED_DOMAINS, JSONArray(website.userBlockedDomains))
-                put(KEY_DISABLED_BUILTIN_DOMAINS, JSONArray(website.disabledBuiltinDomains))
-                put(KEY_WHITELISTED_DOMAINS, JSONArray(website.whitelistedDomains))
-            }
         val tempIgnoredJson =
             JSONObject().apply {
                 settings.temporaryIgnoredApps.forEach { (pkg, expiry) -> put(pkg, expiry) }
             }
         return JSONObject().apply {
-            put(KEY_BLOCKER_CONFIG, blockerJson)
-            put(KEY_WEBSITE_CONFIG, websiteJson)
+            put(KEY_BLOCKER_CONFIG, encodeBlockerConfig(settings.keywordBlockerConfig))
+            put(KEY_WEBSITE_CONFIG, encodeWebsiteConfig(settings.websiteBlockerConfig))
             if (settings.passwordHash != null) put(KEY_PASSWORD_HASH, settings.passwordHash)
             if (settings.geminiApiKey != null) put(KEY_GEMINI_API_KEY, settings.geminiApiKey)
             put(KEY_NO_COUNT, settings.noCount)
@@ -92,6 +63,37 @@ object SettingsJsonCodec {
             put(KEY_ADMIN_REQUESTED_AT, settings.deviceAdminActivationRequestedAt)
         }.toString()
     }
+
+    private fun encodeBlockerConfig(config: KeywordBlocker): JSONObject {
+        val entries = config.effectiveBlockedEntries()
+        val entriesJson =
+            JSONArray().apply {
+                entries.forEach { entry ->
+                    put(
+                        JSONObject().apply {
+                            put(KEY_TERM, entry.term)
+                            put(KEY_MODE, entry.mode.wireValue)
+                            put(KEY_ADDED_AT, entry.addedAt)
+                        },
+                    )
+                }
+            }
+        return JSONObject().apply {
+            put(KEY_IS_ACTIVE, config.isActive)
+            put(KEY_BLOCKED_KEYWORDS, JSONArray(entries.map { it.term }))
+            put(KEY_BLOCKED_ENTRIES, entriesJson)
+            put(KEY_WHITELISTED_KEYWORDS, JSONArray(config.whitelistedKeywords))
+            put(KEY_IGNORED_APPS, JSONArray(config.ignoredApps))
+        }
+    }
+
+    private fun encodeWebsiteConfig(website: WebsiteBlockerConfig): JSONObject =
+        JSONObject().apply {
+            put(KEY_WEBSITE_ENABLED, website.isEnabled)
+            put(KEY_USER_BLOCKED_DOMAINS, JSONArray(website.userBlockedDomains))
+            put(KEY_DISABLED_BUILTIN_DOMAINS, JSONArray(website.disabledBuiltinDomains))
+            put(KEY_WHITELISTED_DOMAINS, JSONArray(website.whitelistedDomains))
+        }
 
     /**
      * Parses [rawJson] into [Settings], returning `null` if [rawJson] is not a valid JSON object.
@@ -145,14 +147,16 @@ object SettingsJsonCodec {
         current: Settings,
         imported: Settings,
     ): Settings {
-        val mergedEntries = mergeEntries(current.keywordBlockerConfig.effectiveBlockedEntries(), imported.keywordBlockerConfig.effectiveBlockedEntries())
+        val curCfg = current.keywordBlockerConfig
+        val impCfg = imported.keywordBlockerConfig
+        val mergedEntries = mergeEntries(curCfg.effectiveBlockedEntries(), impCfg.effectiveBlockedEntries())
         val mergedConfig =
-            current.keywordBlockerConfig.copy(
-                isActive = current.keywordBlockerConfig.isActive || imported.keywordBlockerConfig.isActive,
+            curCfg.copy(
+                isActive = curCfg.isActive || impCfg.isActive,
                 blockedKeywords = mergedEntries.map { it.term },
                 blockedEntries = mergedEntries,
-                whitelistedKeywords = (current.keywordBlockerConfig.whitelistedKeywords + imported.keywordBlockerConfig.whitelistedKeywords).distinct(),
-                ignoredApps = (current.keywordBlockerConfig.ignoredApps + imported.keywordBlockerConfig.ignoredApps).distinct(),
+                whitelistedKeywords = (curCfg.whitelistedKeywords + impCfg.whitelistedKeywords).distinct(),
+                ignoredApps = (curCfg.ignoredApps + impCfg.ignoredApps).distinct(),
             )
         val curWeb = current.websiteBlockerConfig
         val impWeb = imported.websiteBlockerConfig
@@ -206,7 +210,8 @@ object SettingsJsonCodec {
                 if (existing == null) {
                     entry
                 } else {
-                    val mode = if (existing.mode == MatchMode.CONTAINS || entry.mode == MatchMode.CONTAINS) MatchMode.CONTAINS else MatchMode.EXACT
+                    val isContains = existing.mode == MatchMode.CONTAINS || entry.mode == MatchMode.CONTAINS
+                    val mode = if (isContains) MatchMode.CONTAINS else MatchMode.EXACT
                     existing.copy(mode = mode, addedAt = maxOf(existing.addedAt, entry.addedAt))
                 }
         }
@@ -217,12 +222,13 @@ object SettingsJsonCodec {
         if (this == null) return null
         val seen = LinkedHashMap<String, BlockedEntry>()
         for (i in 0 until length()) {
-            val item = optJSONObject(i) ?: continue
-            val term = item.optString(KEY_TERM, "").trim()
-            if (term.isEmpty()) continue
-            val mode = MatchMode.fromWire(item.optString(KEY_MODE, MatchMode.EXACT.wireValue))
-            val addedAt = item.optLong(KEY_ADDED_AT, 0L)
-            seen[term] = BlockedEntry(term = term, mode = mode, addedAt = addedAt)
+            val item = optJSONObject(i)
+            val term = item?.optString(KEY_TERM, "")?.trim().orEmpty()
+            if (item != null && term.isNotEmpty()) {
+                val mode = MatchMode.fromWire(item.optString(KEY_MODE, MatchMode.EXACT.wireValue))
+                val addedAt = item.optLong(KEY_ADDED_AT, 0L)
+                seen[term] = BlockedEntry(term = term, mode = mode, addedAt = addedAt)
+            }
         }
         return seen.values.toList()
     }
