@@ -77,6 +77,8 @@ internal class DashboardControllers(
                         binding = binding,
                         scope = scope,
                         repository = container.pornDomainRepository,
+                        hasPassword = { viewModel.settings.value.passwordHash != null },
+                        passwordDialogs = pwdDialogs,
                         isUpdatingUi = host.isUpdatingUi,
                         isViewAlive = host.isViewAlive,
                         dispatch = viewModel::dispatch,

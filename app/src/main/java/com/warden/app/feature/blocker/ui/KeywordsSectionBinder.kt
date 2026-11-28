@@ -131,8 +131,6 @@ class KeywordsSectionBinder(
                     badgeText = badgeLabel,
                     badgeKind = if (isContains) RuleBadgeKind.CONTAINS else RuleBadgeKind.EXACT,
                     badgeClickable = true,
-                    badgeContentDesc = context.getString(R.string.cd_toggle_mode_fmt, entry.term, badgeLabel),
-                    actionContentDesc = context.getString(R.string.cd_delete_entry_fmt, entry.term),
                 )
             }
         val grouped = RuleListFormatter.buildGroupedList(specs, blockedQuery)
@@ -146,10 +144,7 @@ class KeywordsSectionBinder(
         rules.tvWhitelistKeywordCount.text =
             context.resources.getQuantityString(R.plurals.word_count, latestWhitelist.size, latestWhitelist.size)
 
-        val specs =
-            latestWhitelist.map {
-                RuleItemSpec(id = it, label = it, actionContentDesc = context.getString(R.string.cd_delete_entry_fmt, it))
-            }
+        val specs = latestWhitelist.map { RuleItemSpec(id = it, label = it) }
         val grouped = RuleListFormatter.buildGroupedList(specs, whitelistQuery)
         whitelistAdapter.submitList(grouped.rows)
         LetterJumpBarBinder.bind(
@@ -250,7 +245,11 @@ class KeywordsSectionBinder(
     private fun toggleEntryModeInline(spec: RuleItemSpec) {
         val current = latestBlocked.firstOrNull { it.term == spec.id } ?: return
         val nextMode = if (current.mode == MatchMode.EXACT) MatchMode.CONTAINS else MatchMode.EXACT
-        dispatch(BlockerAction.SetBlockedKeywordMode(current.term, nextMode))
+        if (current.mode == MatchMode.CONTAINS) {
+            runPasswordGated { dispatch(BlockerAction.SetBlockedKeywordMode(current.term, nextMode)) }
+        } else {
+            dispatch(BlockerAction.SetBlockedKeywordMode(current.term, nextMode))
+        }
     }
 
     private fun requestRemoveBlocked(term: String) {

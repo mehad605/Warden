@@ -11,6 +11,7 @@ import com.warden.app.R
 import com.warden.app.data.models.WebsiteBlockerConfig
 import com.warden.app.databinding.FragmentKeywordBlockerBinding
 import com.warden.app.feature.blocker.domain.RuleItemSpec
+import com.warden.app.feature.security.ui.PasswordDialogController
 import com.warden.app.feature.websites.data.PornDomainRepository
 import com.warden.app.feature.websites.domain.DomainNormalizer
 import com.warden.app.feature.websites.domain.DomainValidationResult
@@ -33,6 +34,8 @@ class WebsiteSectionBinder(
     private val binding: FragmentKeywordBlockerBinding,
     private val scope: CoroutineScope,
     private val repository: PornDomainRepository,
+    private val hasPassword: () -> Boolean,
+    private val passwordDialogs: PasswordDialogController,
     private val isUpdatingUi: () -> Boolean,
     private val isViewAlive: () -> Boolean,
     private val dispatch: (BlockerAction) -> Unit,
@@ -40,8 +43,11 @@ class WebsiteSectionBinder(
 ) {
     private var builtinDomains: List<String> = emptyList()
     private var latestConfig: WebsiteBlockerConfig = WebsiteBlockerConfig()
+    private var lastRenderedConfig: WebsiteBlockerConfig? = null
+    private var lastBuiltinsCount: Int = -1
     private var query: String = ""
     private var renderJob: Job? = null
+    private var isSyncingSwitch: Boolean = false
 
     private val adapter = RuleListAdapter(onActionClick = ::handleRowAction)
 
@@ -52,8 +58,29 @@ class WebsiteSectionBinder(
         rules.rvDomains.adapter = adapter
 
         rules.switchWebsiteBlocker.setOnCheckedChangeListener { _, isChecked ->
-            if (!isUpdatingUi()) dispatch(SetWebsiteBlockerEnabled(isChecked))
+            if (isUpdatingUi() || isSyncingSwitch) return@setOnCheckedChangeListener
+            if (!isChecked && hasPassword()) {
+                syncSwitchVisual(true)
+                runPasswordGated { dispatch(SetWebsiteBlockerEnabled(false)) }
+            } else {
+                dispatch(SetWebsiteBlockerEnabled(isChecked))
+            }
         }
+        bindDomainInput()
+        rules.btnResetBuiltins.setOnClickListener { dispatch(ResetDisabledBuiltinDomains) }
+        rules.etSearchDomains.doAfterTextChanged { text ->
+            query = text?.toString().orEmpty()
+            scheduleListBuild()
+        }
+
+        scope.launch {
+            builtinDomains = repository.loadBuiltinDomains()
+            if (isViewAlive()) render(latestConfig)
+        }
+    }
+
+    private fun bindDomainInput() {
+        val rules = binding.tabRules
         rules.tilAddDomain.setEndIconOnClickListener { submitDomainInput() }
         rules.etDomainInput.doAfterTextChanged { rules.tilAddDomain.error = null }
         rules.etDomainInput.setOnEditorActionListener { _, actionId, _ ->
@@ -72,25 +99,17 @@ class WebsiteSectionBinder(
                 false
             }
         }
-        rules.btnResetBuiltins.setOnClickListener { dispatch(ResetDisabledBuiltinDomains) }
-        rules.etSearchDomains.doAfterTextChanged { text ->
-            query = text?.toString().orEmpty()
-            scheduleListBuild()
-        }
-
-        scope.launch {
-            builtinDomains = repository.loadBuiltinDomains()
-            if (isViewAlive()) render(latestConfig)
-        }
     }
 
     /** Renders the website blocker toggle, counts, Reset button, and sorted/filtered domain list. */
     fun render(config: WebsiteBlockerConfig) {
         latestConfig = config
+        if (config == lastRenderedConfig && builtinDomains.size == lastBuiltinsCount) return
+        lastRenderedConfig = config
+        lastBuiltinsCount = builtinDomains.size
+
         val rules = binding.tabRules
-        if (rules.switchWebsiteBlocker.isChecked != config.isEnabled) {
-            rules.switchWebsiteBlocker.isChecked = config.isEnabled
-        }
+        syncSwitchVisual(config.isEnabled)
         rules.btnResetBuiltins.visibility =
             if (config.disabledBuiltinDomains.isNotEmpty()) View.VISIBLE else View.GONE
 
@@ -143,14 +162,15 @@ class WebsiteSectionBinder(
             is DomainValidationResult.Valid -> {
                 rules.tilAddDomain.error = null
                 val isAllow = rules.toggleDomainTarget.checkedButtonId == R.id.btn_domain_allow
-                dispatch(
-                    if (isAllow) {
-                        AddWhitelistedDomain(result.domain)
-                    } else {
-                        AddUserBlockedDomain(result.domain)
-                    },
-                )
-                rules.etDomainInput.setText("")
+                if (isAllow) {
+                    runPasswordGated {
+                        dispatch(AddWhitelistedDomain(result.domain))
+                        rules.etDomainInput.setText("")
+                    }
+                } else {
+                    dispatch(AddUserBlockedDomain(result.domain))
+                    rules.etDomainInput.setText("")
+                }
             }
         }
     }
@@ -159,9 +179,11 @@ class WebsiteSectionBinder(
         when {
             spec.id.startsWith(WebsiteListBuilder.PREFIX_USER) -> {
                 val domain = spec.id.removePrefix(WebsiteListBuilder.PREFIX_USER)
-                dispatch(RemoveUserBlockedDomain(domain))
-                showUndo(context.getString(R.string.removed_entry_fmt, domain)) {
-                    dispatch(AddUserBlockedDomain(domain))
+                runPasswordGated {
+                    dispatch(RemoveUserBlockedDomain(domain))
+                    showUndo(context.getString(R.string.removed_entry_fmt, domain)) {
+                        dispatch(AddUserBlockedDomain(domain))
+                    }
                 }
             }
             spec.id.startsWith(WebsiteListBuilder.PREFIX_ALLOW) -> {
@@ -173,15 +195,39 @@ class WebsiteSectionBinder(
             }
             spec.id.startsWith(WebsiteListBuilder.PREFIX_BUILTIN) -> {
                 val domain = spec.id.removePrefix(WebsiteListBuilder.PREFIX_BUILTIN)
-                dispatch(SetBuiltinDomainDisabled(domain, disabled = true))
-                showUndo(context.getString(R.string.disabled_builtin_fmt, domain)) {
-                    dispatch(SetBuiltinDomainDisabled(domain, disabled = false))
+                runPasswordGated {
+                    dispatch(SetBuiltinDomainDisabled(domain, disabled = true))
+                    showUndo(context.getString(R.string.disabled_builtin_fmt, domain)) {
+                        dispatch(SetBuiltinDomainDisabled(domain, disabled = false))
+                    }
                 }
             }
             spec.id.startsWith(WebsiteListBuilder.PREFIX_DISABLED) -> {
                 val domain = spec.id.removePrefix(WebsiteListBuilder.PREFIX_DISABLED)
                 dispatch(SetBuiltinDomainDisabled(domain, disabled = false))
             }
+        }
+    }
+
+    private fun syncSwitchVisual(checked: Boolean) {
+        if (binding.tabRules.switchWebsiteBlocker.isChecked == checked) return
+        isSyncingSwitch = true
+        try {
+            binding.tabRules.switchWebsiteBlocker.isChecked = checked
+        } finally {
+            isSyncingSwitch = false
+        }
+    }
+
+    private fun runPasswordGated(onAuthorized: () -> Unit) {
+        if (hasPassword()) {
+            passwordDialogs.showVerifyDialog(
+                title = context.getString(R.string.password_prompt_title),
+                message = context.getString(R.string.password_required_to_delete),
+                onVerified = onAuthorized,
+            )
+        } else {
+            onAuthorized()
         }
     }
 

@@ -14,6 +14,13 @@ enum class RuleBadgeKind {
     ALLOWED,
 }
 
+/** Action semantics for a rule row, used to render its icon and TalkBack description lazily. */
+enum class RuleActionKind {
+    DELETE,
+    DISABLE_BUILTIN,
+    ENABLE_BUILTIN,
+}
+
 /** Single data item passed into [RuleListFormatter] for dictionary sorting and letter grouping. */
 data class RuleItemSpec(
     val id: String,
@@ -21,9 +28,7 @@ data class RuleItemSpec(
     val badgeText: String? = null,
     val badgeKind: RuleBadgeKind = RuleBadgeKind.NONE,
     val badgeClickable: Boolean = false,
-    val actionContentDesc: String = "",
-    val badgeContentDesc: String = "",
-    val isSecondaryAction: Boolean = false,
+    val actionKind: RuleActionKind = RuleActionKind.DELETE,
 )
 
 /** Flat row rendered by the virtualized `RecyclerView` (either a letter section header or a rule item). */
@@ -120,8 +125,15 @@ object RuleListFormatter {
 
     /** Computes the uppercase ASCII bucket letter (`A`..`Z`) or `#` for digits/symbols/other scripts. */
     fun bucketLetter(label: String): String {
-        val folded = TextNormalizer.normalizeTerm(label)
-        val first = folded.firstOrNull() ?: return "#"
-        return if (first in 'a'..'z') first.uppercaseChar().toString() else "#"
+        val rawFirst = label.firstOrNull()
+        return when {
+            rawFirst == null -> "#"
+            rawFirst in 'a'..'z' -> rawFirst.uppercaseChar().toString()
+            rawFirst in 'A'..'Z' -> rawFirst.toString()
+            else -> {
+                val first = TextNormalizer.normalizeTerm(label).firstOrNull()
+                if (first != null && first in 'a'..'z') first.uppercaseChar().toString() else "#"
+            }
+        }
     }
 }

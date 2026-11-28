@@ -4,6 +4,7 @@ import android.content.Context
 import com.warden.app.R
 import com.warden.app.data.models.WebsiteBlockerConfig
 import com.warden.app.feature.blocker.domain.GroupedRuleList
+import com.warden.app.feature.blocker.domain.RuleActionKind
 import com.warden.app.feature.blocker.domain.RuleBadgeKind
 import com.warden.app.feature.blocker.domain.RuleItemSpec
 import com.warden.app.feature.blocker.domain.RuleListFormatter
@@ -72,37 +73,23 @@ internal object WebsiteListBuilder {
         lowerQuery: String,
     ): List<RuleItemSpec> {
         val list = ArrayList<RuleItemSpec>()
+        val yoursLabel = context.getString(R.string.badge_yours)
+        val allowedLabel = context.getString(R.string.badge_allowed)
+        val disabledLabel = context.getString(R.string.badge_disabled)
         config.userBlockedDomains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
-            list.add(
-                RuleItemSpec(
-                    id = "$PREFIX_USER$domain",
-                    label = domain,
-                    badgeText = context.getString(R.string.badge_yours),
-                    badgeKind = RuleBadgeKind.USER,
-                    actionContentDesc = context.getString(R.string.cd_delete_entry_fmt, domain),
-                ),
-            )
+            list.add(RuleItemSpec("$PREFIX_USER$domain", domain, yoursLabel, RuleBadgeKind.USER, actionKind = RuleActionKind.DELETE))
         }
         config.whitelistedDomains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
-            list.add(
-                RuleItemSpec(
-                    id = "$PREFIX_ALLOW$domain",
-                    label = domain,
-                    badgeText = context.getString(R.string.badge_allowed),
-                    badgeKind = RuleBadgeKind.ALLOWED,
-                    actionContentDesc = context.getString(R.string.cd_delete_entry_fmt, domain),
-                ),
-            )
+            list.add(RuleItemSpec("$PREFIX_ALLOW$domain", domain, allowedLabel, RuleBadgeKind.ALLOWED, actionKind = RuleActionKind.DELETE))
         }
         config.disabledBuiltinDomains.filter { lowerQuery.isEmpty() || it.contains(lowerQuery) }.forEach { domain ->
             list.add(
                 RuleItemSpec(
                     id = "$PREFIX_DISABLED$domain",
                     label = domain,
-                    badgeText = context.getString(R.string.badge_disabled),
+                    badgeText = disabledLabel,
                     badgeKind = RuleBadgeKind.DISABLED,
-                    actionContentDesc = context.getString(R.string.cd_enable_builtin_fmt, domain),
-                    isSecondaryAction = true,
+                    actionKind = RuleActionKind.ENABLE_BUILTIN,
                 ),
             )
         }
@@ -124,22 +111,28 @@ internal object WebsiteListBuilder {
                 addAll(whiteSet)
             }
         val label = context.getString(R.string.badge_builtin)
-        val out = ArrayList<RuleItemSpec>(if (lowerQuery.isEmpty()) builtins.size else 256)
+        val letters = ArrayList<RuleItemSpec>(if (lowerQuery.isEmpty()) builtins.size else 256)
+        val nonLetters = ArrayList<RuleItemSpec>()
         for (domain in builtins) {
             val included = domain !in excluded && (lowerQuery.isEmpty() || domain.contains(lowerQuery))
             if (included) {
-                out.add(
+                val spec =
                     RuleItemSpec(
                         id = "$PREFIX_BUILTIN$domain",
                         label = domain,
                         badgeText = label,
                         badgeKind = RuleBadgeKind.BUILTIN,
-                        actionContentDesc = context.getString(R.string.cd_disable_builtin_fmt, domain),
-                    ),
-                )
+                        actionKind = RuleActionKind.DISABLE_BUILTIN,
+                    )
+                if (RuleListFormatter.bucketLetter(domain) == "#") {
+                    nonLetters.add(spec)
+                } else {
+                    letters.add(spec)
+                }
             }
         }
-        return out
+        letters.addAll(nonLetters)
+        return letters
     }
 
     private fun mergeSortedSpecs(

@@ -1,31 +1,54 @@
 package com.warden.app.feature.blocker.ui
 
+import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.MaterialColors
 import com.warden.app.R
 import com.warden.app.databinding.ItemRuleEntryRowBinding
 import com.warden.app.databinding.ItemRuleLetterHeaderBinding
+import com.warden.app.feature.blocker.domain.RuleActionKind
 import com.warden.app.feature.blocker.domain.RuleBadgeKind
 import com.warden.app.feature.blocker.domain.RuleItemSpec
 import com.warden.app.feature.blocker.domain.RuleListRow
 
 /**
- * Shared virtualized [ListAdapter] rendering alphabetically grouped letter headers and
+ * Shared virtualized [RecyclerView.Adapter] rendering alphabetically grouped letter headers and
  * accessible rule rows for Blocked Words, Safe Phrases, and Website Domains.
+ *
+ * Uses [DiffUtil] for smooth animations on small/medium lists (`<= 500` rows) and switches to an
+ * O(1) swap for massive datasets (46,000+ built-in domains) so scrolling and search never stutter.
  */
 internal class RuleListAdapter(
     private val onBadgeClick: (RuleItemSpec) -> Unit = {},
     private val onActionClick: (RuleItemSpec) -> Unit,
-) : ListAdapter<RuleListRow, RecyclerView.ViewHolder>(DiffCallback) {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private var rows: List<RuleListRow> = emptyList()
+
+    /** Replaces the displayed [newRows], using [DiffUtil] for lists up to 500 rows. */
+    @SuppressLint("NotifyDataSetChanged")
+    internal fun submitList(newRows: List<RuleListRow>) {
+        val oldRows = rows
+        if (oldRows === newRows) return
+        if (oldRows.size <= DIFF_LIMIT && newRows.size <= DIFF_LIMIT) {
+            val diff = DiffUtil.calculateDiff(RowDiffCallback(oldRows, newRows))
+            rows = newRows
+            diff.dispatchUpdatesTo(this)
+        } else {
+            rows = newRows
+            notifyDataSetChanged()
+        }
+    }
+
+    override fun getItemCount(): Int = rows.size
+
     override fun getItemViewType(position: Int): Int =
-        when (getItem(position)) {
+        when (rows[position]) {
             is RuleListRow.Header -> VIEW_TYPE_HEADER
             is RuleListRow.Entry -> VIEW_TYPE_ENTRY
         }
@@ -46,7 +69,7 @@ internal class RuleListAdapter(
         holder: RecyclerView.ViewHolder,
         position: Int,
     ) {
-        when (val row = getItem(position)) {
+        when (val row = rows[position]) {
             is RuleListRow.Header -> (holder as HeaderViewHolder).bind(row)
             is RuleListRow.Entry -> (holder as EntryViewHolder).bind(row.spec, onBadgeClick, onActionClick)
         }
@@ -87,7 +110,12 @@ internal class RuleListAdapter(
             }
             badge.visibility = View.VISIBLE
             badge.text = spec.badgeText
-            badge.contentDescription = spec.badgeContentDesc.ifBlank { spec.badgeText }
+            badge.contentDescription =
+                if (spec.badgeClickable) {
+                    binding.root.context.getString(R.string.cd_toggle_mode_fmt, spec.label, spec.badgeText)
+                } else {
+                    spec.badgeText
+                }
             badge.isClickable = spec.badgeClickable
             badge.isFocusable = spec.badgeClickable
             applyBadgeColors(spec.badgeKind)
@@ -119,32 +147,47 @@ internal class RuleListAdapter(
             spec: RuleItemSpec,
             onActionClick: (RuleItemSpec) -> Unit,
         ) {
+            val ctx = binding.root.context
             val iconRes =
-                if (spec.isSecondaryAction) {
+                if (spec.actionKind == RuleActionKind.ENABLE_BUILTIN) {
                     R.drawable.baseline_refresh_24
                 } else {
                     R.drawable.baseline_close_24
                 }
+            val descRes =
+                when (spec.actionKind) {
+                    RuleActionKind.DELETE -> R.string.cd_delete_entry_fmt
+                    RuleActionKind.DISABLE_BUILTIN -> R.string.cd_disable_builtin_fmt
+                    RuleActionKind.ENABLE_BUILTIN -> R.string.cd_enable_builtin_fmt
+                }
             binding.btnRuleAction.setImageResource(iconRes)
-            binding.btnRuleAction.contentDescription = spec.actionContentDesc
+            binding.btnRuleAction.contentDescription = ctx.getString(descRes, spec.label)
             binding.btnRuleAction.setOnClickListener { onActionClick(spec) }
         }
     }
 
-    private object DiffCallback : DiffUtil.ItemCallback<RuleListRow>() {
+    private class RowDiffCallback(
+        private val oldRows: List<RuleListRow>,
+        private val newRows: List<RuleListRow>,
+    ) : DiffUtil.Callback() {
+        override fun getOldListSize(): Int = oldRows.size
+
+        override fun getNewListSize(): Int = newRows.size
+
         override fun areItemsTheSame(
-            oldItem: RuleListRow,
-            newItem: RuleListRow,
-        ): Boolean = oldItem.stableId == newItem.stableId
+            oldItemPosition: Int,
+            newItemPosition: Int,
+        ): Boolean = oldRows[oldItemPosition].stableId == newRows[newItemPosition].stableId
 
         override fun areContentsTheSame(
-            oldItem: RuleListRow,
-            newItem: RuleListRow,
-        ): Boolean = oldItem == newItem
+            oldItemPosition: Int,
+            newItemPosition: Int,
+        ): Boolean = oldRows[oldItemPosition] == newRows[newItemPosition]
     }
 
     companion object {
         private const val VIEW_TYPE_HEADER = 0
         private const val VIEW_TYPE_ENTRY = 1
+        private const val DIFF_LIMIT = 500
     }
 }

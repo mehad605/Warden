@@ -15,6 +15,7 @@ import com.warden.app.data.models.WebsiteBlockerConfig
 import com.warden.app.feature.blocker.domain.RuleItemSpec
 import com.warden.app.feature.blocker.domain.RuleListFormatter
 import com.warden.app.feature.blocker.domain.RuleListRow
+import com.warden.app.feature.blocker.ui.WebsiteListBuilder
 import com.warden.app.feature.websites.data.PornDomainRepository
 import com.warden.app.feature.websites.domain.DomainNormalizer
 import com.warden.app.feature.websites.domain.DomainValidationResult
@@ -59,29 +60,13 @@ class RulesUiAndWebsiteBlockerTest {
     }
 
     @Test
-    fun rulesUiSupportsModeAtAddTimePhrasesSearchInlineSwitchAndCounts() {
-        val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
-        awaitMainLooper()
+    fun rulesUiSupportsModeAtAddTimePhrasesSearchAndCounts() {
+        val activity = openRulesTab()
+        addBlockedWord(activity, "  Robert   DeNero  ", R.id.btn_add_mode_exact)
+        addBlockedWord(activity, "porn", R.id.btn_add_mode_contains)
 
-        activity.findViewById<View>(R.id.nav_rules).performClick()
-        shadowOf(Looper.getMainLooper()).idle()
-
-        val etKeyword = activity.findViewById<EditText>(R.id.et_keyword)
-        val addModeToggle = activity.findViewById<MaterialButtonToggleGroup>(R.id.toggle_add_mode)
         val countTv = activity.findViewById<TextView>(R.id.tv_keyword_count)
         val rvBlocked = activity.findViewById<RecyclerView>(R.id.rv_blocked_words)
-
-        // Add phrase in default Exact mode via Enter key
-        etKeyword.setText("  Robert   DeNero  ")
-        etKeyword.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
-        awaitMainLooper()
-
-        // Switch mode to Anywhere in text and add "porn"
-        addModeToggle.check(R.id.btn_add_mode_contains)
-        etKeyword.setText("porn")
-        etKeyword.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
-        awaitMainLooper()
-
         assertTrue("Expected total/exact/anywhere counts, got: ${countTv.text}", countTv.text.toString().contains("2 total"))
         assertTrue(countTv.text.toString().contains("1 Exact"))
         assertTrue(countTv.text.toString().contains("1 Anywhere"))
@@ -90,10 +75,61 @@ class RulesUiAndWebsiteBlockerTest {
         assertEquals(4, rvBlocked.adapter?.itemCount)
 
         // Live search filters down to just "porn" (1 header + 1 entry = 2 rows)
-        val etSearch = activity.findViewById<EditText>(R.id.et_search_blocked)
-        etSearch.setText("por")
+        activity.findViewById<EditText>(R.id.et_search_blocked).setText("por")
         awaitMainLooper()
         assertEquals(2, rvBlocked.adapter?.itemCount)
+    }
+
+    @Test
+    fun rulesUiSupportsInlineModeSwitchAndUndoDelete() {
+        val activity = openRulesTab()
+        addBlockedWord(activity, "porn", R.id.btn_add_mode_contains)
+
+        val countTv = activity.findViewById<TextView>(R.id.tv_keyword_count)
+        val rvBlocked = activity.findViewById<RecyclerView>(R.id.rv_blocked_words)
+        rvBlocked.measure(
+            View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
+        )
+        rvBlocked.layout(0, 0, 400, 400)
+
+        // Inline mode toggle: Anywhere -> Exact
+        val badgeView = requireNotNull(rvBlocked.findViewHolderForAdapterPosition(1)).itemView.findViewById<TextView>(R.id.btn_rule_badge)
+        assertEquals("Anywhere", badgeView.text.toString())
+        badgeView.performClick()
+        awaitMainLooper()
+        assertTrue("Inline click must switch Anywhere -> Exact, got: ${countTv.text}", countTv.text.toString().contains("1 Exact"))
+
+        // Delete with 5-second Undo restores the entry
+        val deleteBtn = requireNotNull(rvBlocked.findViewHolderForAdapterPosition(1)).itemView.findViewById<View>(R.id.btn_rule_action)
+        deleteBtn.performClick()
+        awaitMainLooper()
+        assertTrue("Delete must decrement count, got: ${countTv.text}", countTv.text.toString().contains("0 total"))
+        val undoBtn = activity.findViewById<View>(com.google.android.material.R.id.snackbar_action)
+        assertNotNull("5-second Undo Snackbar action must be visible", undoBtn)
+        undoBtn.performClick()
+        awaitMainLooper()
+        assertTrue("Undo must restore deleted term, got: ${countTv.text}", countTv.text.toString().contains("1 total"))
+    }
+
+    private fun openRulesTab(): FragmentActivity {
+        val activity = Robolectric.buildActivity(FragmentActivity::class.java).setup().get()
+        awaitMainLooper()
+        activity.findViewById<View>(R.id.nav_rules).performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+        return activity
+    }
+
+    private fun addBlockedWord(
+        activity: FragmentActivity,
+        text: String,
+        modeButtonId: Int,
+    ) {
+        activity.findViewById<MaterialButtonToggleGroup>(R.id.toggle_add_mode).check(modeButtonId)
+        val etKeyword = activity.findViewById<EditText>(R.id.et_keyword)
+        etKeyword.setText(text)
+        etKeyword.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+        awaitMainLooper()
     }
 
     @Test
@@ -119,6 +155,16 @@ class RulesUiAndWebsiteBlockerTest {
         assertTrue("Must group accented e under E bucket", grouped.letterPositions.containsKey("E"))
         val headers = grouped.rows.filterIsInstance<RuleListRow.Header>().map { it.letter }
         assertEquals("#", headers.last())
+
+        val siteGrouped =
+            WebsiteListBuilder.build(
+                context = app,
+                config = WebsiteBlockerConfig(isEnabled = true, userBlockedDomains = listOf("9custom.com")),
+                builtins = listOf("2pornhub.com", "anotherpornhub.com", "pornhub.com"),
+                lowerQuery = "",
+            )
+        val siteHeaders = siteGrouped.rows.filterIsInstance<RuleListRow.Header>().map { it.letter }
+        assertEquals(listOf("A", "P", "#"), siteHeaders)
     }
 
     @Test
