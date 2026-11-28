@@ -10,7 +10,7 @@ import com.warden.app.feature.blocker.domain.KeywordMatch
 
 /**
  * Coordinates accessibility event processing, self-protection, keyword scanning, and grace-period
- * minimization with explicit dependency injection and guaranteed `AccessibilityNodeInfo` recycling.
+ * minimization with a single `rootInActiveWindow` fetch per event and guaranteed node recycling.
  */
 class BlockerCoordinator(
     private val rootNodeProvider: () -> AccessibilityNodeInfo?,
@@ -30,26 +30,51 @@ class BlockerCoordinator(
         engine.updateSettings(settings)
     }
 
-    /** Updates the shipped built-in adult domain list used by the website blocker. */
+    /** Updates the shipped built-in adult domain set used by the website blocker. */
     fun onBuiltinDomainsLoaded(domains: Collection<String>) {
         engine.updateBuiltinDomains(domains)
     }
 
-    /** Processes one accessibility event; safe to invoke from a background worker coroutine. */
+    /** Processes one accessibility event using at most one `rootInActiveWindow` IPC call. */
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || (event.eventType and TARGET_EVENTS_MASK) == 0) return
 
         val nowMs = clock.currentTimeMillis()
-        if (handleSelfProtection(event, nowMs)) return
-
         val eventPackage = event.packageName?.toString().orEmpty()
-        if (!engine.shouldScanPackage(eventPackage, nowMs)) {
-            graceController.cancel()
-            clearInstantBlockCooldown()
+        val maybeSelfProtect = eventPackage.isEmpty() || engine.shouldInspectSelfProtection(eventPackage)
+        val shouldScanEventPkg = engine.shouldScanPackage(eventPackage, nowMs)
+
+        if (!maybeSelfProtect && !shouldScanEventPkg) {
+            cancelPendingChecks()
             return
         }
 
-        scanActiveWindow(nowMs)
+        val rootNode = rootNodeProvider() ?: return
+        try {
+            processRootNode(rootNode, event, shouldScanEventPkg, nowMs)
+        } finally {
+            AccessibilityNodeScanner.recycleNodeCompat(rootNode)
+        }
+    }
+
+    private fun processRootNode(
+        rootNode: AccessibilityNodeInfo,
+        event: AccessibilityEvent,
+        shouldScanEventPkg: Boolean,
+        nowMs: Long,
+    ) {
+        val rootPackage = rootNode.packageName?.toString().orEmpty()
+        if (handleSelfProtectionOnNode(rootNode, rootPackage, event, nowMs)) return
+        if (!shouldScanEventPkg || !engine.shouldScanPackage(rootPackage, nowMs)) {
+            cancelPendingChecks()
+            return
+        }
+        scanNode(rootNode, rootPackage, nowMs)
+    }
+
+    private fun cancelPendingChecks() {
+        graceController.cancel()
+        clearInstantBlockCooldown()
     }
 
     /** Cancels pending timers when the hosting service is destroyed. */
@@ -59,56 +84,45 @@ class BlockerCoordinator(
         dismissToast()
     }
 
-    private fun handleSelfProtection(
+    private fun handleSelfProtectionOnNode(
+        rootNode: AccessibilityNodeInfo,
+        activePackage: String,
         event: AccessibilityEvent,
         nowMs: Long,
     ): Boolean {
-        val rootNode = rootNodeProvider() ?: return false
-        try {
-            val activePackage = rootNode.packageName?.toString().orEmpty()
-            if (!engine.shouldInspectSelfProtection(activePackage)) return false
-
-            val screenTexts = mutableListOf<String>()
-            AccessibilityNodeScanner.collectScreenTexts(rootNode, screenTexts)
-            val className = event.className?.toString().orEmpty()
-            val warning = engine.evaluateSelfProtection(activePackage, className, screenTexts, nowMs)
-            if (warning != null) {
-                graceController.cancel()
-                clearInstantBlockCooldown()
-                pressHome()
-                showToast(warning)
-                return true
-            }
-            return false
-        } finally {
-            AccessibilityNodeScanner.recycleNodeCompat(rootNode)
+        if (!engine.shouldInspectSelfProtection(activePackage)) return false
+        val screenTexts = mutableListOf<String>()
+        AccessibilityNodeScanner.collectScreenTexts(rootNode, screenTexts)
+        val className = event.className?.toString().orEmpty()
+        val warning = engine.evaluateSelfProtection(activePackage, className, screenTexts, nowMs)
+        if (warning != null) {
+            graceController.cancel()
+            clearInstantBlockCooldown()
+            pressHome()
+            showToast(warning)
+            return true
         }
+        return false
     }
 
-    private fun scanActiveWindow(nowMs: Long) {
-        val rootNode = rootNodeProvider() ?: return
-        try {
-            val rootPackage = rootNode.packageName?.toString().orEmpty()
-            if (rootPackage != lastInstantBlockedPackage) {
+    private fun scanNode(
+        rootNode: AccessibilityNodeInfo,
+        rootPackage: String,
+        nowMs: Long,
+    ) {
+        if (rootPackage != lastInstantBlockedPackage) {
+            clearInstantBlockCooldown()
+        }
+        val match = AccessibilityNodeScanner.findFirstMatch(rootNode, engine::findMatch)
+        if (match != null) {
+            handleKeywordMatch(rootPackage, match, nowMs)
+        } else {
+            if (rootPackage == lastInstantBlockedPackage) {
                 clearInstantBlockCooldown()
             }
-            if (!engine.shouldScanPackage(rootPackage, nowMs)) {
-                graceController.cancel()
-                return
+            if (graceController.cancelForPackage(rootPackage)) {
+                dismissToast()
             }
-            val match = AccessibilityNodeScanner.findFirstMatch(rootNode, engine::findMatch)
-            if (match != null) {
-                handleKeywordMatch(rootPackage, match, nowMs)
-            } else {
-                if (rootPackage == lastInstantBlockedPackage) {
-                    clearInstantBlockCooldown()
-                }
-                if (graceController.cancelForPackage(rootPackage)) {
-                    dismissToast()
-                }
-            }
-        } finally {
-            AccessibilityNodeScanner.recycleNodeCompat(rootNode)
         }
     }
 

@@ -89,10 +89,13 @@ object RuleListFormatter {
 
     private fun sortDictionaryOrder(items: List<RuleItemSpec>): List<RuleItemSpec> {
         val collator = Collator.getInstance(Locale.ROOT).apply { strength = Collator.PRIMARY }
-        return items.sortedWith { a, b ->
-            val cmp = collator.compare(a.label, b.label)
-            if (cmp != 0) cmp else a.label.compareTo(b.label)
-        }
+        val keyed = items.map { it to collator.getCollationKey(it.label) }
+        return keyed
+            .sortedWith { a, b ->
+                val cmp = a.second.compareTo(b.second)
+                if (cmp != 0) cmp else a.first.label.compareTo(b.first.label)
+            }
+            .map { it.first }
     }
 
     private fun groupSorted(sorted: List<RuleItemSpec>): GroupedRuleList {

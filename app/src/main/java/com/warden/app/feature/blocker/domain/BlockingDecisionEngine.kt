@@ -6,6 +6,9 @@ import com.warden.app.feature.websites.domain.WebsiteDomainMatcher
 /**
  * Thread-safe pure domain engine that holds the latest compiled [Settings] snapshot and
  * evaluates self-protection, app exemptions, keyword/phrase matches, and website domain matches.
+ *
+ * Uses differential recompilation so unrelated settings updates (like moving the Grace slider
+ * or editing API settings) never recompile word regexes or rebuild the website matcher.
  */
 class BlockingDecisionEngine(
     initialSettings: Settings = Settings(),
@@ -16,20 +19,56 @@ class BlockingDecisionEngine(
         val matcher: KeywordMatcher,
         val websiteMatcher: WebsiteDomainMatcher,
         val ignoredApps: Set<String>,
-        val builtinDomains: List<String>,
+        val builtinDomains: Set<String>,
     )
 
     @Volatile
-    private var state: CompiledState = compile(initialSettings, initialBuiltinDomains.toList())
+    private var state: CompiledState = compileInitial(initialSettings, toSharedSet(initialBuiltinDomains))
 
-    /** Atomically replaces the active configuration snapshot and recompiles word & domain matchers. */
+    /** Atomically updates active rules, recompiling only the matchers whose inputs changed. */
     fun updateSettings(settings: Settings) {
-        state = compile(settings, state.builtinDomains)
+        val prev = state
+        if (prev.settings == settings) return
+        val prevBlocker = prev.settings.keywordBlockerConfig
+        val nextBlocker = settings.keywordBlockerConfig
+        val keywordsChanged =
+            prevBlocker.effectiveBlockedEntries() != nextBlocker.effectiveBlockedEntries() ||
+                prevBlocker.whitelistedKeywords != nextBlocker.whitelistedKeywords
+        val websitesChanged = prev.settings.websiteBlockerConfig != settings.websiteBlockerConfig
+        val ignoredChanged = prevBlocker.ignoredApps != nextBlocker.ignoredApps
+
+        state =
+            prev.copy(
+                settings = settings,
+                matcher =
+                    if (keywordsChanged) {
+                        KeywordMatcher(
+                            blockedEntries = nextBlocker.effectiveBlockedEntries(),
+                            whitelistedKeywords = nextBlocker.whitelistedKeywords,
+                        )
+                    } else {
+                        prev.matcher
+                    },
+                websiteMatcher =
+                    if (websitesChanged) {
+                        WebsiteDomainMatcher.fromConfig(settings.websiteBlockerConfig, prev.builtinDomains)
+                    } else {
+                        prev.websiteMatcher
+                    },
+                ignoredApps = if (ignoredChanged) nextBlocker.ignoredApps.toHashSet() else prev.ignoredApps,
+            )
     }
 
-    /** Supplies the shipped built-in adult domain list and recompiles the website matcher. */
+    /** Supplies the shipped built-in adult domain set (zero-copy when already a [Set]) and updates website matching. */
     fun updateBuiltinDomains(domains: Collection<String>) {
-        state = compile(state.settings, domains.toList())
+        val prev = state
+        val sharedSet = toSharedSet(domains)
+        if (prev.builtinDomains === sharedSet) return
+        state =
+            prev.copy(
+                builtinDomains = sharedSet,
+                websiteMatcher = WebsiteDomainMatcher.fromConfig(prev.settings.websiteBlockerConfig, sharedSet),
+            )
     }
 
     /** Current configured grace period in seconds (`0` means instant block). */
@@ -93,9 +132,9 @@ class BlockingDecisionEngine(
     /** Formats the standard user-facing alert message for a [KeywordMatch]. */
     fun formatBlockedMessage(match: KeywordMatch): String = "Blocked word ${match.keyword} was found : \" ${match.context} \""
 
-    private fun compile(
+    private fun compileInitial(
         settings: Settings,
-        builtinDomains: List<String>,
+        builtinDomains: Set<String>,
     ): CompiledState =
         CompiledState(
             settings = settings,
@@ -108,6 +147,13 @@ class BlockingDecisionEngine(
             ignoredApps = settings.keywordBlockerConfig.ignoredApps.toHashSet(),
             builtinDomains = builtinDomains,
         )
+
+    private fun toSharedSet(domains: Collection<String>): Set<String> =
+        when {
+            domains.isEmpty() -> emptySet()
+            domains is Set<String> -> domains
+            else -> domains.toHashSet()
+        }
 
     companion object {
         private const val WARDEN_PACKAGE = "com.warden.app"

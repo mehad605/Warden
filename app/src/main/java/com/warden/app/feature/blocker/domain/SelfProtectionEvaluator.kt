@@ -49,8 +49,8 @@ object SelfProtectionEvaluator {
         nowMs: Long,
     ): String? {
         if (!shouldInspectPackage(packageName)) return null
+        if (screenTexts.none { it.contains("warden", ignoreCase = true) }) return null
         val lowerTexts = screenTexts.map { it.lowercase(Locale.ROOT) }
-        if (lowerTexts.none { it.contains("warden") }) return null
 
         val isDeviceAdminScreen = isDeviceAdminUi(eventClassName, lowerTexts)
         val isActivating = nowMs - deviceAdminActivationRequestedAt < DEVICE_ADMIN_ACTIVATION_GRACE_MS

@@ -7,10 +7,14 @@ import com.warden.app.feature.blocker.domain.KeywordMatch
 import com.warden.app.feature.blocker.domain.KeywordMatcher
 
 /**
- * Safely traverses Android [AccessibilityNodeInfo] trees and recycles every obtained child node
- * in `finally` blocks on API < 33 so the accessibility node pool is never leaked.
+ * Safely traverses Android [AccessibilityNodeInfo] trees with bounded depth and node budgets
+ * and recycles every obtained child node in `finally` blocks on API < 33 so the accessibility
+ * node pool is never leaked and oversized WebViews cannot cause CPU spikes.
  */
 object AccessibilityNodeScanner {
+    private const val MAX_NODES_PER_SCAN = 300
+    private const val MAX_TREE_DEPTH = 32
+
     /**
      * Depth-first search over [node] inspecting `text` and `contentDescription` until [matchText]
      * finds a blocked keyword or domain. Recycles all intermediate child nodes before returning.
@@ -20,17 +24,7 @@ object AccessibilityNodeScanner {
         matchText: (String) -> KeywordMatch?,
     ): KeywordMatch? {
         node ?: return null
-        matchNodeText(node, matchText)?.let { return it }
-
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            try {
-                findFirstMatch(child, matchText)?.let { return it }
-            } finally {
-                recycleNodeCompat(child)
-            }
-        }
-        return null
+        return findFirstMatchBounded(node, matchText, depth = 0, remaining = intArrayOf(MAX_NODES_PER_SCAN))
     }
 
     /** Convenience overload using a [KeywordMatcher] directly. */
@@ -39,34 +33,70 @@ object AccessibilityNodeScanner {
         matcher: KeywordMatcher,
     ): KeywordMatch? = findFirstMatch(node, matcher::findMatch)
 
+    private fun findFirstMatchBounded(
+        node: AccessibilityNodeInfo,
+        matchText: (String) -> KeywordMatch?,
+        depth: Int,
+        remaining: IntArray,
+    ): KeywordMatch? {
+        if (depth > MAX_TREE_DEPTH || remaining[0] <= 0) return null
+        remaining[0]--
+        matchNodeText(node, matchText)?.let { return it }
+
+        for (i in 0 until node.childCount) {
+            if (remaining[0] <= 0) return null
+            val child = node.getChild(i) ?: continue
+            try {
+                findFirstMatchBounded(child, matchText, depth + 1, remaining)?.let { return it }
+            } finally {
+                recycleNodeCompat(child)
+            }
+        }
+        return null
+    }
+
     private fun matchNodeText(
         node: AccessibilityNodeInfo,
         matchText: (String) -> KeywordMatch?,
     ): KeywordMatch? {
-        val nodeText = node.text?.toString()
-        if (!nodeText.isNullOrEmpty()) {
-            matchText(nodeText)?.let { return it }
+        val rawText = node.text
+        if (!rawText.isNullOrEmpty()) {
+            matchText(rawText.toString())?.let { return it }
         }
-        val contentDesc = node.contentDescription?.toString()
-        return if (!contentDesc.isNullOrEmpty()) matchText(contentDesc) else null
+        val rawDesc = node.contentDescription
+        return if (!rawDesc.isNullOrEmpty()) matchText(rawDesc.toString()) else null
     }
 
     /**
      * Collects all non-empty `text` and `contentDescription` values from [node] into [targetList],
-     * recycling every child node in `finally`.
+     * bounded by [MAX_NODES_PER_SCAN] and [MAX_TREE_DEPTH], recycling every child node in `finally`.
      */
     fun collectScreenTexts(
         node: AccessibilityNodeInfo?,
         targetList: MutableList<String>,
     ) {
         node ?: return
-        node.text?.toString()?.takeIf { it.isNotEmpty() }?.let { targetList.add(it) }
-        node.contentDescription?.toString()?.takeIf { it.isNotEmpty() }?.let { targetList.add(it) }
+        collectBounded(node, targetList, depth = 0, remaining = intArrayOf(MAX_NODES_PER_SCAN))
+    }
+
+    private fun collectBounded(
+        node: AccessibilityNodeInfo,
+        targetList: MutableList<String>,
+        depth: Int,
+        remaining: IntArray,
+    ) {
+        if (depth > MAX_TREE_DEPTH || remaining[0] <= 0) return
+        remaining[0]--
+        val rawText = node.text
+        if (!rawText.isNullOrEmpty()) targetList.add(rawText.toString())
+        val rawDesc = node.contentDescription
+        if (!rawDesc.isNullOrEmpty()) targetList.add(rawDesc.toString())
 
         for (i in 0 until node.childCount) {
+            if (remaining[0] <= 0) return
             val child = node.getChild(i) ?: continue
             try {
-                collectScreenTexts(child, targetList)
+                collectBounded(child, targetList, depth + 1, remaining)
             } finally {
                 recycleNodeCompat(child)
             }
